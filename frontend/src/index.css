@@ -1,0 +1,70 @@
+:root {
+  --void: #070B12;
+  --panel: #0D1521;
+  --panel-2: #111C2B;
+  --panel-border: rgba(255, 255, 255, 0.06);
+
+  --teal: #17C4A4;
+  --teal-glow: #39F0CB;
+  --teal-dim: rgba(23, 196, 164, 0.14);
+
+  --coral: #F1435C;
+  --coral-glow: #FF6E82;
+  --coral-dim: rgba(241, 67, 92, 0.14);
+
+  --amber: #F0A63E;
+  --amber-dim: rgba(240, 166, 62, 0.14);
+
+  --text-hi: #EAF1F5;
+  --text-mid: #8FA1B3;
+  --text-lo: #4E6072;
+
+  --grid-line: rgba(23, 196, 164, 0.07);
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  background: var(--void);
+  color: var(--text-hi);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--teal);
+  color: #03110d;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.display {
+  font-family: var(--font-display);
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--panel-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
