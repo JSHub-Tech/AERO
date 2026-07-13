@@ -1,0 +1,86 @@
+"""
+SQLAlchemy 2.0 ORM models — the Postgres "source of truth" tier (Supabase).
+Mirrors the ER diagram: Aircraft -> Flight -> Seat -> Booking.
+"""
+import uuid
+from datetime import datetime
+
+from sqlalchemy import ForeignKey, String, Float, Boolean, DateTime, Integer, func
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.db.postgres import Base
+
+
+class Airport(Base):
+    __tablename__ = "airport"
+
+    iata: Mapped[str] = mapped_column(String(3), primary_key=True)
+    name: Mapped[str] = mapped_column(String(150), nullable=False)
+    city: Mapped[str] = mapped_column(String(100), nullable=False)
+    country: Mapped[str] = mapped_column(String(100), nullable=False)
+    latitude: Mapped[float] = mapped_column(Float, nullable=False)
+    longitude: Mapped[float] = mapped_column(Float, nullable=False)
+
+
+class Aircraft(Base):
+    __tablename__ = "aircraft"
+
+    aircraft_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    registration_code: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    manufacturer: Mapped[str] = mapped_column(String(100), nullable=False)
+    model: Mapped[str] = mapped_column(String(100), nullable=False)
+    total_seats: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="active")
+
+    flights: Mapped[list["Flight"]] = relationship(back_populates="aircraft")
+
+
+class Flight(Base):
+    __tablename__ = "flight"
+
+    flight_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    flight_number: Mapped[str] = mapped_column(String(10), nullable=False, index=True)
+    aircraft_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("aircraft.aircraft_id"), nullable=False)
+    departure_airport: Mapped[str] = mapped_column(ForeignKey("airport.iata"), nullable=False, index=True)
+    arrival_airport: Mapped[str] = mapped_column(ForeignKey("airport.iata"), nullable=False, index=True)
+    scheduled_departure: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    estimated_departure: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    scheduled_arrival: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    estimated_arrival: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    base_price: Mapped[float] = mapped_column(Float, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="scheduled")  # scheduled|boarding|final_call|delayed|airborne|completed|cancelled
+    region_shard: Mapped[str] = mapped_column(String(30), nullable=False, index=True)  # e.g. "lahore"
+
+    aircraft: Mapped["Aircraft"] = relationship(back_populates="flights")
+    seats: Mapped[list["Seat"]] = relationship(back_populates="flight", cascade="all, delete-orphan")
+    bookings: Mapped[list["Booking"]] = relationship(back_populates="flight")
+
+
+class Seat(Base):
+    __tablename__ = "seat"
+
+    seat_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    flight_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("flight.flight_id"), nullable=False)
+    seat_number: Mapped[str] = mapped_column(String(5), nullable=False)
+    seat_class: Mapped[str] = mapped_column(String(20), default="economy")
+    is_booked: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    flight: Mapped["Flight"] = relationship(back_populates="seats")
+    booking: Mapped["Booking | None"] = relationship(back_populates="seat", uselist=False)
+
+
+class Booking(Base):
+    __tablename__ = "booking"
+
+    booking_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    flight_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("flight.flight_id"), nullable=False)
+    seat_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("seat.seat_id"), unique=True, nullable=False)
+    passenger_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    passenger_email: Mapped[str] = mapped_column(String(150), nullable=False, index=True)
+    price_paid: Mapped[float] = mapped_column(Float, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="confirmed")  # confirmed|cancelled
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    flight: Mapped["Flight"] = relationship(back_populates="bookings")
+    seat: Mapped["Seat"] = relationship(back_populates="booking")

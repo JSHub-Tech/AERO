@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# Setup markers (machine-specific, not source)
+scripts/.markers/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
