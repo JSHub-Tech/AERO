@@ -12,6 +12,17 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.postgres import Base
 
 
+class Airport(Base):
+    __tablename__ = "airport"
+
+    iata: Mapped[str] = mapped_column(String(3), primary_key=True)
+    name: Mapped[str] = mapped_column(String(150), nullable=False)
+    city: Mapped[str] = mapped_column(String(100), nullable=False)
+    country: Mapped[str] = mapped_column(String(100), nullable=False)
+    latitude: Mapped[float] = mapped_column(Float, nullable=False)
+    longitude: Mapped[float] = mapped_column(Float, nullable=False)
+
+
 class Aircraft(Base):
     __tablename__ = "aircraft"
 
@@ -31,12 +42,14 @@ class Flight(Base):
     flight_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     flight_number: Mapped[str] = mapped_column(String(10), nullable=False, index=True)
     aircraft_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("aircraft.aircraft_id"), nullable=False)
-    departure_airport: Mapped[str] = mapped_column(String(3), nullable=False, index=True)  # IATA code
-    arrival_airport: Mapped[str] = mapped_column(String(3), nullable=False, index=True)
-    departure_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    arrival_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    departure_airport: Mapped[str] = mapped_column(ForeignKey("airport.iata"), nullable=False, index=True)
+    arrival_airport: Mapped[str] = mapped_column(ForeignKey("airport.iata"), nullable=False, index=True)
+    scheduled_departure: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    estimated_departure: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    scheduled_arrival: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    estimated_arrival: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     base_price: Mapped[float] = mapped_column(Float, nullable=False)
-    status: Mapped[str] = mapped_column(String(20), default="scheduled")  # scheduled|completed|cancelled
+    status: Mapped[str] = mapped_column(String(20), default="scheduled")  # scheduled|boarding|final_call|delayed|airborne|completed|cancelled
     region_shard: Mapped[str] = mapped_column(String(30), nullable=False, index=True)  # e.g. "lahore"
 
     aircraft: Mapped["Aircraft"] = relationship(back_populates="flights")

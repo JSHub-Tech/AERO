@@ -7,8 +7,10 @@ Schema:
   (:Airport)-[:FLIGHT {
         flight_number: str,
         base_price: float,
-        departure_time: datetime (ISO string),
-        arrival_time: datetime (ISO string)
+        scheduled_departure: datetime (ISO string),
+        estimated_departure: datetime | None (ISO string),
+        scheduled_arrival: datetime (ISO string),
+        estimated_arrival: datetime | None (ISO string)
   }]->(:Airport)
 
 Constraints/indexes are created once by scripts/create_neo4j_constraints.py.
@@ -26,7 +28,9 @@ class AirportNode:
 class FlightEdge:
     flight_number: str
     base_price: float
-    departure_time: datetime
-    arrival_time: datetime
+    scheduled_departure: datetime
+    estimated_departure: datetime | None
+    scheduled_arrival: datetime
+    estimated_arrival: datetime | None
     from_airport: str
     to_airport: str

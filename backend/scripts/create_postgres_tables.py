@@ -15,6 +15,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))  # allow `python sc
 
 from app.db.postgres import engine, Base
 from app.models import sql_models  # noqa: F401  (import so tables register on Base.metadata)
+from app.models.sql_models import Airport
 
 MARKER = Path(__file__).parent / ".markers" / "postgres.done"
 

@@ -29,8 +29,10 @@ class FlightCreate(BaseModel):
     aircraft_id: uuid.UUID
     departure_airport: str = Field(min_length=3, max_length=3)
     arrival_airport: str = Field(min_length=3, max_length=3)
-    departure_time: datetime
-    arrival_time: datetime
+    scheduled_departure: datetime
+    estimated_departure: datetime | None = None
+    scheduled_arrival: datetime
+    estimated_arrival: datetime | None = None
     base_price: float = Field(gt=0)
     region_shard: str
 
@@ -76,8 +78,10 @@ class RouteLeg(BaseModel):
     flight_number: str
     departure_airport: str
     arrival_airport: str
-    departure_time: datetime
-    arrival_time: datetime
+    scheduled_departure: datetime
+    estimated_departure: datetime | None = None
+    scheduled_arrival: datetime
+    estimated_arrival: datetime | None = None
     price: float
 
 
@@ -98,3 +102,17 @@ class ChatResponse(BaseModel):
     answer: str
     route: RouteOut | None = None
     sources: list[str] = []
+
+
+# ---------- Telemetry (MongoDB) ----------
+class GeoPointOut(BaseModel):
+    lat: float
+    lng: float
+
+
+class LiveFlightOut(BaseModel):
+    flight_number: str
+    status: str
+    position: GeoPointOut
+    updated_at: datetime
+
