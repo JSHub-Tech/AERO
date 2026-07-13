@@ -1,4 +1,4 @@
-# AERO ADMS Backend — Dockerless / Managed-Services Edition
+# AERO Backend — Managed-Services Edition
 
 Same polyglot architecture as the original AERO ADMS report, rebuilt for a
 hackathon deploy: no Docker, no local DB containers — everything runs
