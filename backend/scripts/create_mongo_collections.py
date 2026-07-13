@@ -1,11 +1,14 @@
 """
-ONE-TIME USE: creates the MongoDB Atlas collection(s) with a schema
-validator and indexes. Checks `list_collection_names()` first so re-running
-is a no-op (Mongo also just implicitly creates collections on first insert,
-but an explicit validator is worth setting up once, up front).
+scripts/create_mongo_collections.py
 
-Run directly:  python scripts/create_mongo_collections.py
+Drops and recreates the 'live_flights' MongoDB Atlas collection with a
+strict schema validator and the required indexes.
+
+Always runs end-to-end (no marker guard).
+
+Run with:  python scripts/create_mongo_collections.py
 """
+
 import asyncio
 import sys
 from pathlib import Path
@@ -17,45 +20,70 @@ from app.config import settings
 
 MARKER = Path(__file__).parent / ".markers" / "mongo.done"
 
+# ── Collection validator ──────────────────────────────────────────────────────
+# Matches the LiveFlight Beanie document in app/models/mongo_models.py
+
 LIVE_FLIGHTS_VALIDATOR = {
     "$jsonSchema": {
         "bsonType": "object",
         "required": ["flight_number", "status", "position", "updated_at"],
         "properties": {
-            "flight_number": {"bsonType": "string"},
-            "status": {"enum": ["airborne", "completed"]},
+            "flight_number": {
+                "bsonType": "string",
+                "description": "Unique flight identifier e.g. PK1000_1",
+            },
+            "status": {
+                "enum": ["airborne", "completed"],
+                "description": "Operational status of the flight",
+            },
             "position": {
                 "bsonType": "object",
                 "required": ["lat", "lng"],
+                "description": "Current interpolated geolocation",
                 "properties": {
                     "lat": {"bsonType": "double"},
                     "lng": {"bsonType": "double"},
                 },
             },
-            "updated_at": {"bsonType": "date"},
+            "updated_at": {
+                "bsonType": "date",
+                "description": "Timestamp of last telemetry update (UTC)",
+            },
         },
     }
 }
 
 
 async def main() -> None:
-    if MARKER.exists():
-        print("[mongo] marker found -> collections already created, skipping.")
-        return
-
+    print("[mongo] Connecting to MongoDB Atlas...")
     db = get_client()[settings.MONGODB_DB_NAME]
     existing = await db.list_collection_names()
 
+    # Drop if it already exists so we start clean
     if "live_flights" in existing:
-        print("[mongo] 'live_flights' already exists, skipping creation.")
-    else:
-        print("[mongo] creating 'live_flights' with schema validator...")
-        await db.create_collection("live_flights", validator=LIVE_FLIGHTS_VALIDATOR)
-        await db["live_flights"].create_index("flight_number")
+        print("[mongo] Dropping existing 'live_flights' collection...")
+        await db.drop_collection("live_flights")
+
+    print("[mongo] Creating 'live_flights' with schema validator...")
+    await db.create_collection("live_flights", validator=LIVE_FLIGHTS_VALIDATOR)
+
+    col = db["live_flights"]
+
+    # Index on flight_number for fast single-flight lookups (WebSocket updates)
+    await col.create_index("flight_number", unique=True, name="idx_flight_number_unique")
+
+    # Index on status for efficient "get all airborne" queries
+    await col.create_index("status", name="idx_status")
+
+    # Compound index for the most common query: status=airborne ordered by updated_at
+    await col.create_index(
+        [("status", 1), ("updated_at", -1)],
+        name="idx_status_updated_at",
+    )
 
     MARKER.parent.mkdir(parents=True, exist_ok=True)
-    MARKER.touch()
-    print("[mongo] done.")
+    MARKER.write_text("done")
+    print("[mongo] ✅  'live_flights' collection created with validator and indexes.")
     await close_mongo()
 
 
