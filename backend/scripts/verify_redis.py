@@ -1,10 +1,15 @@
 """
-ONE-TIME USE: Redis/Upstash has no schema to create, so this just verifies
-connectivity and writes a health-check key. Kept in `scripts/` for symmetry
-with the other three databases so setup.bat can drive all four the same way.
+scripts/verify_redis.py
 
-Run directly:  python scripts/verify_redis.py
+Verifies Upstash Redis connectivity and flushes any stale seat-lock keys
+from a previous seeding session.  No schema to create — just a health check
+and cache invalidation.
+
+Always runs end-to-end (no marker guard).
+
+Run with:  python scripts/verify_redis.py
 """
+
 import asyncio
 import sys
 from pathlib import Path
@@ -17,19 +22,33 @@ MARKER = Path(__file__).parent / ".markers" / "redis.done"
 
 
 async def main() -> None:
-    if MARKER.exists():
-        print("[redis] marker found -> already verified, skipping.")
-        return
-
-    print("[redis] pinging Upstash...")
+    print("[redis] Pinging Upstash...")
     r = get_redis()
+
+    # Basic liveness check
     await r.set("health:aero_adms", "ok", ex=60)
     value = await r.get("health:aero_adms")
-    assert value == "ok", "Redis health check failed"
+    assert value == "ok", f"Redis health check failed — got: {value!r}"
+    print("[redis] Ping OK — reachable and writable.")
+
+    # Flush all seat-lock keys from any prior test run so re-seeding starts clean.
+    # Pattern: lock:seat:<flight_id>:<seat_id>
+    lock_keys = await r.keys("lock:seat:*")
+    if lock_keys:
+        await r.delete(*lock_keys)
+        print(f"[redis] Flushed {len(lock_keys)} stale seat-lock key(s).")
+    else:
+        print("[redis] No stale seat locks to flush.")
+
+    # Also clear any routing cache from previous seeding
+    cache_keys = await r.keys("cache:*")
+    if cache_keys:
+        await r.delete(*cache_keys)
+        print(f"[redis] Flushed {len(cache_keys)} routing cache key(s).")
 
     MARKER.parent.mkdir(parents=True, exist_ok=True)
-    MARKER.touch()
-    print("[redis] reachable and writable. done.")
+    MARKER.write_text("done")
+    print("[redis] ✅  Redis verified and cache cleared.")
 
 
 if __name__ == "__main__":
