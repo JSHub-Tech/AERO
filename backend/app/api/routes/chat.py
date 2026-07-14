@@ -2,11 +2,15 @@
 from fastapi import APIRouter
 
 from app.models.schemas import ChatQuery, ChatResponse
+from app.services import rag_service
 
 router = APIRouter()
 
 
 @router.post("/", response_model=ChatResponse)
 async def chat(query: ChatQuery):
-    # TODO: call app/services/rag_service.py once implemented
-    return ChatResponse(answer="RAG service not yet implemented.", sources=[])
+    """
+    Send a natural language query to the Gemini RAG agent.
+    It can answer questions about the knowledge base or search flights.
+    """
+    return await rag_service.process_chat(query)
