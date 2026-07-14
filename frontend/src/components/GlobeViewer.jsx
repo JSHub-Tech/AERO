@@ -2,7 +2,9 @@ import { useEffect, useRef } from 'react';
 import Globe from 'react-globe.gl';
 import * as THREE from 'three';
 
-// Uses the same polar->cartesian convention as three-globe internally
+// Uses the same polar->cartesian convention as three-globe internally so our
+// manually-computed surface normal lines up with where three-globe actually
+// places the point.
 function outwardNormal(lat, lng) {
   const phi = (90 - lat) * (Math.PI / 180);
   const theta = (90 - lng) * (Math.PI / 180);
@@ -13,18 +15,34 @@ function outwardNormal(lat, lng) {
   ).normalize();
 }
 
-// 1. Load your vibrant red pin texture
-const pointerTexture = new THREE.TextureLoader().load('/pointer__.png');
+// Helper to safely extract lat/lng from any route coordinate formats
+// (e.g. [lat, lng], {lat, lng}, {Latitude, Longitude})
+function getCoordinateValue(point, type) {
+  if (!point) return null;
+  
+  if (Array.isArray(point)) {
+    return type === 'lat' ? point[0] : point[1];
+  }
+  
+  if (type === 'lat') {
+    return point.lat ?? point.Latitude ?? point.latitude;
+  } else {
+    return point.lng ?? point.lon ?? point.Longitude ?? point.longitude;
+  }
+}
 
-// 2. Dynamic, soft radial red glow texture
+// 1. Load the flat red pointer image
+const pointerTexture = new THREE.TextureLoader().load('/pointer_.png');
+
+// 2. Programmatically generate a soft radial red glow texture
 const glowTexture = (() => {
   const canvas = document.createElement('canvas');
   canvas.width = 128;
   canvas.height = 128;
   const ctx = canvas.getContext('2d');
   const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-  gradient.addColorStop(0, 'rgba(239, 68, 68, 0.9)');
-  gradient.addColorStop(0.2, 'rgba(239, 68, 68, 0.5)');
+  gradient.addColorStop(0, 'rgba(239, 68, 68, 0.95)');
+  gradient.addColorStop(0.2, 'rgba(239, 68, 68, 0.55)');
   gradient.addColorStop(0.6, 'rgba(239, 68, 68, 0.15)');
   gradient.addColorStop(1, 'rgba(239, 68, 68, 0)');
   ctx.fillStyle = gradient;
@@ -45,29 +63,24 @@ const glowMaterial = new THREE.SpriteMaterial({
   depthWrite: false,
 });
 
-// Builds a completely stationary, face-on glowing pointer
+// Builds a stationary, glowing 3D pin that always faces the camera (billboards)
 function buildPointerObject(d) {
   const normal = outwardNormal(d.Latitude, d.Longitude);
 
   const anchor = new THREE.Group();
-  // Align anchor orientation with the globe's surface normal
   anchor.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
 
-  // 3. Pin Sprite: Always faces the camera, keeping the original color 100% visible
+  // Pin Sprite: Always faces the camera, keeping the original red color 100% visible
   const pin = new THREE.Sprite(pinMaterial);
   pin.scale.set(8, 11, 1);
-  
-  // Set the pivot point to the bottom-center (the sharp tip of the pin)
-  pin.center.set(0.5, 0); 
-  
-  // Hover height above the airport surface (completely stationary)
-  pin.position.y = 2.0; 
+  pin.center.set(0.5, 0); // Aligns pivot point to the bottom-center sharp tip of the pin
+  pin.position.y = 2.0;   // Hover height above the globe surface
   anchor.add(pin);
 
-  // 4. Glow Sprite: Creates a soft red aura behind the pin
+  // Glow Sprite: Soft red aura behind the pin
   const glow = new THREE.Sprite(glowMaterial);
   glow.scale.set(16, 16, 1);
-  glow.position.y = 7.5; // Centered relative to the pin body
+  glow.position.y = 7.5;  // Centered relative to the pin body
   anchor.add(glow);
 
   return anchor;
@@ -129,6 +142,7 @@ export default function GlobeViewer({ airports, routes, flights, selectedAirport
         backgroundColor="rgba(0,0,0,0)"
         showAtmosphere={false}
         
+        // --- Airports ---
         pointsData={visibleAirports}
         pointLat="Latitude"
         pointLng="Longitude"
@@ -144,6 +158,7 @@ export default function GlobeViewer({ airports, routes, flights, selectedAirport
           </div>
         `}
 
+        // --- Rings ---
         ringsData={ringsData}
         ringLat="Latitude"
         ringLng="Longitude"
@@ -153,6 +168,7 @@ export default function GlobeViewer({ airports, routes, flights, selectedAirport
         ringPropagationSpeed={2.2}
         ringRepeatPeriod={1100}
 
+        // --- Pin Pointer ---
         objectsData={objectsData}
         objectLat="Latitude"
         objectLng="Longitude"
@@ -160,14 +176,42 @@ export default function GlobeViewer({ airports, routes, flights, selectedAirport
         objectFacesSurface={false}
         objectThreeObject={buildPointerObject}
 
-        pathsData={visibleRoutes}
-        pathPoints={d => d}
-        pathPointAlt={0.01}
-        pathColor={() => 'rgba(0, 79, 48, 0.6)'}
-        pathStroke={selectedAirportCode ? 1.5 : 0.5}
-        pathDashLength={0.1}
-        pathDashGap={0.05}
-        pathDashAnimateTime={2000}
+        // --- Beautiful 3D Flight Arcs ---
+        arcsData={visibleRoutes}
+        
+        // Robust coordinate mapping fallbacks for all formats
+        arcStartLat={d => {
+          const raw = d.Source_Latitude ?? d.startLat ?? (Array.isArray(d) ? d[0] : null);
+          const val = getCoordinateValue(raw, 'lat') ?? getCoordinateValue(d, 'lat');
+          return val !== null && val !== undefined ? Number(val) : null;
+        }}
+        arcStartLng={d => {
+          const raw = d.Source_Longitude ?? d.startLng ?? (Array.isArray(d) ? d[0] : null);
+          const val = getCoordinateValue(raw, 'lng') ?? getCoordinateValue(d, 'lng');
+          return val !== null && val !== undefined ? Number(val) : null;
+        }}
+        arcEndLat={d => {
+          const raw = d.Destination_Latitude ?? d.endLat ?? (Array.isArray(d) ? d[1] : null);
+          const val = getCoordinateValue(raw, 'lat') ?? getCoordinateValue(d, 'lat');
+          return val !== null && val !== undefined ? Number(val) : null;
+        }}
+        arcEndLng={d => {
+          const raw = d.Destination_Longitude ?? d.endLng ?? (Array.isArray(d) ? d[1] : null);
+          const val = getCoordinateValue(raw, 'lng') ?? getCoordinateValue(d, 'lng');
+          return val !== null && val !== undefined ? Number(val) : null;
+        }}
+        
+        arcAltitudeAutoScale={0.22} // Beautiful Bezier altitude curve
+        arcStroke={selectedAirportCode ? 0.35 : 0.18} // Clean, crisp line thicknesses
+        
+        // Fades from bright emerald green to semi-translucent green
+        arcColor={() => ['rgba(16, 185, 129, 0.7)', 'rgba(16, 185, 129, 0.05)']} 
+        
+        // Flowing flight light pulses
+        arcDashLength={0.4}
+        arcDashGap={1.2}
+        arcDashAnimateTime={2500} // Flow speed
+        arcDashInitialGap={() => Math.random()}
       />
     </div>
   );
