@@ -1,5 +1,77 @@
 import { useEffect, useRef } from 'react';
 import Globe from 'react-globe.gl';
+import * as THREE from 'three';
+
+// Uses the same polar->cartesian convention as three-globe internally
+function outwardNormal(lat, lng) {
+  const phi = (90 - lat) * (Math.PI / 180);
+  const theta = (90 - lng) * (Math.PI / 180);
+  return new THREE.Vector3(
+    Math.sin(phi) * Math.cos(theta),
+    Math.cos(phi),
+    Math.sin(phi) * Math.sin(theta)
+  ).normalize();
+}
+
+// 1. Load your vibrant red pin texture
+const pointerTexture = new THREE.TextureLoader().load('/pointer__.png');
+
+// 2. Dynamic, soft radial red glow texture
+const glowTexture = (() => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  gradient.addColorStop(0, 'rgba(239, 68, 68, 0.9)');
+  gradient.addColorStop(0.2, 'rgba(239, 68, 68, 0.5)');
+  gradient.addColorStop(0.6, 'rgba(239, 68, 68, 0.15)');
+  gradient.addColorStop(1, 'rgba(239, 68, 68, 0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(canvas);
+})();
+
+const pinMaterial = new THREE.SpriteMaterial({
+  map: pointerTexture,
+  transparent: true,
+  depthWrite: false,
+});
+
+const glowMaterial = new THREE.SpriteMaterial({
+  map: glowTexture,
+  blending: THREE.AdditiveBlending,
+  transparent: true,
+  depthWrite: false,
+});
+
+// Builds a completely stationary, face-on glowing pointer
+function buildPointerObject(d) {
+  const normal = outwardNormal(d.Latitude, d.Longitude);
+
+  const anchor = new THREE.Group();
+  // Align anchor orientation with the globe's surface normal
+  anchor.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
+
+  // 3. Pin Sprite: Always faces the camera, keeping the original color 100% visible
+  const pin = new THREE.Sprite(pinMaterial);
+  pin.scale.set(8, 11, 1);
+  
+  // Set the pivot point to the bottom-center (the sharp tip of the pin)
+  pin.center.set(0.5, 0); 
+  
+  // Hover height above the airport surface (completely stationary)
+  pin.position.y = 2.0; 
+  anchor.add(pin);
+
+  // 4. Glow Sprite: Creates a soft red aura behind the pin
+  const glow = new THREE.Sprite(glowMaterial);
+  glow.scale.set(16, 16, 1);
+  glow.position.y = 7.5; // Centered relative to the pin body
+  anchor.add(glow);
+
+  return anchor;
+}
 
 export default function GlobeViewer({ airports, routes, flights, selectedAirportCode, onAirportClick, disableInteractions }) {
   const globeEl = useRef();
@@ -12,7 +84,6 @@ export default function GlobeViewer({ airports, routes, flights, selectedAirport
       controls.autoRotate = !selectedAirportCode; 
       controls.autoRotateSpeed = 0.3;
       
-      // Relax limits so home page can zoom out nicely
       controls.minDistance = 180; 
       controls.maxDistance = 550; 
     }
@@ -26,7 +97,6 @@ export default function GlobeViewer({ airports, routes, flights, selectedAirport
           globeEl.current.pointOfView({ lat: target.Latitude, lng: target.Longitude, altitude: 1.6 }, 2000);
         }
       } else {
-        // Backed out the earth slightly more so it perfectly fits widescreen displays without vertical clipping
         globeEl.current.pointOfView({ lat: 28, lng: 65, altitude: 2.9 }, 2000);
       }
     }
@@ -43,6 +113,13 @@ export default function GlobeViewer({ airports, routes, flights, selectedAirport
       onAirportClick(point.Airport_Code);
     }
   };
+
+  const selectedAirport = selectedAirportCode
+    ? airports.find(a => a.Airport_Code === selectedAirportCode)
+    : null;
+
+  const ringsData = selectedAirport ? [selectedAirport] : [];
+  const objectsData = selectedAirport ? [selectedAirport] : [];
 
   return (
     <div className="w-full h-full cursor-grab active:cursor-grabbing flex justify-center items-center relative z-10">
@@ -66,6 +143,22 @@ export default function GlobeViewer({ airports, routes, flights, selectedAirport
             ${!selectedAirportCode ? '<br/><span style="font-size: 11px; color: #A89411; margin-top: 4px; display: block; font-weight: bold;">[ Click to view details ]</span>' : ''}
           </div>
         `}
+
+        ringsData={ringsData}
+        ringLat="Latitude"
+        ringLng="Longitude"
+        ringAltitude={0.012}
+        ringColor={() => t => `rgba(250, 204, 21, ${1 - t})`}
+        ringMaxRadius={4.5}
+        ringPropagationSpeed={2.2}
+        ringRepeatPeriod={1100}
+
+        objectsData={objectsData}
+        objectLat="Latitude"
+        objectLng="Longitude"
+        objectAltitude={0}
+        objectFacesSurface={false}
+        objectThreeObject={buildPointerObject}
 
         pathsData={visibleRoutes}
         pathPoints={d => d}
