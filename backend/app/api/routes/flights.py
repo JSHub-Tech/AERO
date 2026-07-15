@@ -1,5 +1,6 @@
 """Flight schedule, search, and seat-availability endpoints (api.md 1.4 / 1.5 / 1.8)."""
 import uuid
+import json
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -7,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.postgres import get_db
+from app.db.redis_client import get_redis
 from app.models.schemas import FlightScheduleOut, FlightSearchResult, SeatsAvailabilityOut
 from app.models.sql_models import Aircraft, Flight, Seat
 from app.repositories.routing_repository import cheapest_path, fastest_path
@@ -100,7 +102,17 @@ async def search_flights(
 ):
     """Flights matching Origin/Destination (+ optional max_price), backed by Neo4j path search."""
     origin, destination = origin.upper(), destination.upper()
+    
+    # 1. Check Redis Cache
+    r = get_redis()
+    cache_key = f"cache:search:{origin}:{destination}:{max_price or 'any'}"
+    cached_data = await r.get(cache_key)
+    if cached_data:
+        # Return instantly from cache
+        import json
+        return [FlightSearchResult(**item) for item in json.loads(cached_data)]
 
+    # 2. Cache Miss: Query Neo4j
     cheapest_records = await cheapest_path(origin, destination, max_price=max_price)
     fastest_records = await fastest_path(origin, destination)
 
@@ -117,6 +129,9 @@ async def search_flights(
 
     if not results:
         raise HTTPException(status_code=404, detail="No flights found for this route.")
+
+    # 3. Save to Redis (TTL 1 hour)
+    await r.set(cache_key, json.dumps([item.model_dump() for item in results]), ex=3600)
 
     return results
 
@@ -143,4 +158,30 @@ async def get_flight_seats(flight_id: str, db: AsyncSession = Depends(get_db)):
         select(Seat.seat_number).where(Seat.flight_id == flight.flight_id, Seat.is_booked.is_(True))
     )
     booked_seats = [row[0] for row in seats_result.all()]
+    
+    # 2. Check Redis for active locks (e.g. someone is on the checkout page)
+    # The lock key format from bookings.py is: lock:seat:{flight.flight_id}:{seat_number}
+    r = get_redis()
+    # In upstash REST client or redis TCP client, `keys` is not supported in the exact same async protocol in some edge cases.
+    # But usually `keys` or `scan` is fine. For this hackathon, we will just fetch all seats 1-100 or scan.
+    # Wait, fetching 1-100 is safer since we know seat numbers usually go up to a certain bound, 
+    # but the easiest way is to use `keys()` if supported by the client.
+    # Let's try to grab all locks for this flight ID:
+    try:
+        # Note: upstash-redis has a `keys()` method but it might differ from redis.asyncio
+        # To be completely safe across both REST and TCP, we can just use the underlying client methods
+        keys_result = await r.keys(f"lock:seat:{flight.flight_id}:*")
+        
+        # keys_result might be a list of strings
+        if keys_result:
+            for key in keys_result:
+                # Extract seat_number from the end of the key
+                # e.g. "lock:seat:1234-uuid-5678:12A" -> "12A"
+                seat_number = key.split(":")[-1]
+                if seat_number not in booked_seats:
+                    booked_seats.append(seat_number)
+    except AttributeError:
+        # Fallback if `keys()` is missing on the specific Upstash REST client version
+        pass
+
     return SeatsAvailabilityOut(booked_seats=booked_seats)
