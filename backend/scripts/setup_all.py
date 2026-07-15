@@ -6,10 +6,20 @@ Every script does a full DROP + recreate + seed on each run, so this is safe
 to run repeatedly — it always ends up with a clean, fully-seeded state.
 
 Order matters:
-  1. PostgreSQL first  — airports and aircraft must exist before flights/seats
-  2. Neo4j second      — mirrors the same flight schedule as Postgres
+  1. PostgreSQL first  — airports and aircraft must exist before flights/seats.
+                          This is now the sole source of truth for flight timing.
+  2. Neo4j second      — reads the `flight` table Postgres just committed and
+                          mirrors it 1:1 (exact same timestamps, keyed by flight_id).
+                          It no longer recomputes schedule dates independently,
+                          which previously let Neo4j and Postgres drift apart.
   3. MongoDB third     — creates the empty telemetry collection (simulator fills it)
   4. Redis last        — flush stale locks after new seats are seeded
+
+This script is for a full destructive reset (drops + reseeds everything) —
+run it manually when you want a clean slate. For keeping the schedule
+populated day-to-day WITHOUT wiping bookings, schedule
+scripts/extend_schedule.py to run periodically (e.g. daily via cron /
+Task Scheduler) instead of re-running this.
 
 Can be called from setup.bat or directly:
     python scripts/setup_all.py

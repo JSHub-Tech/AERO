@@ -281,13 +281,12 @@ async def seed_flights_and_seats(
             dep_time = next_departure_for_day(time_str, day_iso)
             arr_time = dep_time + timedelta(minutes=duration_min)
 
-            # Make flight_number unique per day: PK1000_1, PK1000_2 …
-            unique_fn = f"{fn_base}_{day_iso}"
-            fid       = uuid.uuid4()
+            fid = uuid.uuid4()
 
             flight = Flight(
                 flight_id=fid,
-                flight_number=unique_fn,
+                flight_number=fn_base,              # raw CSV value, e.g. "PK1000" — not unique on its own
+                service_date=dep_time.date(),        # (flight_number, service_date) together ARE unique
                 aircraft_id=pg_aircraft_id,
                 departure_airport=dep,
                 arrival_airport=arr,

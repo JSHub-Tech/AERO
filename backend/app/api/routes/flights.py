@@ -1,4 +1,5 @@
 """Flight schedule, search, and seat-availability endpoints (api.md 1.4 / 1.5 / 1.8)."""
+import uuid
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -20,7 +21,8 @@ async def get_flight_schedule(db: AsyncSession = Depends(get_db)):
     flights = result.scalars().all()
     return [
         FlightScheduleOut(
-            flight_number=f.flight_number,
+            flight_number=f.flight_number,          # raw CSV value, e.g. "PK1000" — no more "_1" suffix
+            service_date=f.service_date.isoformat(),
             departure_airport=f.departure_airport,
             arrival_airport=f.arrival_airport,
             departure_time_of_day=f.scheduled_departure.strftime("%H:%M"),
@@ -41,26 +43,28 @@ async def _legs_to_search_result(legs, db: AsyncSession, route_type: str) -> Fli
     if not legs:
         return None
 
-    flight_numbers = [leg["flight_number"] for leg in legs]
+    flight_ids = [leg["flight_id"] for leg in legs]
     result = await db.execute(
         select(Flight, Aircraft)
         .join(Aircraft, Flight.aircraft_id == Aircraft.aircraft_id)
-        .where(Flight.flight_number.in_(flight_numbers))
+        .where(Flight.flight_id.in_(flight_ids))
     )
-    aircraft_by_flight_number = {f.flight_number: a for f, a in result.all()}
+    aircraft_by_flight_id = {str(f.flight_id): a for f, a in result.all()}
 
     path = [legs[0].start_node["iata"]]
     total_price = 0.0
     planes: list[str] = []
+    flight_numbers: list[str] = []
     dep_dt: datetime | None = None
     arr_dt: datetime | None = None
 
     for leg in legs:
-        flight_number = leg["flight_number"]
+        flight_id = leg["flight_id"]
         path.append(leg.end_node["iata"])
         total_price += leg["base_price"] or 0.0
+        flight_numbers.append(leg["flight_number"])
 
-        aircraft = aircraft_by_flight_number.get(flight_number)
+        aircraft = aircraft_by_flight_id.get(flight_id)
         if aircraft:
             planes.append(aircraft.registration_code)
 
@@ -73,7 +77,8 @@ async def _legs_to_search_result(legs, db: AsyncSession, route_type: str) -> Fli
     duration_minutes = int((arr_dt - dep_dt).total_seconds() // 60) if dep_dt and arr_dt else 0
 
     return FlightSearchResult(
-        id="+".join(flight_numbers),
+        id="+".join(flight_ids),                 # booking key — always unique
+        flight_number="+".join(flight_numbers),   # display label only, e.g. "PK1000+PK1002"
         departureTime=dep_dt.strftime("%I:%M %p") if dep_dt else "",
         arrivalTime=arr_dt.strftime("%I:%M %p") if arr_dt else "",
         duration=_format_duration(duration_minutes),
@@ -120,10 +125,16 @@ async def search_flights(
 async def get_flight_seats(flight_id: str, db: AsyncSession = Depends(get_db)):
     """Booked seat numbers for a flight, so they can be greyed out on the seat map.
 
-    `flight_id` is the flight_number (e.g. "PK300") — the same identifier the
-    frontend already uses as `FlightSearchResult.id`, not the internal Postgres UUID.
+    `flight_id` is the Postgres Flight.flight_id UUID — the same identifier the
+    frontend gets back as `FlightSearchResult.id` for single-leg results. For
+    multi-leg itineraries, call this once per leg using each "+"-separated segment.
     """
-    flight_result = await db.execute(select(Flight).where(Flight.flight_number == flight_id))
+    try:
+        parsed_id = uuid.UUID(flight_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="flight_id must be a valid flight UUID.")
+
+    flight_result = await db.execute(select(Flight).where(Flight.flight_id == parsed_id))
     flight = flight_result.scalar_one_or_none()
     if not flight:
         raise HTTPException(status_code=404, detail="Flight not found.")

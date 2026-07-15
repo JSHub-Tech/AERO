@@ -42,7 +42,8 @@ class NetworkRouteOut(BaseModel):
 # ---------- Flight schedule (api.md 1.4) ----------
 class FlightScheduleOut(BaseModel):
     """GET /api/v1/flights/schedule — 'Live Flight Schedule' tables."""
-    flight_number: str
+    flight_number: str        # raw CSV value, e.g. "PK1000" (same number recurs across service_dates)
+    service_date: str         # "YYYY-MM-DD" — disambiguates recurring flight_numbers
     departure_airport: str
     arrival_airport: str
     departure_time_of_day: str  # "HH:MM"
@@ -51,8 +52,14 @@ class FlightScheduleOut(BaseModel):
 
 # ---------- Flight search (api.md 1.5) ----------
 class FlightSearchResult(BaseModel):
-    """GET /api/v1/flights/search — Booking Portal results."""
+    """GET /api/v1/flights/search — Booking Portal results.
+
+    `id` is the booking key (Flight.flight_id UUID(s), "+"-joined for multi-leg
+    itineraries) — use this for /flights/seats/{id} and booking checkout.
+    `flight_number` is the human-readable label (e.g. "PK1000+PK1002") for display only.
+    """
     id: str
+    flight_number: str
     departureTime: str  # "08:00 AM"
     arrivalTime: str    # "10:00 AM"
     duration: str        # "2h 0m"
@@ -83,7 +90,7 @@ class CustomerDetails(BaseModel):
 
 
 class BookingCheckoutRequest(BaseModel):
-    flight_id: str  # this is the flight_number (e.g. "PK300"), matching FlightSearchResult.id
+    flight_id: str  # Postgres Flight.flight_id UUID, matching FlightSearchResult.id (single-leg)
     passengers: int = Field(gt=0)
     seats: list[str]
     customer_details: CustomerDetails
@@ -242,4 +249,3 @@ class LiveFlightOut(BaseModel):
     status: str
     position: GeoPointOut
     updated_at: datetime
-
