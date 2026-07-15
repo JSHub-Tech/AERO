@@ -149,3 +149,15 @@ export const searchFlights = async (origin, destination, date, passengers) => {
   });
   return response.data;
 };
+
+export const bookFlight = async (flightId, seats, passengers) => {
+  if (USE_MOCK_DATA) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({ success: true, pnr: `AERO-${Math.random().toString(36).substr(2, 6).toUpperCase()}` });
+      }, 1500);
+    });
+  }
+  const response = await API.post('/flights/book', { flightId, seats, passengers });
+  return response.data;
+};
