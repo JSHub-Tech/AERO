@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import Papa from 'papaparse';
+import { getAirports, getFleets, searchFlights, bookFlight } from '../services/api';
+import Footer from '../components/Footer';
 import { Plane, Calendar, Users, ArrowRight, CheckCircle2, ChevronRight, ShieldCheck, ArrowLeft } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -34,40 +35,28 @@ export default function Booking() {
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [hoveredFlight, setHoveredFlight] = useState(null);
   
-  // Mock Flights with routing paths and assigned planes
-  const mockFlights = [
-    { id: 'PK300', departureTime: '08:00 AM', arrivalTime: '10:00 AM', duration: '2h 0m', price: '$120', path: [origin || 'KHI', destination || 'ISB'], type: 'Direct', plane: 'A320-01' },
-    { id: 'PK302', departureTime: '01:30 PM', arrivalTime: '04:45 PM', duration: '3h 15m', price: '$145', path: [origin || 'KHI', 'LHE', destination || 'ISB'], type: '1 Stop', plane: 'B777-01' },
-    { id: 'PK304', departureTime: '06:00 PM', arrivalTime: '08:15 PM', duration: '2h 15m', price: '$95', path: [origin || 'KHI', destination || 'ISB'], type: 'Direct', plane: 'ATR-01' }
-  ];
+  const [availableFlights, setAvailableFlights] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
+  
+  const [isBooking, setIsBooking] = useState(false);
+  const [pnr, setPnr] = useState('');
 
-  // Load CSVs
+  // Load Data via API
   useEffect(() => {
-    // Load Airports
-    fetch('/airport.csv')
-      .then(res => res.text())
-      .then(csv => {
-        Papa.parse(csv, {
-          header: true,
-          complete: (results) => {
-            const valid = results.data.filter(a => a.Airport_Code && a.City);
-            setAirports(valid);
-          }
-        });
-      });
-
-    // Load Fleets
-    fetch('/fleet.csv')
-      .then(res => res.text())
-      .then(csv => {
-        Papa.parse(csv, {
-          header: true,
-          complete: (results) => {
-            const valid = results.data.filter(f => f.Aircraft_ID);
-            setFleets(valid);
-          }
-        });
-      });
+    const fetchData = async () => {
+      try {
+        const [airportsData, fleetsData] = await Promise.all([
+          getAirports(),
+          getFleets()
+        ]);
+        setAirports(airportsData);
+        setFleets(fleetsData);
+      } catch (error) {
+        console.error("Error loading booking data:", error);
+      }
+    };
+    fetchData();
   }, []);
 
   const airportCoords = useMemo(() => {
@@ -80,16 +69,40 @@ export default function Booking() {
     return coords;
   }, [airports]);
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     e.preventDefault();
     if (origin && destination && date) {
-      setStep(2);
+      setIsSearching(true);
+      setSearchError('');
+      try {
+        const flights = await searchFlights(origin, destination, date, passengers);
+        setAvailableFlights(flights);
+        setStep(2);
+      } catch (err) {
+        setSearchError(err.message || 'Error searching flights');
+      } finally {
+        setIsSearching(false);
+      }
     }
   };
 
   const handleSelectFlight = (flight) => {
     setSelectedFlight(flight);
     setStep(3);
+  };
+
+  const handleCheckout = async () => {
+    setIsBooking(true);
+    try {
+      const result = await bookFlight(selectedFlight.id, selectedSeats, passengers);
+      setPnr(result.pnr || `AERO-${Math.random().toString(36).substr(2, 6).toUpperCase()}`);
+      setStep(4);
+    } catch (error) {
+      console.error("Booking failed:", error);
+      alert("Failed to book flight. Please try again.");
+    } finally {
+      setIsBooking(false);
+    }
   };
 
   const toggleSeat = (seatId) => {
@@ -155,7 +168,7 @@ export default function Booking() {
   };
 
   const renderMiniMap = () => {
-    const flightToRender = hoveredFlight || mockFlights[0];
+    const flightToRender = hoveredFlight || availableFlights[0];
     const pathCoords = (flightToRender?.path || []).map(code => airportCoords[code]).filter(Boolean);
     
     if (pathCoords.length < 2) return <div className="w-full h-full bg-gray-100 rounded-3xl flex items-center justify-center text-gray-400 font-bold">Map Data Unavailable</div>;
@@ -188,8 +201,8 @@ export default function Booking() {
   };
 
   return (
-    <div className="w-full min-h-screen pt-28 pb-20 bg-[#F8F9FA]">
-      <div className="max-w-6xl mx-auto px-4">
+    <div className="w-full min-h-screen pt-28 bg-[#F8F9FA] flex flex-col">
+      <div className="max-w-6xl mx-auto px-4 flex-grow w-full pb-20">
         
         {/* Progress Bar */}
         <div className="flex items-center justify-between mb-12 relative max-w-5xl mx-auto">
@@ -262,9 +275,15 @@ export default function Booking() {
                 </div>
               </div>
 
+              {searchError && (
+                <div className="md:col-span-5 mb-2 px-4 py-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold">
+                  {searchError}
+                </div>
+              )}
+
               <div className="md:col-span-5 mt-4 text-right">
-                <button type="submit" className="px-10 py-4 bg-[#004F30] hover:bg-[#1C2B22] text-white font-bold tracking-widest rounded-xl transition-all shadow-lg inline-flex items-center gap-3">
-                  SEARCH FLIGHTS <ArrowRight className="w-5 h-5" />
+                <button type="submit" disabled={isSearching} className="px-10 py-4 bg-[#004F30] hover:bg-[#1C2B22] text-white font-bold tracking-widest rounded-xl transition-all shadow-lg inline-flex items-center gap-3 disabled:opacity-70">
+                  {isSearching ? 'SEARCHING...' : 'SEARCH FLIGHTS'} <ArrowRight className="w-5 h-5" />
                 </button>
               </div>
 
@@ -278,19 +297,25 @@ export default function Booking() {
             <button onClick={() => setStep(1)} className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-[#1C2B22] uppercase tracking-wider transition-colors">
               <ArrowLeft className="w-4 h-4" /> Back to Search
             </button>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div>
-                <h2 className="text-3xl font-bold text-[#1C2B22] mb-2">Select your flight</h2>
-                <p className="text-gray-500 font-medium mb-8">Showing available flights from {origin} to {destination} {flexibility !== '0' ? `(Flexible by +/- ${flexibility} days)` : ''}</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+              
+              {/* Flight List */}
+              <div className="flex flex-col gap-4">
+                <h3 className="text-xl font-bold text-[#1C2B22] mb-2">Select your flight</h3>
+                <p className="text-sm text-gray-500 font-medium mb-4">Showing available flights from {origin} to {destination} ({flexibility === '0' ? 'Exact Dates' : `Flexible by +/- ${flexibility} days`})</p>
                 
-                <div className="space-y-4">
-                  {mockFlights.map((flight, idx) => (
+                {availableFlights.length === 0 ? (
+                   <div className="p-8 text-center bg-gray-50 rounded-2xl border border-gray-100 text-gray-500 font-medium">
+                     No flights available for this route.
+                   </div>
+                ) : (
+                  availableFlights.map((flight) => (
                     <div 
-                      key={idx} 
+                      key={flight.id} 
                       onClick={() => handleSelectFlight(flight)}
                       onMouseEnter={() => setHoveredFlight(flight)}
                       onMouseLeave={() => setHoveredFlight(null)}
-                      className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-[#004F30]/30 hover:shadow-md transition-all cursor-pointer flex items-center justify-between group"
+                      className="bg-white border-2 border-gray-100 p-6 rounded-2xl hover:border-[#004F30] hover:shadow-lg transition-all cursor-pointer group flex items-center justify-between"
                     >
                       <div className="flex items-center gap-6">
                         <div>
@@ -322,8 +347,8 @@ export default function Booking() {
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  ))
+                )}
               </div>
               
               <div className="hidden md:block h-[500px] sticky top-32">
@@ -390,15 +415,15 @@ export default function Booking() {
                 </div>
                 
                 <button 
-                  onClick={() => setStep(4)}
-                  disabled={selectedSeats.length !== passengers}
+                  onClick={handleCheckout}
+                  disabled={selectedSeats.length !== passengers || isBooking}
                   className={`w-full py-5 font-bold tracking-widest rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 ${
                     selectedSeats.length === passengers 
                     ? 'bg-[#004F30] hover:bg-[#1C2B22] text-white' 
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  }`}
+                  } ${isBooking ? 'opacity-70' : ''}`}
                 >
-                  CONTINUE TO CHECKOUT <ArrowRight className="w-5 h-5" />
+                  {isBooking ? 'PROCESSING...' : 'CONTINUE TO CHECKOUT'} <ArrowRight className="w-5 h-5" />
                 </button>
               </div>
             </div>
@@ -407,11 +432,11 @@ export default function Booking() {
 
         {/* Step 4: Checkout & Success */}
         {step === 4 && (
-          <div className="animate-fade-in max-w-2xl mx-auto">
-            <button onClick={() => setStep(3)} className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-[#1C2B22] uppercase tracking-wider transition-colors">
+          <div className="animate-fade-in max-w-2xl mx-auto flex-grow flex flex-col items-center justify-center pt-10">
+            <button onClick={() => { setStep(3); setPnr(''); }} className="mb-6 self-start inline-flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-[#1C2B22] uppercase tracking-wider transition-colors">
               <ArrowLeft className="w-4 h-4" /> Back to Seats
             </button>
-            <div className="bg-white p-16 rounded-3xl shadow-[0_10px_40px_rgba(0,79,48,0.06)] border border-gray-100 text-center">
+            <div className="bg-white p-16 rounded-3xl shadow-[0_10px_40px_rgba(0,79,48,0.06)] border border-gray-100 text-center w-full">
               <div className="w-24 h-24 bg-[#004F30]/10 rounded-full flex items-center justify-center mx-auto mb-6">
                 <ShieldCheck className="w-12 h-12 text-[#004F30]" />
               </div>
@@ -422,13 +447,13 @@ export default function Booking() {
               
               <div className="bg-[#F8F9FA] rounded-2xl p-6 border border-gray-200 mb-10 flex items-center justify-between text-left">
                 <div>
-                  <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Booking Reference</div>
-                  <div className="text-2xl font-mono font-bold text-[#1C2B22]">AERO-{Math.random().toString(36).substr(2, 6).toUpperCase()}</div>
+                  <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Booking Reference (PNR)</div>
+                  <div className="text-2xl font-mono font-bold text-[#1C2B22]">{pnr}</div>
                 </div>
                 <Plane className="w-10 h-10 text-[#004F30] opacity-20 transform rotate-45" />
               </div>
 
-              <button onClick={() => { setStep(1); setOrigin(''); setDestination(''); setDate(''); setSelectedSeats([]); }} className="px-10 py-4 bg-[#004F30] hover:bg-[#1C2B22] text-white font-bold tracking-widest rounded-xl transition-all shadow-lg">
+              <button onClick={() => { setStep(1); setOrigin(''); setDestination(''); setDate(''); setSelectedSeats([]); setPnr(''); }} className="px-10 py-4 bg-[#004F30] hover:bg-[#1C2B22] text-white font-bold tracking-widest rounded-xl transition-all shadow-lg">
                 BOOK ANOTHER FLIGHT
               </button>
             </div>
@@ -436,6 +461,7 @@ export default function Booking() {
         )}
 
       </div>
+      <Footer />
     </div>
   );
 }

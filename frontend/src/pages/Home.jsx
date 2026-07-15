@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import Papa from 'papaparse';
+import { getAirports, getRoutes, getFlightSchedule, getAirportDetails } from '../services/api';
 import GlobeViewer from '../components/GlobeViewer';
 import Footer from '../components/Footer';
 import FleetTeaser from '../components/home/FleetTeaser';
@@ -31,45 +31,48 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const fetchCsv = (url) => {
-      return fetch(url).then(res => res.text()).then(csv => new Promise((resolve) => {
-        Papa.parse(csv, { header: true, dynamicTyping: true, skipEmptyLines: true, complete: (results) => resolve(results.data) });
-      }));
+    const fetchData = async () => {
+      try {
+        const [airportData, routeData, flightData, detailsData] = await Promise.all([
+          getAirports(),
+          getRoutes(),
+          getFlightSchedule(),
+          getAirportDetails()
+        ]);
+        
+        const validAirports = airportData.map(row => ({
+          ...row, Latitude: Number(row.Latitude), Longitude: Number(row.Longitude)
+        }));
+        setAirports(validAirports);
+
+        const aMap = {};
+        validAirports.forEach(a => { aMap[a.Airport_Code] = a; });
+
+        const mappedRoutes = routeData.map(route => {
+          const src = aMap[route.Source_Airport_Code];
+          const dst = aMap[route.Destination_Airport_Code];
+          if (src && dst) return [ [src.Latitude, src.Longitude, 0.01], [dst.Latitude, dst.Longitude, 0.01] ];
+          return null;
+        }).filter(Boolean);
+        setRoutes(mappedRoutes);
+
+        const mappedFlights = flightData.map(flight => {
+          const src = aMap[flight.src];
+          const dst = aMap[flight.dst];
+          if (src && dst) return { ...flight, startLat: src.Latitude, startLng: src.Longitude, endLat: dst.Latitude, endLng: dst.Longitude };
+          return null;
+        }).filter(Boolean);
+        setFlights(mappedFlights);
+
+        const dMap = {};
+        detailsData.forEach(d => { dMap[d.Airport_Code] = d; });
+        setAirportDetailsMap(dMap);
+      } catch (error) {
+        console.error("Failed to load Home data:", error);
+      }
     };
-
-    Promise.all([
-      fetchCsv('/airport.csv'), fetchCsv('/routes.csv'),
-      fetchCsv('/flight_schedule.csv'), fetchCsv('/airport_details.csv')
-    ]).then(([airportData, routeData, flightData, detailsData]) => {
-      
-      const validAirports = airportData.filter(row => row.Latitude && row.Longitude).map(row => ({
-        ...row, Latitude: Number(row.Latitude), Longitude: Number(row.Longitude)
-      }));
-      setAirports(validAirports);
-
-      const aMap = {};
-      validAirports.forEach(a => { aMap[a.Airport_Code] = a; });
-
-      const mappedRoutes = routeData.map(route => {
-        const src = aMap[route.Source_Airport_Code];
-        const dst = aMap[route.Destination_Airport_Code];
-        if (src && dst) return [ [src.Latitude, src.Longitude, 0.01], [dst.Latitude, dst.Longitude, 0.01] ];
-        return null;
-      }).filter(Boolean);
-      setRoutes(mappedRoutes);
-
-      const mappedFlights = flightData.map(flight => {
-        const src = aMap[flight.departure_airport];
-        const dst = aMap[flight.arrival_airport];
-        if (src && dst) return { ...flight, startLat: src.Latitude, startLng: src.Longitude, endLat: dst.Latitude, endLng: dst.Longitude };
-        return null;
-      }).filter(Boolean);
-      setFlights(mappedFlights);
-
-      const dMap = {};
-      detailsData.forEach(d => { dMap[d.Airport_Code] = d; });
-      setAirportDetailsMap(dMap);
-    });
+    
+    fetchData();
   }, []);
 
   // Lock global scroll when in Single Airport View OR to enforce snap scrolling container
