@@ -9,6 +9,133 @@ from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 
+# ---------- Airports (api.md 1.1 / 1.2) ----------
+class AirportOut(BaseModel):
+    """GET /api/v1/airports — node data for the 3D Globe / 2D Map."""
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    Airport_Code: str = Field(validation_alias="iata", serialization_alias="Airport_Code")
+    Airport_Name: str = Field(validation_alias="name", serialization_alias="Airport Name")
+    City: str = Field(validation_alias="city", serialization_alias="City")
+    Country: str = Field(validation_alias="country", serialization_alias="Country")
+    Latitude: float = Field(validation_alias="latitude", serialization_alias="Latitude")
+    Longitude: float = Field(validation_alias="longitude", serialization_alias="Longitude")
+
+
+class AirportDetailOut(BaseModel):
+    """GET /api/v1/airports/details — cinematic 'Airports View' metadata."""
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    Airport_Code: str = Field(validation_alias="iata", serialization_alias="Airport_Code")
+    Operational_Status: str | None = Field(default=None, validation_alias="operational_status", serialization_alias="Operational_Status")
+    Annual_Passengers: str | None = Field(default=None, validation_alias="annual_passengers", serialization_alias="Annual_Passengers")
+    Description_Blog: str | None = Field(default=None, validation_alias="description_blog", serialization_alias="Description_Blog")
+
+
+# ---------- Network routes (api.md 1.3) ----------
+class NetworkRouteOut(BaseModel):
+    """GET /api/v1/routes — glowing arcs / dashed lines on the map."""
+    Source_Airport_Code: str
+    Destination_Airport_Code: str
+
+
+# ---------- Flight schedule (api.md 1.4) ----------
+class FlightScheduleOut(BaseModel):
+    """GET /api/v1/flights/schedule — 'Live Flight Schedule' tables."""
+    flight_number: str
+    departure_airport: str
+    arrival_airport: str
+    departure_time_of_day: str  # "HH:MM"
+    arrival_time_of_day: str    # "HH:MM"
+
+
+# ---------- Flight search (api.md 1.5) ----------
+class FlightSearchResult(BaseModel):
+    """GET /api/v1/flights/search — Booking Portal results."""
+    id: str
+    departureTime: str  # "08:00 AM"
+    arrivalTime: str    # "10:00 AM"
+    duration: str        # "2h 0m"
+    price: str            # "$120"
+    path: list[str]
+    type: str              # "Direct" | "1-Stop" | ...
+    plane: str
+
+
+# ---------- Fleet (api.md 1.7) ----------
+class FleetOut(BaseModel):
+    """GET /api/v1/fleet — seat-map layout lookup."""
+    Aircraft_ID: str
+    Model: str
+    Total_Seats: int
+
+
+# ---------- Seat availability (api.md 1.8) ----------
+class SeatsAvailabilityOut(BaseModel):
+    """GET /api/v1/flights/seats/{flight_id}"""
+    booked_seats: list[str]
+
+
+# ---------- Booking checkout (api.md 1.6) ----------
+class CustomerDetails(BaseModel):
+    name: str
+    email: EmailStr
+
+
+class BookingCheckoutRequest(BaseModel):
+    flight_id: str  # this is the flight_number (e.g. "PK300"), matching FlightSearchResult.id
+    passengers: int = Field(gt=0)
+    seats: list[str]
+    customer_details: CustomerDetails
+
+
+class BookingCheckoutResponse(BaseModel):
+    status: str
+    booking_reference: str
+    message: str
+
+
+# ---------- Telemetry websocket (api.md 2.1) ----------
+class TelemetryFlightOut(BaseModel):
+    id: str
+    flightNumber: str
+    departure: str | None = None
+    dest: str | None = None
+    lat: float
+    lng: float
+    heading: float
+    progress: float
+    status: str
+
+
+class TelemetryUpdateMessage(BaseModel):
+    type: str = "FLIGHT_TELEMETRY_UPDATE"
+    data: list[TelemetryFlightOut]
+
+
+# ---------- Operations websocket (api.md 2.2) ----------
+class OperationsBoardingItem(BaseModel):
+    route: str
+    flight: str
+    time: str
+
+
+class OperationsDelayedItem(BaseModel):
+    route: str
+    flight: str
+    reason: str
+
+
+class OperationsData(BaseModel):
+    boarding: list[OperationsBoardingItem]
+    delayed: list[OperationsDelayedItem]
+
+
+class OperationsUpdateMessage(BaseModel):
+    type: str = "OPERATIONAL_UPDATE"
+    data: OperationsData
+
+
 # ---------- Aircraft ----------
 class AircraftCreate(BaseModel):
     registration_code: str
