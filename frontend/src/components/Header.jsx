@@ -15,7 +15,7 @@ export default function Header() {
         
         <nav className="hidden md:flex gap-8 items-center">
           <Link to="/" className={`text-sm font-bold tracking-widest transition-colors ${location.pathname === '/' ? 'text-[#004F30]' : 'text-gray-500 hover:text-[#1C2B22]'}`}>
-            DASHBOARD
+            HOME
           </Link>
           <Link to="/live-ops" className={`text-sm font-bold tracking-widest transition-colors ${location.pathname === '/live-ops' ? 'text-[#004F30]' : 'text-gray-500 hover:text-[#1C2B22]'}`}>
             LIVE MAP
@@ -23,12 +23,15 @@ export default function Header() {
           <Link to="/airports" className={`text-sm font-bold tracking-widest transition-colors ${location.pathname === '/airports' ? 'text-[#004F30]' : 'text-gray-500 hover:text-[#1C2B22]'}`}>
             VIEW AIRPORTS
           </Link>
+          <Link to="/fleet" className={`text-sm font-bold tracking-widest transition-colors ${location.pathname === '/fleet' ? 'text-[#004F30]' : 'text-gray-500 hover:text-[#1C2B22]'}`}>
+            FLEET
+          </Link>
           
           <div className="h-4 w-px bg-gray-300 mx-2"></div>
           
           <Link to="/booking" className={`text-sm font-bold tracking-widest transition-colors ${location.pathname === '/booking' ? 'text-[#004F30]' : 'text-gray-500 hover:text-[#004F30]'}`}>BOOK FLIGHT</Link>
-          <a href="/#about" className="text-sm font-bold tracking-widest text-gray-500 hover:text-[#004F30] transition-colors">ABOUT</a>
-          <a href="/#contact" className="text-sm font-bold tracking-widest text-gray-500 hover:text-[#004F30] transition-colors">CONTACT</a>
+          <Link to="/about" className={`text-sm font-bold tracking-widest transition-colors ${location.pathname === '/about' ? 'text-[#004F30]' : 'text-gray-500 hover:text-[#004F30]'}`}>ABOUT</Link>
+          <Link to="/contact" className={`text-sm font-bold tracking-widest transition-colors ${location.pathname === '/contact' ? 'text-[#004F30]' : 'text-gray-500 hover:text-[#004F30]'}`}>CONTACT</Link>
         </nav>
         
       </div>

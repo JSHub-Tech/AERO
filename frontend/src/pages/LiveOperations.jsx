@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Plane, RefreshCw } from 'lucide-react';
+import { Plane, RefreshCw, X } from 'lucide-react';
 import { AviationMap } from '../components/AviationMap';
 import GlobeViewer from '../components/GlobeViewer';
 import Papa from 'papaparse';
+import Footer from '../components/Footer';
 
-const GlassCard = ({ title, children, isLoading, onRefresh }) => (
-  <div className="bg-white/70 backdrop-blur-3xl rounded-3xl border border-white shadow-[0_20px_50px_rgba(0,79,48,0.05)] p-5 flex flex-col h-full overflow-hidden relative group transition-all hover:bg-white/80">
+const GlassCard = ({ title, children, isLoading, onRefresh, onClick }) => (
+  <div onClick={onClick} className="bg-white/70 backdrop-blur-3xl rounded-3xl border border-white shadow-[0_20px_50px_rgba(0,79,48,0.05)] p-5 flex flex-col h-full overflow-hidden relative group transition-all hover:bg-white/80 cursor-pointer hover:scale-[1.02]">
     <div className="flex justify-between items-center mb-4">
       <h2 className="text-[13px] font-black text-[#A89411] tracking-widest uppercase flex items-center gap-2">
         {title}
@@ -13,7 +14,7 @@ const GlassCard = ({ title, children, isLoading, onRefresh }) => (
       </h2>
       {onRefresh && (
         <button 
-          onClick={onRefresh} 
+          onClick={(e) => { e.stopPropagation(); onRefresh(); }} 
           className="p-1.5 rounded-full bg-white/50 hover:bg-white text-gray-400 hover:text-[#004F30] transition-colors shadow-sm"
           title="Refresh Data"
         >
@@ -21,11 +22,81 @@ const GlassCard = ({ title, children, isLoading, onRefresh }) => (
         </button>
       )}
     </div>
-    <div className="flex-1 overflow-y-auto hide-scrollbar">
+    <div className="flex-1 overflow-y-auto hide-scrollbar pointer-events-none">
       {children}
+    </div>
+    <div className="absolute bottom-2 right-4 text-[10px] font-bold text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+      CLICK TO EXPAND
     </div>
   </div>
 );
+
+const ExpandedTableModal = ({ category, flights, airports, onClose }) => {
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
+  if (!category) return null;
+
+  const getCity = (code) => {
+    if (!airports) return code;
+    const a = airports.find(x => x.Airport_Code === code);
+    return a ? `${code} (${a.City})` : code;
+  };
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-8 bg-[#1C2B22]/40 backdrop-blur-md transition-all" onClick={onClose}>
+      <div className="bg-white/95 backdrop-blur-3xl rounded-3xl p-8 max-w-5xl w-full h-[80vh] flex flex-col shadow-[0_20px_60px_rgba(0,0,0,0.2)] border border-white relative" onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors z-10">
+          <X size={20} />
+        </button>
+        
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-12 h-12 rounded-full bg-[#004F30]/10 flex items-center justify-center text-[#004F30]">
+            <Plane size={24} className="rotate-45" />
+          </div>
+          <div>
+            <h3 className="text-3xl font-black text-[#1C2B22] uppercase tracking-tighter">{category} Flights</h3>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Detailed Operational Log</p>
+          </div>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto border border-gray-100 rounded-2xl bg-white shadow-inner p-4">
+          <table className="w-full text-left text-sm">
+            <thead className="text-[11px] uppercase font-bold tracking-widest text-gray-400 border-b-2 border-gray-100 sticky top-0 bg-white z-10">
+              <tr>
+                <th className="pb-3 pl-4">Flight No</th>
+                <th className="pb-3">Origin</th>
+                <th className="pb-3">Destination</th>
+                <th className="pb-3">Status</th>
+                <th className="pb-3 text-right pr-4">Time</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {flights.length === 0 ? (
+                 <tr><td colSpan="5" className="py-12 text-center text-sm font-bold text-gray-400">NO DATA AVAILABLE</td></tr>
+              ) : (
+                 flights.map((f, i) => (
+                   <tr key={i} className="hover:bg-gray-50 transition-colors">
+                     <td className="py-4 pl-4 font-black text-[#004F30]">{f.flightNum}</td>
+                     <td className="py-4 font-bold text-[#1C2B22] text-xs">{getCity(f.source)}</td>
+                     <td className="py-4 font-bold text-[#1C2B22] text-xs">{getCity(f.dest)}</td>
+                     <td className="py-4 font-black text-[#A89411] text-xs">{f.delayTime ? 'DELAYED' : (f.targetTime ? 'SCHEDULED' : 'ACTIVE')}</td>
+                     <td className="py-4 text-right pr-4 font-bold text-gray-500 text-xs">{f.delayTime || (f.targetTime ? new Date(f.targetTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A')}</td>
+                   </tr>
+                 ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function LiveOperations() {
   const [now, setNow] = useState(Date.now());
@@ -37,6 +108,9 @@ export default function LiveOperations() {
   const [loadingActive, setLoadingActive] = useState(true);
   const [loadingBoarding, setLoadingBoarding] = useState(true);
   const [loadingDelayed, setLoadingDelayed] = useState(true);
+  
+  // Track which category modal is open
+  const [expandedCategory, setExpandedCategory] = useState(null);
 
   // Background globe state
   const [airports, setAirports] = useState([]);
@@ -92,20 +166,50 @@ export default function LiveOperations() {
       setLoadingActive(true);
       fetch('http://localhost:8000/dashboard/active-flights')
         .then(res => res.json())
-        .then(data => { setActiveFlights(data.flights || []); setLoadingActive(false); })
-        .catch(() => setLoadingActive(false));
+        .then(data => { 
+          if (data.flights && data.flights.length > 0) {
+            setActiveFlights(data.flights); 
+          } else {
+            setActiveFlights([]);
+          }
+          setLoadingActive(false); 
+        })
+        .catch(() => {
+          setActiveFlights([]);
+          setLoadingActive(false);
+        });
 
       setLoadingBoarding(true);
       fetch('http://localhost:8000/dashboard/onboarding-flights')
         .then(res => res.json())
-        .then(data => { setOnBoardingFlights(data.flights || []); setLoadingBoarding(false); })
-        .catch(() => setLoadingBoarding(false));
+        .then(data => { 
+          if (data.flights && data.flights.length > 0) {
+            setOnBoardingFlights(data.flights); 
+          } else {
+             setOnBoardingFlights([]);
+          }
+          setLoadingBoarding(false); 
+        })
+        .catch(() => {
+           setOnBoardingFlights([]);
+           setLoadingBoarding(false);
+        });
 
       setLoadingDelayed(true);
       fetch('http://localhost:8000/dashboard/delayed-flights')
         .then(res => res.json())
-        .then(data => { setDelayedFlights(data.flights || []); setLoadingDelayed(false); })
-        .catch(() => setLoadingDelayed(false));
+        .then(data => { 
+          if (data.flights && data.flights.length > 0) {
+            setDelayedFlights(data.flights); 
+          } else {
+             setDelayedFlights([]);
+          }
+          setLoadingDelayed(false); 
+        })
+        .catch(() => {
+           setDelayedFlights([]);
+           setLoadingDelayed(false);
+        });
         
     } catch (error) {
       console.error('Dashboard data fetch error:', error);
@@ -132,7 +236,7 @@ export default function LiveOperations() {
            <tr><td colSpan="3" className="py-6 text-center text-xs font-bold text-gray-400">NO ACTIVE FLIGHTS</td></tr>
         ) : (
            activeFlights.map((f, i) => (
-             <tr key={i} className="group hover:bg-white/50 transition-colors">
+             <tr key={i} className="group transition-colors">
                <td className="py-3 font-bold text-[#1C2B22] text-xs">
                  {f.source} <span className="text-[#004F30]">→</span> {f.dest}
                </td>
@@ -159,7 +263,7 @@ export default function LiveOperations() {
            <tr><td colSpan="3" className="py-6 text-center text-xs font-bold text-gray-400">NO FLIGHTS BOARDING</td></tr>
         ) : (
            onBoardingFlights.map((f, i) => (
-             <tr key={i} className="group hover:bg-white/50 transition-colors">
+             <tr key={i} className="group transition-colors">
                <td className="py-3 font-bold text-[#1C2B22] text-xs">
                  {f.source} <span className="text-gray-400">→</span> {f.dest}
                </td>
@@ -186,7 +290,7 @@ export default function LiveOperations() {
            <tr><td colSpan="3" className="py-6 text-center text-xs font-bold text-gray-400">ALL OPERATIONS NOMINAL</td></tr>
         ) : (
            delayedFlights.map((f, i) => (
-             <tr key={i} className="group hover:bg-white/50 transition-colors">
+             <tr key={i} className="group transition-colors">
                <td className="py-3 font-bold text-[#1C2B22] text-xs">
                  {f.source} <span className="text-red-400">→</span> {f.dest}
                </td>
@@ -200,7 +304,7 @@ export default function LiveOperations() {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] relative flex flex-col pt-[100px] pb-4 px-6 overflow-hidden">
+    <div className="min-h-screen bg-[#F8F9FA] relative flex flex-col pt-[100px] overflow-x-hidden">
       
       {/* LIGHTWEIGHT BACKGROUND (Removed heavy 3D globe to fix lag) */}
       <div className="absolute inset-0 w-full h-full z-0 opacity-40 pointer-events-none">
@@ -209,7 +313,7 @@ export default function LiveOperations() {
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
       </div>
 
-      <div className="relative z-10 max-w-[1600px] w-full mx-auto flex flex-col h-full flex-grow">
+      <div className="relative z-10 max-w-[1600px] w-full mx-auto flex flex-col flex-grow px-6 pb-12">
         
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
@@ -234,17 +338,17 @@ export default function LiveOperations() {
           {/* Left Column (Tables) */}
           <div className="lg:col-span-4 xl:col-span-3 flex flex-col gap-6">
             <div className="flex-1 min-h-[250px]">
-              <GlassCard title="Active In-Air" isLoading={loadingActive} onRefresh={fetchDashboardData}>
+              <GlassCard title="Active In-Air" isLoading={loadingActive} onRefresh={fetchDashboardData} onClick={() => setExpandedCategory('Active')}>
                 {renderActiveFlights()}
               </GlassCard>
             </div>
             <div className="flex-1 min-h-[250px]">
-              <GlassCard title="Boarding" isLoading={loadingBoarding}>
+              <GlassCard title="Boarding" isLoading={loadingBoarding} onClick={() => setExpandedCategory('Boarding')}>
                 {renderOnBoarding()}
               </GlassCard>
             </div>
             <div className="flex-1 min-h-[250px]">
-              <GlassCard title="Delayed Warnings" isLoading={loadingDelayed}>
+              <GlassCard title="Delayed Warnings" isLoading={loadingDelayed} onClick={() => setExpandedCategory('Delayed')}>
                 {renderDelayedFlights()}
               </GlassCard>
             </div>
@@ -256,8 +360,17 @@ export default function LiveOperations() {
           </div>
           
         </div>
-
       </div>
+      
+      {/* Flight Detail Modal */}
+      <ExpandedTableModal 
+        category={expandedCategory} 
+        flights={expandedCategory === 'Active' ? activeFlights : (expandedCategory === 'Boarding' ? onBoardingFlights : delayedFlights)}
+        airports={airports}
+        onClose={() => setExpandedCategory(null)} 
+      />
+
+      <Footer />
     </div>
   );
 }

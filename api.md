@@ -128,6 +128,23 @@ This document outlines the API endpoints and WebSocket channels required by the 
 }
 ```
 
+### 1.9 POST `/api/v1/chat`
+**Description:** Processes a user's natural language query (e.g., "Find me a flight to Dubai next week") and returns a structured AI response. This will be used by the upcoming Chatbot frontend.
+**Request Body:**
+```json
+{
+  "message": "When is the next flight from KHI to ISB?",
+  "session_id": "user-abc-123"
+}
+```
+**Response Body:**
+```json
+{
+  "reply": "The next flight from Karachi (KHI) to Islamabad (ISB) is PK300 departing at 07:00 AM.",
+  "suggested_actions": ["Book this flight", "View schedule"]
+}
+```
+
 ---
 
 ## 2. WebSockets (Live Telemetry)
