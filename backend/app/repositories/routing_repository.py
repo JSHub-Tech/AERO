@@ -39,6 +39,18 @@ async def prune_flight_edge(flight_number: str) -> None:
         await session.run(query, flight_number=flight_number)
 
 
+async def list_network_routes() -> list[dict]:
+    """Distinct origin -> destination airport pairs currently in the graph (api.md 1.3)."""
+    query = """
+    MATCH (a:Airport)-[:FLIGHT]->(b:Airport)
+    RETURN DISTINCT a.iata AS source, b.iata AS destination
+    ORDER BY source, destination
+    """
+    async with neo4j_session() as session:
+        result = await session.run(query)
+        return [{"source": record["source"], "destination": record["destination"]} async for record in result]
+
+
 async def cheapest_path(origin: str, destination: str, max_hops: int = 3, max_price: float | None = None):
     """Cheapest path up to `max_hops` legs, optionally capped at max_price."""
     query = f"""

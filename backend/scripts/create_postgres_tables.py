@@ -171,6 +171,7 @@ async def seed_airports(session: AsyncSession) -> None:
     airports = []
     for row in read_csv(CSV_AIRPORTS):
         code = row["Airport_Code"].strip().upper()
+        details = details_map.get(code, {})
         airports.append(
             Airport(
                 iata=code,
@@ -179,6 +180,9 @@ async def seed_airports(session: AsyncSession) -> None:
                 country=row["Country"].strip(),
                 latitude=float(row["Latitude"]),
                 longitude=float(row["Longitude"]),
+                operational_status=(details.get("Operational_Status") or "").strip() or None,
+                annual_passengers=(details.get("Annual_Passengers") or "").strip() or None,
+                description_blog=(details.get("Description_Blog") or "").strip() or None,
             )
         )
 
