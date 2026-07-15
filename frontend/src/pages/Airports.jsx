@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from 'react';
-import Papa from 'papaparse';
 import GlobeViewer from '../components/GlobeViewer';
 import Footer from '../components/Footer';
 import { getAirports, getRoutes, getAirportDetails } from '../services/api';

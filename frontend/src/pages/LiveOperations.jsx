@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { Plane, RefreshCw, X } from 'lucide-react';
 import { AviationMap } from '../components/AviationMap';
 import GlobeViewer from '../components/GlobeViewer';
-import Papa from 'papaparse';
 import Footer from '../components/Footer';
 import { getAirports, getRoutes, getActiveFlights, getOnboardingFlights, getDelayedFlights } from '../services/api';
 
