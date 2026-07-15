@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Papa from 'papaparse';
 import GlobeViewer from '../components/GlobeViewer';
-import BookingDemo from './BookingDemo';
+import Footer from '../components/Footer';
+import FleetTeaser from '../components/home/FleetTeaser';
+import LiveOpsTeaser from '../components/home/LiveOpsTeaser';
+import NetworkTeaser from '../components/home/NetworkTeaser';
 import About from './About';
 import Contact from './Contact';
 
@@ -12,6 +15,20 @@ export default function Home() {
   const [routes, setRoutes] = useState([]);
   const [flights, setFlights] = useState([]);
   const [airportDetailsMap, setAirportDetailsMap] = useState({});
+  
+  const [heroInView, setHeroInView] = useState(true);
+  const heroRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      // If at least 10% of the hero section is visible, keep it mounted
+      setHeroInView(entries[0].isIntersecting);
+    }, { threshold: 0.1 });
+
+    if (heroRef.current) observer.observe(heroRef.current);
+
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const fetchCsv = (url) => {
@@ -55,29 +72,26 @@ export default function Home() {
     });
   }, []);
 
-  // Lock global scroll when in Single Airport View
+  // Lock global scroll when in Single Airport View OR to enforce snap scrolling container
   useEffect(() => {
-    if (selectedAirportCode) {
-      document.documentElement.style.overflow = 'hidden';
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.documentElement.style.overflow = '';
-      document.body.style.overflow = '';
-    }
+    // ALWAYS lock the global body scroll so our custom snap-scroll container can take over
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+
     return () => {
       document.documentElement.style.overflow = '';
       document.body.style.overflow = '';
     }
-  }, [selectedAirportCode]);
+  }, []);
 
   const airportFlights = selectedAirportCode ? flights.filter(f => f.departure_airport === selectedAirportCode || f.arrival_airport === selectedAirportCode) : [];
   const selectedDetails = selectedAirportCode ? airportDetailsMap[selectedAirportCode] : null;
 
   return (
-    <div className="w-full relative">
+    <div className="w-full h-screen overflow-y-scroll snap-y snap-mandatory scroll-smooth relative hide-scrollbar">
       
       {/* 1. HERO SECTION (The 3D Globe & UI Panels) */}
-      <section id="hero" className="snap-start flex flex-col md:flex-row h-[calc(100vh-80px)] w-full items-center justify-center relative overflow-hidden bg-[#F8F9FA]">
+      <section id="hero" ref={heroRef} className="snap-start shrink-0 flex flex-col md:flex-row h-screen pt-[80px] w-full items-center justify-center relative overflow-hidden bg-[#F8F9FA]">
         
         {/* Soft light gradient background */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white via-[#F8F9FA] to-[#F0F4F2] -z-10"></div>
@@ -148,44 +162,57 @@ export default function Home() {
             
           ) : (
             
-            <div className="bg-white/75 backdrop-blur-xl border border-white p-10 rounded-3xl shadow-[0_10px_40px_rgba(0,79,48,0.08)] w-full pointer-events-auto transform transition-all translate-x-0 opacity-100 mt-20 md:mt-0">
-              <h1 className="text-5xl md:text-7xl font-bold tracking-widest flex items-center gap-4 text-[#1C2B22]">
-                AERO <img src="/logo.png" alt="AERO" className="h-12 md:h-16 object-contain opacity-90" />
+            <div className="w-full pointer-events-auto transform transition-all translate-x-0 opacity-100 mt-20 md:mt-0 pl-4 md:pl-8">
+              <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-[#1C2B22] leading-[1.05] mb-8">
+                THE FUTURE OF <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#004F30] to-[#A89411]">FLIGHT TELEMETRY.</span>
               </h1>
-              <p className="mt-6 text-gray-600 text-lg md:text-xl font-medium leading-relaxed">
-                Welcome to the next generation of Pakistan International Airlines' operational dashboard. Explore live telemetry across the globe.
+              
+              <p className="text-gray-500 text-lg md:text-xl font-medium leading-relaxed mb-10 max-w-lg">
+                Experience unprecedented visibility into global airspace. AERO provides real-time, high-fidelity tracking for Pakistan International Airlines.
               </p>
-              <a href="#tickets" className="mt-8 inline-block px-10 py-5 bg-[#004F30] hover:bg-[#1C2B22] text-white font-bold tracking-widest rounded-xl transition-all shadow-lg hover:shadow-xl">
-                EXPLORE ROUTES
-              </a>
             </div>
-            
+          
           )}
           
         </div>
 
         <div className={`z-10 absolute inset-0 w-full h-full pointer-events-auto transition-all duration-1000 ${selectedAirportCode ? 'md:left-[45%] md:w-[55%]' : 'md:left-[40%] md:w-[60%]'}`}>
-          <GlobeViewer 
-            airports={airports}
-            routes={routes}
-            flights={flights}
-            selectedAirportCode={selectedAirportCode}
-            onAirportClick={setSelectedAirportCode}
-            disableInteractions={true}
-          />
+          {heroInView ? (
+            <GlobeViewer 
+              airports={airports}
+              routes={routes}
+              flights={flights}
+              selectedAirportCode={selectedAirportCode}
+              onAirportClick={setSelectedAirportCode}
+              disableInteractions={true}
+            />
+          ) : (
+             <div className="w-full h-full bg-[#F8F9FA] flex items-center justify-center text-gray-400 font-bold tracking-widest text-sm">
+               [ GLOBE SUSPENDED FOR MEMORY OPTIMIZATION ]
+             </div>
+          )}
         </div>
       </section>
 
       {!selectedAirportCode && (
         <>
-          <section className="snap-start w-full">
-            <BookingDemo />
+          <section className="snap-start shrink-0 w-full h-screen">
+            <FleetTeaser />
           </section>
-          <section className="snap-start w-full">
-            <About />
+          <section className="snap-start shrink-0 w-full h-screen">
+            <LiveOpsTeaser />
           </section>
-          <section className="snap-start w-full">
-            <Contact />
+          <section className="snap-start shrink-0 w-full h-screen">
+            <NetworkTeaser />
+          </section>
+          <section className="snap-start shrink-0 w-full h-screen">
+            <About isSection={true} />
+          </section>
+          <section className="snap-start shrink-0 w-full h-screen">
+            <Contact isSection={true} />
+          </section>
+          <section className="snap-start shrink-0 w-full">
+            <Footer />
           </section>
         </>
       )}

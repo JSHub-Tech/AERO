@@ -122,60 +122,19 @@ export const AviationMap = () => {
   }, [airports]);
 
   useEffect(() => {
-    // DUMMY FLIGHTS SIMULATION
     if (Object.keys(airportCoords).length === 0) return;
 
-    // Pick a few routes that exist in the loaded data for the dummy flights, or hardcode them based on known large hubs.
-    // We will simulate 4 flights
-    const initialDummyFlights = [
-      { id: 'PK701', flightNumber: 'PK701', source: 'KHI', dest: 'LHR', progress: 0.1 },
-      { id: 'EK202', flightNumber: 'EK202', source: 'DXB', dest: 'JFK', progress: 0.5 },
-      { id: 'QR303', flightNumber: 'QR303', source: 'DOH', dest: 'CDG', progress: 0.8 },
-      { id: 'EY404', flightNumber: 'EY404', source: 'AUH', dest: 'FRA', progress: 0.3 },
-    ];
-
-    const interval = setInterval(() => {
-      setLiveFlights((prev) => {
-        // Use prev if populated, else initial
-        const currentFlights = prev.length > 0 ? prev : initialDummyFlights;
-
-        return currentFlights.map((df) => {
-          let newProgress = (df.progress || 0) + 0.0003; // SLOWED DOWN significantly
-          if (newProgress > 1) newProgress = 0; // Restart loop
-          
-          const start = airportCoords[df.source || df.departure];
-          const end = airportCoords[df.destination || df.dest];
-          
-          // If coords not found, just return the data without lat/lng
-          if (!start || !end) {
-            return { ...df, progress: newProgress };
-          }
-          
-          // Simple linear interpolation for lat/lng movement
-          const lat = start[0] + (end[0] - start[0]) * newProgress;
-          const lng = start[1] + (end[1] - start[1]) * newProgress;
-          
-          const dy = end[0] - start[0];
-          const dx = end[1] - start[1];
-          const heading = (Math.atan2(dx, dy) * 180) / Math.PI;
-
-          return {
-            id: df.id,
-            flightNumber: df.flightNumber,
-            source: df.source || df.departure,
-            destination: df.destination || df.dest,
-            lat,
-            lng,
-            heading,
-            progress: newProgress,
-            startCoords: start,
-            endCoords: end
-          };
-        });
-      });
-    }, 100); // 100ms for smooth animation
-
-    return () => clearInterval(interval);
+    // TODO: IMPLEMENT REAL MONGODB API POLLING HERE
+    // Example:
+    // const fetchLiveFlights = async () => {
+    //   const res = await fetch('/api/flights/live');
+    //   const data = await res.json();
+    //   setLiveFlights(data);
+    // };
+    // fetchLiveFlights();
+    // const interval = setInterval(fetchLiveFlights, 30000); // 30 seconds
+    // return () => clearInterval(interval);
+    
   }, [airportCoords]);
 
 // Cache plane icons by rounded heading to prevent constant marker re-creation and popup closing
@@ -204,7 +163,7 @@ const getPlaneIcon = (heading) => {
       <div className="absolute top-4 right-4 z-[1000]">
         <button
           onClick={() => setShowRoutes(!showRoutes)}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-bold shadow-lg transition-all border text-sm tracking-widest ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-bold shadow-lg transition-all border text-sm tracking-widest cursor-pointer ${
             showRoutes 
               ? 'bg-[#004F30] border-[#004F30] text-white shadow-[#004F30]/20' 
               : 'bg-white/90 backdrop-blur-md border-gray-200 text-[#1C2B22] hover:bg-white'
@@ -259,6 +218,7 @@ const getPlaneIcon = (heading) => {
               {/* Path already covered (solid line) */}
               {flight.startCoords && (
                 <Polyline 
+                  key={`${flight.id}-covered`}
                   positions={[flight.startCoords, currentPos]} 
                   pathOptions={{ color: '#A89411', weight: 2, opacity: 0.8 }} 
                 />
@@ -267,6 +227,7 @@ const getPlaneIcon = (heading) => {
               {/* Path remaining (dashed line) */}
               {flight.endCoords && (
                 <Polyline 
+                  key={`${flight.id}-remaining`}
                   positions={[currentPos, flight.endCoords]} 
                   pathOptions={{ color: '#A89411', weight: 2, opacity: 0.3, dashArray: '4, 6' }} 
                 />

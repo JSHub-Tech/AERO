@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import Papa from 'papaparse';
 import GlobeViewer from '../components/GlobeViewer';
+import Footer from '../components/Footer';
 
 export default function Airports() {
   const [airports, setAirports] = useState([]);
@@ -267,7 +268,7 @@ export default function Airports() {
         <section 
           data-index={0}
           ref={(el) => sectionRefs.current[0] = el}
-          className="h-screen w-full shrink-0 snap-start flex flex-col justify-end items-center px-8 pb-12 pointer-events-none"
+          className="h-screen w-full shrink-0 snap-start flex flex-col justify-end items-center px-8 pb-2 pointer-events-none"
         >
            <div className={`transition-opacity duration-1000 delay-500 ${activeIndex === 0 ? 'opacity-100' : 'opacity-0'}`}>
               <div className="animate-bounce flex flex-col items-center">
@@ -392,6 +393,16 @@ export default function Airports() {
              </section>
            )
         })}
+
+        {/* SLIDE X: Footer */}
+        <section 
+          data-index={airportDetails.length + 1}
+          ref={(el) => sectionRefs.current[airportDetails.length + 1] = el}
+          className="w-full shrink-0 snap-start"
+        >
+          <Footer />
+        </section>
+
       </div>
     </div>
   )

@@ -2,6 +2,36 @@ import { useEffect, useRef } from 'react';
 import Globe from 'react-globe.gl';
 import * as THREE from 'three';
 
+// --- ULTRA LOW-POLY PROCEDURAL AIRPLANE GEOMETRY (CACHED GLOBALLY) ---
+// By defining these at the module level, we create the geometry exactly once in GPU memory.
+// This permanently prevents WebGL memory leaks when the component re-renders!
+const planeMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+const bodyGeo = new THREE.CylinderGeometry(0.1, 0.3, 2.5, 6);
+bodyGeo.rotateX(Math.PI / 2);
+const wingGeo = new THREE.BoxGeometry(2.5, 0.05, 0.6);
+const tailGeo = new THREE.BoxGeometry(1.0, 0.05, 0.3);
+const finGeo = new THREE.BoxGeometry(0.05, 0.8, 0.5);
+const finPositions = finGeo.attributes.position;
+for (let i = 0; i < finPositions.count; i++) {
+  if (finPositions.getY(i) > 0) finPositions.setZ(i, finPositions.getZ(i) - 0.3);
+}
+
+const createLowPolyAirplane = () => {
+  const group = new THREE.Group();
+  const body = new THREE.Mesh(bodyGeo, planeMaterial);
+  group.add(body);
+  const wings = new THREE.Mesh(wingGeo, planeMaterial);
+  wings.position.set(0, 0, 0.2);
+  group.add(wings);
+  const tail = new THREE.Mesh(tailGeo, planeMaterial);
+  tail.position.set(0, 0, -1.0);
+  group.add(tail);
+  const fin = new THREE.Mesh(finGeo, planeMaterial);
+  fin.position.set(0, 0.4, -1.0);
+  group.add(fin);
+  return group;
+};
+
 // Uses the same polar->cartesian convention as three-globe internally so our
 // manually-computed surface normal lines up with where three-globe actually
 // places the point.
@@ -31,57 +61,36 @@ function getCoordinateValue(point, type) {
   }
 }
 
-// 1. Load the flat red pointer image
-const pointerTexture = new THREE.TextureLoader().load('/pointer_.png');
+const pinMaterial = new THREE.MeshBasicMaterial({ color: 0xef4444 }); // Bright red
 
-// 2. Programmatically generate a soft radial red glow texture
-const glowTexture = (() => {
-  const canvas = document.createElement('canvas');
-  canvas.width = 128;
-  canvas.height = 128;
-  const ctx = canvas.getContext('2d');
-  const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-  gradient.addColorStop(0, 'rgba(239, 68, 68, 0.95)');
-  gradient.addColorStop(0.2, 'rgba(239, 68, 68, 0.55)');
-  gradient.addColorStop(0.6, 'rgba(239, 68, 68, 0.15)');
-  gradient.addColorStop(1, 'rgba(239, 68, 68, 0)');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, 128, 128);
-  return new THREE.CanvasTexture(canvas);
-})();
-
-const pinMaterial = new THREE.SpriteMaterial({
-  map: pointerTexture,
-  transparent: true,
-  depthWrite: false,
-});
-
-const glowMaterial = new THREE.SpriteMaterial({
-  map: glowTexture,
-  blending: THREE.AdditiveBlending,
-  transparent: true,
-  depthWrite: false,
-});
-
-// Builds a stationary, glowing 3D pin that always faces the camera (billboards)
+// Builds a true 3D map pin that respects the globe's curvature and rotation
 function buildPointerObject(d) {
   const normal = outwardNormal(d.Latitude, d.Longitude);
 
   const anchor = new THREE.Group();
   anchor.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
 
-  // Pin Sprite: Always faces the camera, keeping the original red color 100% visible
-  const pin = new THREE.Sprite(pinMaterial);
-  pin.scale.set(8, 11, 1);
-  pin.center.set(0.5, 0); // Aligns pivot point to the bottom-center sharp tip of the pin
-  pin.position.y = 2.0;   // Hover height above the globe surface
-  anchor.add(pin);
-
-  // Glow Sprite: Soft red aura behind the pin
-  const glow = new THREE.Sprite(glowMaterial);
-  glow.scale.set(16, 16, 1);
-  glow.position.y = 7.5;  // Centered relative to the pin body
-  anchor.add(glow);
+  // Group to hold the pin components
+  const pinGroup = new THREE.Group();
+  
+  // 1. The pointy stem (Cone pointing down)
+  const coneGeo = new THREE.ConeGeometry( 1.2, 5, 16 );
+  const cone = new THREE.Mesh(coneGeo, pinMaterial);
+  cone.rotation.x = Math.PI; // Point tip downwards
+  cone.position.y = 2.5; // Shift so tip is exactly at origin (y=0)
+  
+  // 2. The round top (Sphere sitting on the flat base of the cone)
+  const sphereGeo = new THREE.SphereGeometry( 1.8, 16, 16 );
+  const sphere = new THREE.Mesh(sphereGeo, pinMaterial);
+  sphere.position.y = 5; // Placed on top of the cone
+  
+  pinGroup.add(cone);
+  pinGroup.add(sphere);
+  
+  // Lift the whole pin slightly off the surface to simulate a hovering drop-pin
+  pinGroup.position.y = 1.5;   
+  
+  anchor.add(pinGroup);
 
   return anchor;
 }
@@ -96,6 +105,7 @@ export default function GlobeViewer({ airports, routes, flights, selectedAirport
       controls.dampingFactor = 0.05;
       controls.autoRotate = !selectedAirportCode; 
       controls.autoRotateSpeed = 0.3;
+      controls.enableZoom = false; // Disable zooming so the earth size remains fixed
       
       controls.minDistance = 180; 
       controls.maxDistance = 550; 
@@ -110,10 +120,97 @@ export default function GlobeViewer({ airports, routes, flights, selectedAirport
           globeEl.current.pointOfView({ lat: target.Latitude, lng: target.Longitude, altitude: 1.6 }, 2000);
         }
       } else {
-        globeEl.current.pointOfView({ lat: 28, lng: 65, altitude: 2.9 }, 2000);
+        // Reduced altitude further to 1.85 to make the Earth appear even larger
+        globeEl.current.pointOfView({ lat: 28, lng: 65, altitude: 1.85 }, 2000);
       }
     }
   }, [selectedAirportCode, airports]);
+
+  // --- Ultra-lightweight Dummy Flights ---
+  useEffect(() => {
+    if (!globeEl.current) return;
+    
+    // Hide all dummy planes when zoomed in on a specific airport
+    if (selectedAirportCode) return;
+    
+    let animationFrameId;
+    const DUMMY_ROUTES = [
+      { src: { lat: 24.90, lng: 67.16 }, dst: { lat: 51.47, lng: -0.45 } }, // KHI -> LHR
+      { src: { lat: 33.61, lng: 72.80 }, dst: { lat: 25.25, lng: 55.36 } }, // ISB -> DXB
+      { src: { lat: 31.52, lng: 74.40 }, dst: { lat: 40.64, lng: -73.77 } }, // LHE -> JFK
+      { src: { lat: 24.90, lng: 67.16 }, dst: { lat: 21.53, lng: 39.15 } }, // KHI -> JED
+      { src: { lat: 33.61, lng: 72.80 }, dst: { lat: 43.67, lng: -79.62 } }, // ISB -> YYZ
+    ];
+
+    let airplanes = [];
+
+    // Instantiate 5 low-poly planes immediately
+    for (let i = 0; i < 5; i++) {
+      const wrapper = new THREE.Group();
+      const planeObj = createLowPolyAirplane();
+      
+      // Scale it up significantly (Globe radius is ~100 units)
+      planeObj.scale.set(0.6, 0.6, 0.6);
+      
+      // No extra rotation needed, the nose is already facing +Z
+      
+      wrapper.add(planeObj);
+      
+      const route = DUMMY_ROUTES[i % DUMMY_ROUTES.length];
+      
+      // We store a unique time offset for each plane so they don't all fly in sync
+      airplanes.push({
+        mesh: wrapper,
+        route: route,
+        timeOffset: Math.random() * 100000 
+      });
+      
+      globeEl.current.scene().add(wrapper);
+    }
+    
+    const animateFlights = () => {
+      if (!globeEl.current) return;
+      
+      const now = Date.now();
+      
+      airplanes.forEach(flight => {
+        // Pure time-based ping-pong animation (0 to 1 and back to 0)
+        // 20000ms (20 seconds) for a one-way trip
+        const t = ((now + flight.timeOffset) % 40000) / 20000; 
+        const progress = t > 1 ? 2 - t : t; 
+        
+        const currentLat = flight.route.src.lat + (flight.route.dst.lat - flight.route.src.lat) * progress;
+        const currentLng = flight.route.src.lng + (flight.route.dst.lng - flight.route.src.lng) * progress;
+        const currentAlt = 0.015 + Math.sin(progress * Math.PI) * 0.12;
+        
+        const { x, y, z } = globeEl.current.getCoords(currentLat, currentLng, currentAlt);
+        flight.mesh.position.set(x, y, z);
+        
+        // Calculate the next tiny step to figure out which way the nose should point
+        const nextT = ((now + 16 + flight.timeOffset) % 40000) / 20000;
+        const nextProgress = nextT > 1 ? 2 - nextT : nextT;
+        
+        const nextLat = flight.route.src.lat + (flight.route.dst.lat - flight.route.src.lat) * nextProgress;
+        const nextLng = flight.route.src.lng + (flight.route.dst.lng - flight.route.src.lng) * nextProgress;
+        const nextAlt = 0.015 + Math.sin(nextProgress * Math.PI) * 0.12;
+        const nextPos = globeEl.current.getCoords(nextLat, nextLng, nextAlt);
+        
+        flight.mesh.lookAt(nextPos.x, nextPos.y, nextPos.z);
+      });
+      
+      animationFrameId = requestAnimationFrame(animateFlights);
+    };
+    
+    animateFlights();
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      if (globeEl.current) {
+         const scene = globeEl.current.scene();
+         airplanes.forEach(f => scene.remove(f.mesh));
+      }
+    };
+  }, [selectedAirportCode]);
 
   const visibleAirports = selectedAirportCode ? airports.filter(a => a.Airport_Code === selectedAirportCode) : airports;
   
@@ -146,7 +243,7 @@ export default function GlobeViewer({ airports, routes, flights, selectedAirport
         pointsData={visibleAirports}
         pointLat="Latitude"
         pointLng="Longitude"
-        pointColor={() => '#A89411'} 
+        pointColor={() => '#00F0FF'}
         pointAltitude={0.02} 
         pointRadius={selectedAirportCode ? 0.6 : 0.3} 
         onPointClick={disableInteractions ? null : handlePointClick}

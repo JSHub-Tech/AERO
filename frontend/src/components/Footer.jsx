@@ -1,54 +1,65 @@
+import { Plane } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
 export default function Footer() {
+  const navigate = useNavigate();
+
   return (
-    <footer className="bg-white text-[#1C2B22] py-16 border-t border-gray-200 w-full snap-start relative z-10">
-      <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12">
+    <footer className="w-full bg-white border-t border-gray-200 pt-24 pb-12 relative z-20 overflow-hidden">
+      
+      {/* Giant background text for depth */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[15rem] font-black text-transparent bg-clip-text bg-gradient-to-r from-[#004F30]/10 to-[#A89411]/10 whitespace-nowrap pointer-events-none select-none">
+        AERO SYS
+      </div>
+
+      <div className="max-w-[1600px] mx-auto px-8 md:px-16 lg:px-24 relative z-10">
         
-        <div>
-          <h3 className="text-2xl font-bold tracking-widest mb-4 flex items-center gap-3 text-[#1C2B22]">
-             <img src="/logo.png" alt="AERO" className="h-6 w-auto opacity-90" />
-             AERO
-          </h3>
-          <p className="text-sm text-gray-500 leading-relaxed font-medium">
-            Pakistan International Airlines operational dashboard. Real-time telemetry, routing, and global tracking.
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 border-b border-gray-200 pb-16">
+          
+          {/* Brand Col */}
+          <div className="md:col-span-2">
+            <h2 className="text-4xl font-bold tracking-widest flex items-center gap-3 text-[#1C2B22] mb-6">
+              AERO <img src="/logo.png" alt="AERO" className="h-8 w-auto opacity-90" />
+            </h2>
+            <p className="text-gray-500 font-medium max-w-sm leading-relaxed">
+              The next generation of operational logistics and global flight telemetry. Precision engineered for the future of aviation.
+            </p>
+          </div>
+          
+          {/* Links Col 1 */}
+          <div className="flex flex-col gap-4">
+            <h4 className="text-[#1C2B22] font-black tracking-widest text-xs uppercase mb-2">Platforms</h4>
+            <button onClick={() => navigate('/live-ops')} className="text-gray-500 hover:text-[#004F30] text-left font-medium transition-colors">Command Center</button>
+            <button onClick={() => navigate('/airports')} className="text-gray-500 hover:text-[#004F30] text-left font-medium transition-colors">Global Terminals</button>
+            <button onClick={() => navigate('/fleet')} className="text-gray-500 hover:text-[#004F30] text-left font-medium transition-colors">3D Showroom</button>
+          </div>
+
+          {/* Links Col 2 */}
+          <div className="flex flex-col gap-4">
+            <h4 className="text-[#1C2B22] font-black tracking-widest text-xs uppercase mb-2">Company</h4>
+            <button onClick={() => navigate('/about')} className="text-gray-500 hover:text-[#004F30] text-left font-medium transition-colors">About Us</button>
+            <button onClick={() => navigate('/')} className="text-gray-500 hover:text-[#004F30] text-left font-medium transition-colors">Careers</button>
+            <button onClick={() => navigate('/contact')} className="text-gray-500 hover:text-[#004F30] text-left font-medium transition-colors">Contact</button>
+          </div>
+
+        </div>
+
+        <div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-gray-500 font-medium text-sm">
+            &copy; {new Date().getFullYear()} AERO / Pakistan International Airlines. All rights reserved.
           </p>
-        </div>
-        
-        <div>
-          <h4 className="font-bold tracking-widest mb-4 text-sm text-[#004F30]">PLATFORM</h4>
-          <ul className="space-y-3 text-sm text-gray-500 font-medium">
-            <li><a href="/" className="hover:text-[#A89411] transition-colors">Dashboard</a></li>
-            <li><a href="/live-ops" className="hover:text-[#A89411] transition-colors">Live Map</a></li>
-            <li><a href="/airports" className="hover:text-[#A89411] transition-colors">View Airports</a></li>
-          </ul>
-        </div>
-        
-        <div>
-          <h4 className="font-bold tracking-widest mb-4 text-sm text-[#004F30]">COMPANY</h4>
-          <ul className="space-y-3 text-sm text-gray-500 font-medium">
-            <li><a href="/#about" className="hover:text-[#A89411] transition-colors">About AERO</a></li>
-            <li><a href="/#contact" className="hover:text-[#A89411] transition-colors">Contact</a></li>
-          </ul>
-        </div>
-        
-        <div>
-          <h4 className="font-bold tracking-widest mb-4 text-sm text-[#004F30]">SOCIAL</h4>
-          <div className="flex gap-4">
-            <a href="#" className="w-12 h-12 rounded-full bg-[#F8F9FA] border border-gray-200 flex items-center justify-center hover:bg-[#004F30] hover:border-[#004F30] hover:text-white transition-all hover:scale-110 shadow-sm text-gray-500 font-bold text-lg">
-               𝕏
-            </a>
-            <a href="#" className="w-12 h-12 rounded-full bg-[#F8F9FA] border border-gray-200 flex items-center justify-center hover:bg-[#004F30] hover:border-[#004F30] hover:text-white transition-all hover:scale-110 shadow-sm text-gray-500 font-bold">
-               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
-            </a>
-            <a href="#" className="w-12 h-12 rounded-full bg-[#F8F9FA] border border-gray-200 flex items-center justify-center hover:bg-[#004F30] hover:border-[#004F30] hover:text-white transition-all hover:scale-110 shadow-sm text-gray-500 font-bold">
-               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-            </a>
+          <div className="flex flex-col items-end gap-3">
+            <div className="flex items-center gap-6">
+              <span className="text-gray-500 hover:text-[#004F30] cursor-pointer font-bold tracking-widest text-xs">PRIVACY</span>
+              <span className="text-gray-500 hover:text-[#004F30] cursor-pointer font-bold tracking-widest text-xs">TERMS</span>
+              <span className="text-gray-500 hover:text-[#004F30] cursor-pointer font-bold tracking-widest text-xs">STATUS</span>
+            </div>
+            <span className="text-gray-400 text-[10px] tracking-widest uppercase font-bold">
+              Made by Saad, Umer and Jamal
+            </span>
           </div>
         </div>
-        
-      </div>
-      
-      <div className="text-center text-xs mt-16 pt-8 border-t border-gray-100 text-gray-400 font-bold tracking-[0.15em] uppercase">
-        &copy; {new Date().getFullYear()} AERO BY PAKISTAN INTERNATIONAL AIRLINES. ALL SYSTEMS NOMINAL.
+
       </div>
     </footer>
   );
