@@ -97,6 +97,32 @@ function buildPointerObject(d) {
 
 export default function GlobeViewer({ airports, routes, flights, selectedAirportCode, onAirportClick, disableInteractions }) {
   const globeEl = useRef();
+  const containerRef = useRef(null);
+  const isVisibleRef = useRef(true);
+
+  // Viewport observer to pause heavy animations when scrolled out of view
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          isVisibleRef.current = entry.isIntersecting;
+          if (globeEl.current) {
+             const controls = globeEl.current.controls();
+             if (controls) {
+               controls.autoRotate = !selectedAirportCode && entry.isIntersecting;
+             }
+          }
+        });
+      },
+      { threshold: 0.05 }
+    );
+    
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    
+    return () => observer.disconnect();
+  }, [selectedAirportCode]);
 
   useEffect(() => {
     if (globeEl.current) {
@@ -171,6 +197,12 @@ export default function GlobeViewer({ airports, routes, flights, selectedAirport
     const animateFlights = () => {
       if (!globeEl.current) return;
       
+      // Memory Optimization: Skip all math and matrix updates if globe is out of view
+      if (!isVisibleRef.current) {
+        animationFrameId = requestAnimationFrame(animateFlights);
+        return;
+      }
+      
       const now = Date.now();
       
       airplanes.forEach(flight => {
@@ -232,7 +264,7 @@ export default function GlobeViewer({ airports, routes, flights, selectedAirport
   const objectsData = selectedAirport ? [selectedAirport] : [];
 
   return (
-    <div className="w-full h-full cursor-grab active:cursor-grabbing flex justify-center items-center relative z-10">
+    <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing flex justify-center items-center relative z-10">
       <Globe
         ref={globeEl}
         globeImageUrl="//unpkg.com/three-globe/example/img/earth-day.jpg"

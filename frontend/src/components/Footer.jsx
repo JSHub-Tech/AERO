@@ -5,7 +5,7 @@ export default function Footer() {
   const navigate = useNavigate();
 
   return (
-    <footer className="w-full bg-white border-t border-gray-200 pt-24 pb-12 relative z-20 overflow-hidden">
+    <footer className="w-full bg-white border-t border-gray-200 pt-16 pb-8 relative z-20 overflow-hidden">
       
       {/* Giant background text for depth */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[15rem] font-black text-transparent bg-clip-text bg-gradient-to-r from-[#004F30]/10 to-[#A89411]/10 whitespace-nowrap pointer-events-none select-none">
@@ -19,7 +19,7 @@ export default function Footer() {
           {/* Brand Col */}
           <div className="md:col-span-2">
             <h2 className="text-4xl font-bold tracking-widest flex items-center gap-3 text-[#1C2B22] mb-6">
-              AERO <img src="/logo.png" alt="AERO" className="h-8 w-auto opacity-90" />
+              <img src="/logo.png" alt="AERO" className="h-10 w-auto opacity-90" /> AERO
             </h2>
             <p className="text-gray-500 font-medium max-w-sm leading-relaxed">
               The next generation of operational logistics and global flight telemetry. Precision engineered for the future of aviation.
@@ -44,12 +44,12 @@ export default function Footer() {
 
         </div>
 
-        <div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="pt-4 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-gray-500 font-medium text-sm">
             &copy; {new Date().getFullYear()} AERO / Pakistan International Airlines. All rights reserved.
           </p>
-          <div className="flex flex-col items-end gap-3">
-            <div className="flex items-center gap-6">
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex items-center gap-4">
               <span className="text-gray-500 hover:text-[#004F30] cursor-pointer font-bold tracking-widest text-xs">PRIVACY</span>
               <span className="text-gray-500 hover:text-[#004F30] cursor-pointer font-bold tracking-widest text-xs">TERMS</span>
               <span className="text-gray-500 hover:text-[#004F30] cursor-pointer font-bold tracking-widest text-xs">STATUS</span>

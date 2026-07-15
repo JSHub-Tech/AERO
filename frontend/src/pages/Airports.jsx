@@ -2,10 +2,12 @@ import { useEffect, useState, useRef } from 'react';
 import Papa from 'papaparse';
 import GlobeViewer from '../components/GlobeViewer';
 import Footer from '../components/Footer';
+import { getAirports, getRoutes, getAirportDetails } from '../services/api';
 
 export default function Airports() {
   const [airports, setAirports] = useState([]);
   const [routes, setRoutes] = useState([]);
+  const [fleets, setFleets] = useState([]);
   const [airportDetails, setAirportDetails] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
@@ -39,52 +41,58 @@ export default function Airports() {
   }, []);
 
   useEffect(() => {
-    const fetchCsv = (url) => {
-      return fetch(url).then(res => res.text()).then(csv => new Promise((resolve) => {
-        Papa.parse(csv, { header: true, dynamicTyping: true, skipEmptyLines: true, complete: (results) => resolve(results.data) });
-      }));
-    };
+    const fetchData = async () => {
+      try {
+        const [airportsData, routesData, detailsData] = await Promise.all([
+          getAirports(),
+          getRoutes(),
+          getAirportDetails()
+        ]);
+        
+        // Convert coords to numbers
+        const validAirports = airportsData.map(row => ({
+          ...row, 
+          Latitude: Number(row.Latitude), 
+          Longitude: Number(row.Longitude)
+        }));
+        setAirports(validAirports);
 
-    Promise.all([
-      fetchCsv('/airport.csv'), fetchCsv('/routes.csv'), fetchCsv('/airport_details.csv')
-    ]).then(([airportData, routeData, detailsData]) => {
-      
-      const validAirports = airportData.filter(row => row.Latitude && row.Longitude).map(row => ({
-        ...row, Latitude: Number(row.Latitude), Longitude: Number(row.Longitude)
-      }));
-      setAirports(validAirports);
+        const aMap = {};
+        validAirports.forEach(a => { aMap[a.Airport_Code] = a; });
 
-      const aMap = {};
-      validAirports.forEach(a => { aMap[a.Airport_Code] = a; });
+        const mappedRoutes = routesData.map(route => {
+          const src = aMap[route.Source_Airport_Code];
+          const dst = aMap[route.Destination_Airport_Code];
+          if (src && dst) return { ...route, points: [ [src.Latitude, src.Longitude, 0.01], [dst.Latitude, dst.Longitude, 0.01] ] };
+          return null;
+        }).filter(Boolean);
+        setRoutes(mappedRoutes);
 
-      const mappedRoutes = routeData.map(route => {
-        const src = aMap[route.Source_Airport_Code];
-        const dst = aMap[route.Destination_Airport_Code];
-        if (src && dst) return { ...route, points: [ [src.Latitude, src.Longitude, 0.01], [dst.Latitude, dst.Longitude, 0.01] ] };
-        return null;
-      }).filter(Boolean);
-      setRoutes(mappedRoutes);
+        const enrichedDetails = detailsData.map(d => ({
+           ...d,
+           Latitude: aMap[d.Airport_Code]?.Latitude || 0,
+           Longitude: aMap[d.Airport_Code]?.Longitude || 0
+        }));
+        setAirportDetails(enrichedDetails);
 
-      const enrichedDetails = detailsData.map(d => ({
-         ...d,
-         Latitude: aMap[d.Airport_Code]?.Latitude || 0,
-         Longitude: aMap[d.Airport_Code]?.Longitude || 0
-      }));
-      setAirportDetails(enrichedDetails);
-
-      // JUMP LOGIC: Check URL for ?code=XXX and instantly scroll to it
-      const urlParams = new URLSearchParams(window.location.search);
-      const targetCode = urlParams.get('code');
-      if (targetCode) {
-        setTimeout(() => {
-          const targetIndex = enrichedDetails.findIndex(a => a.Airport_Code === targetCode);
-          if (targetIndex !== -1) {
-             const targetEl = sectionRefs.current[targetIndex + 1];
-             if (targetEl) targetEl.scrollIntoView({ behavior: 'auto' });
-          }
-        }, 500); // Wait for DOM to render sections
+        // JUMP LOGIC: Check URL for ?code=XXX and instantly scroll to it
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetCode = urlParams.get('code');
+        if (targetCode) {
+          setTimeout(() => {
+            const targetIndex = enrichedDetails.findIndex(a => a.Airport_Code === targetCode);
+            if (targetIndex !== -1) {
+               const targetEl = sectionRefs.current[targetIndex + 1];
+               if (targetEl) targetEl.scrollIntoView({ behavior: 'auto' });
+            }
+          }, 500); // Wait for DOM to render sections
+        }
+      } catch (error) {
+        console.error("Failed to fetch API data:", error);
       }
-    });
+    };
+    
+    fetchData();
   }, []);
 
   // Intersection Observer for detecting active slide native scroll

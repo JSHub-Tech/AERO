@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import { Network } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import Papa from 'papaparse';
+import { getAirports, getRoutes } from '../services/api';
 
 // Fix for default marker icons (though we mainly use custom ones)
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -83,32 +83,26 @@ export const AviationMap = () => {
   const [liveFlights, setLiveFlights] = useState([]);
 
   useEffect(() => {
-    fetch('/airport.csv')
-      .then((response) => response.text())
-      .then((csvText) => {
-        Papa.parse(csvText, {
-          header: true,
-          skipEmptyLines: true,
-          dynamicTyping: true,
-          transformHeader: (h) => h.trim(),
-          complete: (results) => setAirports(results.data),
-        });
-      })
-      .catch((error) => console.error('Error fetching airport data:', error));
-  }, []);
-
-  useEffect(() => {
-    fetch('/routes.csv')
-      .then((response) => response.text())
-      .then((csvText) => {
-        Papa.parse(csvText, {
-          header: true,
-          skipEmptyLines: true,
-          transformHeader: (h) => h.trim(),
-          complete: (results) => setRoutesData(results.data),
-        });
-      })
-      .catch((error) => console.error('Error fetching routes data:', error));
+    const fetchData = async () => {
+      try {
+        const [airportsData, routesDataList] = await Promise.all([
+          getAirports(),
+          getRoutes()
+        ]);
+        
+        // Ensure coords are numbers
+        const validAirports = airportsData.map(a => ({
+          ...a, Latitude: Number(a.Latitude), Longitude: Number(a.Longitude)
+        }));
+        
+        setAirports(validAirports);
+        setRoutesData(routesDataList);
+      } catch (error) {
+        console.error('Error fetching map data:', error);
+      }
+    };
+    
+    fetchData();
   }, []);
 
   const airportCoords = useMemo(() => {

@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Plane, RefreshCw, X } from 'lucide-react';
 import { AviationMap } from '../components/AviationMap';
 import GlobeViewer from '../components/GlobeViewer';
 import Papa from 'papaparse';
 import Footer from '../components/Footer';
+import { getAirports, getRoutes, getActiveFlights, getOnboardingFlights, getDelayedFlights } from '../services/api';
 
 const GlassCard = ({ title, children, isLoading, onRefresh, onClick }) => (
   <div onClick={onClick} className="bg-white/70 backdrop-blur-3xl rounded-3xl border border-white shadow-[0_20px_50px_rgba(0,79,48,0.05)] p-5 flex flex-col h-full overflow-hidden relative group transition-all hover:bg-white/80 cursor-pointer hover:scale-[1.02]">
@@ -122,28 +123,34 @@ export default function LiveOperations() {
   }, []);
 
   useEffect(() => {
-    const fetchCsv = (url) => {
-      return fetch(url).then(res => res.text()).then(csv => new Promise((resolve) => {
-        Papa.parse(csv, { header: true, dynamicTyping: true, skipEmptyLines: true, complete: (results) => resolve(results.data) });
-      }));
+    const fetchData = async () => {
+      try {
+        const [airportData, routeData] = await Promise.all([
+          getAirports(),
+          getRoutes()
+        ]);
+        
+        const validAirports = airportData.map(row => ({
+          ...row, Latitude: Number(row.Latitude), Longitude: Number(row.Longitude)
+        }));
+        setAirports(validAirports);
+
+        const aMap = {};
+        validAirports.forEach(a => { aMap[a.Airport_Code] = a; });
+        
+        const mappedRoutes = routeData.map(route => {
+          const src = aMap[route.Source_Airport_Code];
+          const dst = aMap[route.Destination_Airport_Code];
+          if (src && dst) return { ...route, points: [ [src.Latitude, src.Longitude, 0.01], [dst.Latitude, dst.Longitude, 0.01] ] };
+          return null;
+        }).filter(Boolean);
+        setRoutes(mappedRoutes);
+      } catch (error) {
+        console.error("Failed to load map data", error);
+      }
     };
-
-    Promise.all([fetchCsv('/airport.csv'), fetchCsv('/routes.csv')]).then(([airportData, routeData]) => {
-      const validAirports = airportData.filter(row => row.Latitude && row.Longitude).map(row => ({
-        ...row, Latitude: Number(row.Latitude), Longitude: Number(row.Longitude)
-      }));
-      setAirports(validAirports);
-
-      const aMap = {};
-      validAirports.forEach(a => { aMap[a.Airport_Code] = a; });
-      const mappedRoutes = routeData.map(route => {
-        const src = aMap[route.Source_Airport_Code];
-        const dst = aMap[route.Destination_Airport_Code];
-        if (src && dst) return { ...route, points: [ [src.Latitude, src.Longitude, 0.01], [dst.Latitude, dst.Longitude, 0.01] ] };
-        return null;
-      }).filter(Boolean);
-      setRoutes(mappedRoutes);
-    });
+    
+    fetchData();
   }, []);
 
   const formatTimeRem = (targetTimeIso, zeroText) => {
@@ -164,55 +171,28 @@ export default function LiveOperations() {
   const fetchDashboardData = async () => {
     try {
       setLoadingActive(true);
-      fetch('http://localhost:8000/dashboard/active-flights')
-        .then(res => res.json())
-        .then(data => { 
-          if (data.flights && data.flights.length > 0) {
-            setActiveFlights(data.flights); 
-          } else {
-            setActiveFlights([]);
-          }
-          setLoadingActive(false); 
-        })
-        .catch(() => {
-          setActiveFlights([]);
-          setLoadingActive(false);
-        });
+      const activeData = await getActiveFlights();
+      setActiveFlights(activeData.flights || []);
+      setLoadingActive(false);
 
       setLoadingBoarding(true);
-      fetch('http://localhost:8000/dashboard/onboarding-flights')
-        .then(res => res.json())
-        .then(data => { 
-          if (data.flights && data.flights.length > 0) {
-            setOnBoardingFlights(data.flights); 
-          } else {
-             setOnBoardingFlights([]);
-          }
-          setLoadingBoarding(false); 
-        })
-        .catch(() => {
-           setOnBoardingFlights([]);
-           setLoadingBoarding(false);
-        });
+      const boardingData = await getOnboardingFlights();
+      setOnBoardingFlights(boardingData.flights || []);
+      setLoadingBoarding(false);
 
       setLoadingDelayed(true);
-      fetch('http://localhost:8000/dashboard/delayed-flights')
-        .then(res => res.json())
-        .then(data => { 
-          if (data.flights && data.flights.length > 0) {
-            setDelayedFlights(data.flights); 
-          } else {
-             setDelayedFlights([]);
-          }
-          setLoadingDelayed(false); 
-        })
-        .catch(() => {
-           setDelayedFlights([]);
-           setLoadingDelayed(false);
-        });
-        
+      const delayedData = await getDelayedFlights();
+      setDelayedFlights(delayedData.flights || []);
+      setLoadingDelayed(false);
+
     } catch (error) {
-      console.error('Dashboard data fetch error:', error);
+      console.error("Dashboard fetch error:", error);
+      setActiveFlights([]);
+      setOnBoardingFlights([]);
+      setDelayedFlights([]);
+      setLoadingActive(false);
+      setLoadingBoarding(false);
+      setLoadingDelayed(false);
     }
   };
 
