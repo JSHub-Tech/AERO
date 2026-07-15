@@ -1,42 +1,23 @@
 """
 All Cypher lives here — the async driver equivalent of an "ORM layer" for Neo4j.
+
+NOTE: FLIGHT edges are now keyed by `flight_id` (a Postgres UUID), not
+`flight_number` — the same flight_number legitimately appears on multiple
+edges (one per service_date), so flight_number can no longer be used as a
+unique lookup/prune key.
 """
 from app.db.neo4j import neo4j_session
 
 
-async def upsert_flight_edge(
-    flight_number: str,
-    from_iata: str,
-    to_iata: str,
-    base_price: float,
-    departure_time: str,
-    arrival_time: str,
-) -> None:
-    query = """
-    MERGE (a:Airport {iata: $from_iata})
-    MERGE (b:Airport {iata: $to_iata})
-    MERGE (a)-[f:FLIGHT {flight_number: $flight_number}]->(b)
-    SET f.base_price = $base_price,
-        f.departure_time = datetime($departure_time),
-        f.arrival_time = datetime($arrival_time)
+async def prune_flight_edge(flight_id: str) -> None:
+    """Called when a flight hits 100% capacity or completes — keeps the graph in sync with Postgres.
+
+    `flight_id` must be the Postgres Flight.flight_id (UUID string) for this specific
+    departure instance — NOT the flight_number, which is shared across multiple dates.
     """
+    query = "MATCH ()-[f:FLIGHT {flight_id: $flight_id}]->() DELETE f"
     async with neo4j_session() as session:
-        await session.run(
-            query,
-            flight_number=flight_number,
-            from_iata=from_iata,
-            to_iata=to_iata,
-            base_price=base_price,
-            departure_time=departure_time,
-            arrival_time=arrival_time,
-        )
-
-
-async def prune_flight_edge(flight_number: str) -> None:
-    """Called when a flight hits 100% capacity or completes — keeps the graph in sync with Postgres."""
-    query = "MATCH ()-[f:FLIGHT {flight_number: $flight_number}]->() DELETE f"
-    async with neo4j_session() as session:
-        await session.run(query, flight_number=flight_number)
+        await session.run(query, flight_id=str(flight_id))
 
 
 async def list_network_routes() -> list[dict]:

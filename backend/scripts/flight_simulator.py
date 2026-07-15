@@ -140,12 +140,14 @@ async def _handle_airborne(
             live.updated_at = now
             await live.save()
 
-        # Prune from Neo4j so completed routes vanish from search results
+        # Prune from Neo4j so completed routes vanish from search results.
+        # Must use flight_id (unique) — flight_number recurs across service_dates,
+        # so pruning by flight_number would delete every future occurrence too.
         try:
-            await prune_flight_edge(flight.flight_number)
-            print(f"[NEO4J PRUNE] {flight.flight_number} edge removed.")
+            await prune_flight_edge(flight.flight_id)
+            print(f"[NEO4J PRUNE] {flight.flight_number} ({flight.service_date}) edge removed.")
         except Exception as e:
-            print(f"[NEO4J WARN]  Could not prune {flight.flight_number}: {e}")
+            print(f"[NEO4J WARN]  Could not prune {flight.flight_number} ({flight.flight_id}): {e}")
 
     else:
         # ── In-flight telemetry update ──

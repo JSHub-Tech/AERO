@@ -3,9 +3,9 @@ SQLAlchemy 2.0 ORM models — the Postgres "source of truth" tier (Supabase).
 Mirrors the ER diagram: Aircraft -> Flight -> Seat -> Booking.
 """
 import uuid
-from datetime import datetime
+from datetime import datetime, date
 
-from sqlalchemy import ForeignKey, String, Float, Boolean, DateTime, Integer, Text, func
+from sqlalchemy import ForeignKey, String, Float, Boolean, DateTime, Date, Integer, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -45,7 +45,11 @@ class Flight(Base):
     __tablename__ = "flight"
 
     flight_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    # Raw flight number as it appears in flight_schedule.csv (e.g. "PK1000") — NOT unique on
+    # its own, since the same template flies on multiple days. `flight_id` (above) is the
+    # only globally-unique identifier and is what APIs/bookings should reference.
     flight_number: Mapped[str] = mapped_column(String(10), nullable=False, index=True)
+    service_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)  # calendar date of this specific departure
     aircraft_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("aircraft.aircraft_id"), nullable=False)
     departure_airport: Mapped[str] = mapped_column(ForeignKey("airport.iata"), nullable=False, index=True)
     arrival_airport: Mapped[str] = mapped_column(ForeignKey("airport.iata"), nullable=False, index=True)
@@ -61,6 +65,10 @@ class Flight(Base):
     aircraft: Mapped["Aircraft"] = relationship(back_populates="flights")
     seats: Mapped[list["Seat"]] = relationship(back_populates="flight", cascade="all, delete-orphan")
     bookings: Mapped[list["Booking"]] = relationship(back_populates="flight")
+
+    __table_args__ = (
+        UniqueConstraint("flight_number", "service_date", name="uq_flight_number_service_date"),
+    )
 
 
 class Seat(Base):

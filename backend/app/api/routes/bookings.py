@@ -1,6 +1,7 @@
 """Booking checkout: Redis distributed seat locks + Postgres transactional insert (api.md 1.6)."""
 import random
 import string
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
@@ -23,16 +24,21 @@ def _generate_booking_reference() -> str:
 async def checkout_booking(payload: BookingCheckoutRequest, db: AsyncSession = Depends(get_db)):
     """Submits the final passenger booking and locks in the selected seats.
 
-    `flight_id` is the flight_number (e.g. "PK300"), matching what the
-    frontend's search results expose as `FlightSearchResult.id` — not the
-    internal Postgres UUID.
+    `flight_id` is the Postgres Flight.flight_id UUID — the same identifier the
+    frontend's search results expose as `FlightSearchResult.id` for single-leg
+    itineraries. Multi-leg bookings should call this once per leg.
     """
     if len(payload.seats) != payload.passengers:
         raise HTTPException(status_code=400, detail="Number of seats must match number of passengers.")
     if len(set(payload.seats)) != len(payload.seats):
         raise HTTPException(status_code=400, detail="Duplicate seats in request.")
 
-    flight_result = await db.execute(select(Flight).where(Flight.flight_number == payload.flight_id))
+    try:
+        parsed_flight_id = uuid.UUID(payload.flight_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="flight_id must be a valid flight UUID.")
+
+    flight_result = await db.execute(select(Flight).where(Flight.flight_id == parsed_flight_id))
     flight = flight_result.scalar_one_or_none()
     if not flight:
         raise HTTPException(status_code=404, detail="Flight not found.")
