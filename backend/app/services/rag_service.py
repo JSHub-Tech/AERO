@@ -13,22 +13,24 @@ client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
 # 2. Load Knowledge Base (RAG)
 KB_DIR = Path(__file__).resolve().parent.parent / "knowledge_base"
-BAGGAGE_POLICY_PATH = KB_DIR / "baggage_policy.md"
 
 def load_system_instructions() -> str:
     instructions = (
         "You are an AI customer service agent for AERO Airlines. "
         "Answer passenger questions politely and concisely.\n\n"
-        "If a passenger asks about policies, use the OFFICIAL BAGGAGE POLICY provided below.\n"
+        "If a passenger asks about policies, use the OFFICIAL AIRLINE POLICIES provided below.\n"
         "If a passenger asks to find a flight, use the `search_cheapest_flight` tool. "
         "When returning flight information, format it beautifully in Markdown.\n\n"
     )
     
-    if BAGGAGE_POLICY_PATH.exists():
-        with open(BAGGAGE_POLICY_PATH, "r", encoding="utf-8") as f:
-            instructions += "### OFFICIAL BAGGAGE POLICY ###\n"
-            instructions += f.read()
-            instructions += "\n###############################\n"
+    if KB_DIR.exists():
+        instructions += "### OFFICIAL AIRLINE POLICIES ###\n"
+        for md_file in KB_DIR.glob("*.md"):
+            with open(md_file, "r", encoding="utf-8") as f:
+                instructions += f"\n--- {md_file.name} ---\n"
+                instructions += f.read()
+                instructions += "\n"
+        instructions += "###############################\n"
             
     return instructions
 
@@ -132,7 +134,7 @@ async def process_chat(query: ChatQuery) -> ChatResponse:
                 
         return ChatResponse(
             answer=response.text,
-            sources=["baggage_policy.md"]
+            sources=[f.name for f in KB_DIR.glob("*.md")]
         )
     except Exception as e:
         return ChatResponse(
