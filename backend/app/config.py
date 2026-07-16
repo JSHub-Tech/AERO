@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     # --- App ---
     ENV: str = "development"
     APP_NAME: str = "AERO ADMS"
+    # Set to true only when you need to debug raw SQL — off by default so
+    # scripts/setup.bat and the API server stay quiet.
+    DB_ECHO: bool = False
 
 
 @lru_cache

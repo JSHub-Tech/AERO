@@ -9,11 +9,39 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.postgres import get_db
 from app.db.redis_client import get_redis
-from app.models.schemas import FlightScheduleOut, FlightSearchResult, SeatsAvailabilityOut
+from app.models.mongo_models import LiveFlight
+from app.models.schemas import FlightScheduleOut, FlightSearchResult, LiveFlightMapOut, SeatsAvailabilityOut
 from app.models.sql_models import Aircraft, Flight, Seat
 from app.repositories.routing_repository import cheapest_path, fastest_path
 
 router = APIRouter()
+
+
+@router.get("/live", response_model=list[LiveFlightMapOut])
+async def get_live_flight_positions():
+    """Currently airborne flight positions for the animated map marker layer.
+
+    Not part of api.md (which specs ws/telemetry instead), but AviationMap.jsx's
+    UI already renders a `liveFlights` array from a REST poll — this fills that
+    contract in directly rather than requiring the frontend to add a WebSocket
+    client. `source`/`destination` are named to match the Popup markup there
+    (`flight.source`, `flight.destination`), not the ws/telemetry payload's
+    `departure`/`dest`.
+    """
+    airborne = await LiveFlight.find(LiveFlight.status == "airborne").to_list()
+    return [
+        LiveFlightMapOut(
+            id=f"{f.flight_number}-LIVE",
+            flightNumber=f.flight_number,
+            source=f.departure,
+            destination=f.dest,
+            lat=f.position.lat,
+            lng=f.position.lng,
+            heading=f.heading,
+            progress=f.progress,
+        )
+        for f in airborne
+    ]
 
 
 @router.get("/schedule", response_model=list[FlightScheduleOut])
@@ -39,9 +67,10 @@ def _format_duration(minutes: int) -> str:
     return f"{hours}h {mins}m"
 
 
-async def _legs_to_search_result(legs, db: AsyncSession, route_type: str) -> FlightSearchResult | None:
+async def _legs_to_search_result(record, db: AsyncSession, route_type: str) -> FlightSearchResult | None:
     """Map a Neo4j path's :FLIGHT relationships onto the FlightSearchResult wire shape,
     joining back to Postgres to resolve each leg's aircraft (`plane`)."""
+    legs = record["legs"]
     if not legs:
         return None
 
@@ -53,7 +82,10 @@ async def _legs_to_search_result(legs, db: AsyncSession, route_type: str) -> Fli
     )
     aircraft_by_flight_id = {str(f.flight_id): a for f, a in result.all()}
 
-    path = [legs[0].start_node["iata"]]
+    # Airport codes along the route, projected directly in Cypher (see
+    # routing_repository.cheapest_path/fastest_path) rather than read off
+    # leg.start_node/.end_node, which are unhydrated stub nodes here.
+    path = list(record["iata_path"])
     total_price = 0.0
     planes: list[str] = []
     flight_numbers: list[str] = []
@@ -62,7 +94,6 @@ async def _legs_to_search_result(legs, db: AsyncSession, route_type: str) -> Fli
 
     for leg in legs:
         flight_id = leg["flight_id"]
-        path.append(leg.end_node["iata"])
         total_price += leg["base_price"] or 0.0
         flight_numbers.append(leg["flight_number"])
 
@@ -122,7 +153,7 @@ async def search_flights(
     for record in list(cheapest_records) + list(fastest_records):
         legs = record["legs"]
         route_type = "Direct" if len(legs) == 1 else f"{len(legs) - 1}-Stop"
-        item = await _legs_to_search_result(legs, db, route_type)
+        item = await _legs_to_search_result(record, db, route_type)
         if item and item.id not in seen_ids:
             results.append(item)
             seen_ids.add(item.id)

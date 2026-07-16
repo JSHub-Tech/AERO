@@ -12,6 +12,7 @@ from app.api.routes import (
     airports,
     bookings,
     chat,
+    dashboard,
     flights,
     fleet,
     live_flights,
@@ -53,19 +54,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- REST endpoints required by api.md, mounted at the exact documented paths ---
+# --- REST endpoints, mounted to match what services/api.js actually calls ---
 app.include_router(airports.router, prefix="/api/v1/airports", tags=["airports"])
 app.include_router(network.router, prefix="/api/v1/routes", tags=["network-routes"])
 app.include_router(flights.router, prefix="/api/v1/flights", tags=["flights"])
-app.include_router(fleet.router, prefix="/api/v1/fleet", tags=["fleet"])
-app.include_router(bookings.router, prefix="/api/v1/booking", tags=["booking"])
+# Frontend calls GET /fleets (plural) — api.md documents /fleet (singular); matching the frontend.
+app.include_router(fleet.router, prefix="/api/v1/fleets", tags=["fleet"])
+# Frontend calls POST /flights/book, not api.md's POST /booking/checkout — matching the frontend.
+app.include_router(bookings.router, prefix="/api/v1/flights", tags=["booking"])
+# Not in api.md — LiveOperations.jsx already polls these three routes; required by the UI design.
+app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["dashboard"])
 
 # --- Supporting APIs not in api.md, kept for the natural-language chat feature ---
 app.include_router(routing.router, prefix="/api/v1/routing", tags=["routing"])
 app.include_router(chat.router, prefix="/api/v1/chat", tags=["rag-chat"])
 app.include_router(live_flights.router, prefix="/api/v1/live-flights", tags=["telemetry-rest"])
 
-# --- WebSockets required by api.md, exact paths: ws://<host>/ws/telemetry, ws://<host>/ws/operations ---
+# --- WebSockets from api.md — implemented, not yet consumed by the frontend (no WS client there today) ---
 app.include_router(telemetry.router, prefix="/ws", tags=["websocket"])
 app.include_router(operations.router, prefix="/ws", tags=["websocket"])
 

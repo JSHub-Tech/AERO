@@ -85,8 +85,8 @@ CONSTRAINT_STATEMENTS = [
 
 # ── Stage 2 – Seed Airport nodes (still from CSV — airports don't change per-run) ────
 
-async def seed_airports(session) -> None:
-    print("[neo4j] Seeding Airport nodes...")
+async def seed_airports(session) -> int:
+    """Returns the number of Airport nodes upserted."""
     rows = read_csv(CSV_AIRPORTS)
 
     nodes = [
@@ -113,14 +113,13 @@ async def seed_airports(session) -> None:
         """,
         nodes=nodes,
     )
-    print(f"  -> {len(nodes)} Airport nodes upserted.")
+    return len(nodes)
 
 
 # ── Stage 3 – Seed FLIGHT edges, mirrored exactly from Postgres ─────────────
 
-async def seed_flights_from_postgres(session) -> None:
-    print("[neo4j] Mirroring FLIGHT edges from Postgres (source of truth)...")
-
+async def seed_flights_from_postgres(session) -> int:
+    """Returns the number of FLIGHT edges created."""
     async with AsyncSessionLocal() as pg_session:
         result = await pg_session.execute(select(Flight))
         flights = result.scalars().all()
@@ -163,33 +162,30 @@ async def seed_flights_from_postgres(session) -> None:
             edges=chunk,
         )
         total += len(chunk)
-        print(f"  ... {total}/{len(edges)} FLIGHT edges seeded")
 
-    print(f"  -> {total} FLIGHT edges created (mirrored 1:1 from Postgres).")
+    return total
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 async def main() -> None:
-    print("[neo4j] Connecting to Neo4j Aura...")
+    print("[neo4j] Creating Neo4j graph...")
 
     async with neo4j_session() as session:
-        print("[neo4j] Wiping existing Airport nodes and FLIGHT edges...")
         for stmt in WIPE_STATEMENTS:
             await session.run(stmt)
-            print(f"  ok: {stmt[:60]}...")
 
-        print("[neo4j] Creating constraints and indexes...")
         for stmt in CONSTRAINT_STATEMENTS:
             await session.run(stmt)
-            print(f"  ok: {stmt[:60]}...")
 
         await seed_airports(session)
         await seed_flights_from_postgres(session)
 
     MARKER.parent.mkdir(parents=True, exist_ok=True)
     MARKER.write_text("done")
-    print("[neo4j] ✅  Graph schema and data seeded successfully.")
+
+    print("[neo4j] Created successfully.")
+
     await close_driver()
 
 

@@ -91,8 +91,11 @@ class Booking(Base):
     booking_reference: Mapped[str] = mapped_column(String(20), nullable=False, index=True)  # e.g. "AERO-X9F2A", shared across all seats in one checkout
     flight_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("flight.flight_id"), nullable=False)
     seat_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("seat.seat_id"), unique=True, nullable=False)
-    passenger_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    passenger_email: Mapped[str] = mapped_column(String(150), nullable=False, index=True)
+    # Nullable: the frontend's current POST /api/v1/flights/book payload
+    # ({flightId, seats, passengers}) doesn't collect passenger name/email yet.
+    # Fill these in when the booking flow gets a passenger-details step.
+    passenger_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    passenger_email: Mapped[str | None] = mapped_column(String(150), nullable=True, index=True)
     price_paid: Mapped[float] = mapped_column(Float, nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="confirmed")  # confirmed|cancelled
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

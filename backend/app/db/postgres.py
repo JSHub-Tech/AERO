@@ -39,7 +39,7 @@ _USING_POOLER = ":6543" in _ASYNC_DSN  # Supabase's PgBouncer (transaction mode)
 
 engine = create_async_engine(
     _ASYNC_DSN,
-    echo=settings.ENV == "development",
+    echo=settings.DB_ECHO,
     pool_pre_ping=True,          # avoids stale-connection errors on free-tier Supabase
     # Only disable asyncpg's prepared-statement cache when going through the
     # 6543 PgBouncer pooler, which doesn't support them. On the direct 5432
