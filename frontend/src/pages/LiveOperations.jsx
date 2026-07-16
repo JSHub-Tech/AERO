@@ -1,32 +1,40 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Plane, RefreshCw, X } from 'lucide-react';
+import { Plane, RefreshCw, X, Maximize2 } from 'lucide-react';
 import { AviationMap } from '../components/AviationMap';
 import GlobeViewer from '../components/GlobeViewer';
 import Footer from '../components/Footer';
 import { getAirports, getRoutes, getActiveFlights, getOnboardingFlights, getDelayedFlights } from '../services/api';
 
 const GlassCard = ({ title, children, isLoading, onRefresh, onClick }) => (
-  <div onClick={onClick} className="bg-white/70 backdrop-blur-3xl rounded-3xl border border-white shadow-[0_20px_50px_rgba(0,79,48,0.05)] p-5 flex flex-col h-full overflow-hidden relative group transition-all hover:bg-white/80 cursor-pointer hover:scale-[1.02]">
+  <div className="bg-white/70 backdrop-blur-3xl rounded-3xl border border-white shadow-[0_20px_50px_rgba(0,79,48,0.05)] p-5 flex flex-col h-full overflow-hidden relative group transition-all hover:bg-white/80">
     <div className="flex justify-between items-center mb-4">
       <h2 className="text-[13px] font-black text-[#A89411] tracking-widest uppercase flex items-center gap-2">
         {title}
         {isLoading && !onRefresh && <RefreshCw size={14} className="animate-spin text-[#004F30]" />}
       </h2>
-      {onRefresh && (
-        <button 
-          onClick={(e) => { e.stopPropagation(); onRefresh(); }} 
-          className="p-1.5 rounded-full bg-white/50 hover:bg-white text-gray-400 hover:text-[#004F30] transition-colors shadow-sm"
-          title="Refresh Data"
-        >
-          <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
-        </button>
-      )}
+      <div className="flex items-center gap-2">
+        {onRefresh && (
+          <button 
+            onClick={(e) => { e.stopPropagation(); onRefresh(); }} 
+            className="p-1.5 rounded-full bg-white/50 hover:bg-white text-gray-400 hover:text-[#004F30] transition-colors shadow-sm"
+            title="Refresh Data"
+          >
+            <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
+          </button>
+        )}
+        {onClick && (
+          <button 
+            onClick={(e) => { e.stopPropagation(); onClick(); }} 
+            className="p-1.5 rounded-full bg-white/50 hover:bg-white text-gray-400 hover:text-[#004F30] transition-colors shadow-sm"
+            title="Expand Table"
+          >
+            <Maximize2 size={14} />
+          </button>
+        )}
+      </div>
     </div>
-    <div className="flex-1 overflow-y-auto hide-scrollbar pointer-events-none">
+    <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
       {children}
-    </div>
-    <div className="absolute bottom-2 right-4 text-[10px] font-bold text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
-      CLICK TO EXPAND
     </div>
   </div>
 );
@@ -111,6 +119,9 @@ export default function LiveOperations() {
   
   // Track which category modal is open
   const [expandedCategory, setExpandedCategory] = useState(null);
+  
+  // Track selected flight for the map
+  const [selectedFlightId, setSelectedFlightId] = useState(null);
 
   // Background globe state
   const [airports, setAirports] = useState([]);
@@ -167,38 +178,58 @@ export default function LiveOperations() {
     return zeroText;
   };
 
-  const fetchDashboardData = async () => {
+  const fetchActiveData = async () => {
     try {
       setLoadingActive(true);
       const activeData = await getActiveFlights();
       setActiveFlights(activeData.flights || []);
-      setLoadingActive(false);
-
-      setLoadingBoarding(true);
-      const boardingData = await getOnboardingFlights();
-      setOnBoardingFlights(boardingData.flights || []);
-      setLoadingBoarding(false);
-
-      setLoadingDelayed(true);
-      const delayedData = await getDelayedFlights();
-      setDelayedFlights(delayedData.flights || []);
-      setLoadingDelayed(false);
-
     } catch (error) {
-      console.error("Dashboard fetch error:", error);
-      setActiveFlights([]);
-      setOnBoardingFlights([]);
-      setDelayedFlights([]);
+      console.error("Active flights fetch error:", error);
+    } finally {
       setLoadingActive(false);
-      setLoadingBoarding(false);
-      setLoadingDelayed(false);
     }
   };
 
   useEffect(() => {
-    fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 15000);
-    return () => clearInterval(interval);
+    // 1. Initial REST fetch for active flights
+    fetchActiveData();
+    const interval = setInterval(fetchActiveData, 15000);
+
+    // 2. WebSocket for real-time Boarding and Delayed updates
+    const ws = new WebSocket('ws://localhost:8000/ws/operations');
+
+    ws.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload.boarding) {
+          // Map OperationsBoardingItem to our DashboardFlightsResponse format
+          const formattedBoarding = payload.boarding.map(b => ({
+            flightNum: b.flight,
+            source: b.route.split('-')[0],
+            dest: b.route.split('-')[1],
+            targetTime: new Date(b.time).toISOString()
+          }));
+          setOnBoardingFlights(formattedBoarding);
+        }
+        if (payload.delayed) {
+          // Map OperationsDelayedItem to our DashboardDelayedResponse format
+          const formattedDelayed = payload.delayed.map(d => ({
+            flightNum: d.flight,
+            source: d.route.split('-')[0],
+            dest: d.route.split('-')[1],
+            delayTime: d.reason
+          }));
+          setDelayedFlights(formattedDelayed);
+        }
+      } catch (error) {
+        console.error("Operations WS parse error:", error);
+      }
+    };
+
+    return () => {
+      clearInterval(interval);
+      ws.close();
+    };
   }, []);
 
   const renderActiveFlights = () => (
@@ -215,7 +246,7 @@ export default function LiveOperations() {
            <tr><td colSpan="3" className="py-6 text-center text-xs font-bold text-gray-400">NO ACTIVE FLIGHTS</td></tr>
         ) : (
            activeFlights.map((f, i) => (
-             <tr key={i} className="group transition-colors">
+             <tr key={i} className="group transition-colors cursor-pointer hover:bg-gray-100" onClick={() => setSelectedFlightId(`${f.flightNum}-LIVE`)}>
                <td className="py-3 font-bold text-[#1C2B22] text-xs">
                  {f.source} <span className="text-[#004F30]">→</span> {f.dest}
                </td>
@@ -315,18 +346,18 @@ export default function LiveOperations() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow min-h-0">
           
           {/* Left Column (Tables) */}
-          <div className="lg:col-span-4 xl:col-span-3 flex flex-col gap-6">
-            <div className="flex-1 min-h-[250px]">
-              <GlassCard title="Active In-Air" isLoading={loadingActive} onRefresh={fetchDashboardData} onClick={() => setExpandedCategory('Active')}>
+          <div className="lg:col-span-4 xl:col-span-3 flex flex-col gap-6 lg:max-h-[700px]">
+            <div className="h-[220px] lg:flex-1 lg:h-0">
+              <GlassCard title="Active In-Air" isLoading={loadingActive} onRefresh={fetchActiveData} onClick={() => setExpandedCategory('Active')}>
                 {renderActiveFlights()}
               </GlassCard>
             </div>
-            <div className="flex-1 min-h-[250px]">
+            <div className="h-[220px] lg:flex-1 lg:h-0">
               <GlassCard title="Boarding" isLoading={loadingBoarding} onClick={() => setExpandedCategory('Boarding')}>
                 {renderOnBoarding()}
               </GlassCard>
             </div>
-            <div className="flex-1 min-h-[250px]">
+            <div className="h-[220px] lg:flex-1 lg:h-0">
               <GlassCard title="Delayed Warnings" isLoading={loadingDelayed} onClick={() => setExpandedCategory('Delayed')}>
                 {renderDelayedFlights()}
               </GlassCard>
@@ -335,7 +366,7 @@ export default function LiveOperations() {
 
           {/* Right Column (Aviation Map) */}
           <div className="lg:col-span-8 xl:col-span-9 h-[60vh] lg:h-auto min-h-[600px]">
-             <AviationMap />
+             <AviationMap selectedFlightId={selectedFlightId} onSelectFlight={setSelectedFlightId} />
           </div>
           
         </div>

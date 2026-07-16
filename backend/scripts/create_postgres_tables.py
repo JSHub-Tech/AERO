@@ -91,12 +91,13 @@ def next_departure_for_day(time_str: str, day_iso: int) -> datetime:
     now_utc = datetime.now(timezone.utc)
     h, m, s = (int(x) for x in time_str.split(":"))
 
-    # Walk days forward until we land on the right weekday
-    for offset in range(7):
+    # Walk days forward (and slightly backward) until we land on the right weekday
+    for offset in range(-1, 7):
         candidate = (now_utc + timedelta(days=offset)).replace(
             hour=h, minute=m, second=s, microsecond=0
         )
-        if candidate.isoweekday() == day_iso and candidate > now_utc:
+        # Allow flights that departed up to 12 hours ago so they show as "airborne" immediately
+        if candidate.isoweekday() == day_iso and candidate > now_utc - timedelta(hours=12):
             return candidate
 
     # Fallback: same weekday next week

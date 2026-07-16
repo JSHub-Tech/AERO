@@ -39,17 +39,22 @@ async def book_flight(payload: BookFlightRequest, db: AsyncSession = Depends(get
         raise HTTPException(status_code=400, detail="Duplicate seats in request.")
 
     try:
-        parsed_flight_id = uuid.UUID(payload.flightId)
+        parsed_flight_ids = [uuid.UUID(fid) for fid in payload.flightId.split("+")]
     except ValueError:
-        raise HTTPException(status_code=400, detail="flightId must be a valid flight UUID.")
+        raise HTTPException(status_code=400, detail="flightId must be a valid flight UUID or a '+' separated list of UUIDs.")
 
-    flight_result = await db.execute(select(Flight).where(Flight.flight_id == parsed_flight_id))
-    flight = flight_result.scalar_one_or_none()
-    if not flight:
-        raise HTTPException(status_code=404, detail="Flight not found.")
+    flight_result = await db.execute(select(Flight).where(Flight.flight_id.in_(parsed_flight_ids)))
+    flights = flight_result.scalars().all()
+    if len(flights) != len(parsed_flight_ids):
+        raise HTTPException(status_code=404, detail="One or more flights not found.")
 
-    lock_owner = payload.customerDetails.email if payload.customerDetails else f"guest:{parsed_flight_id}"
-    lock_keys = [f"lock:seat:{flight.flight_id}:{seat_number}" for seat_number in payload.seats]
+    lock_owner = payload.customerDetails.email if payload.customerDetails else f"guest:{payload.flightId}"
+    
+    lock_keys = []
+    for flight in flights:
+        for seat_number in payload.seats:
+            lock_keys.append(f"lock:seat:{flight.flight_id}:{seat_number}")
+            
     acquired_keys: list[str] = []
 
     try:
@@ -63,37 +68,38 @@ async def book_flight(payload: BookFlightRequest, db: AsyncSession = Depends(get
                 )
             acquired_keys.append(key)
 
-        seats_result = await db.execute(
-            select(Seat).where(Seat.flight_id == flight.flight_id, Seat.seat_number.in_(payload.seats))
-        )
-        seat_by_number = {seat.seat_number: seat for seat in seats_result.scalars().all()}
-
-        missing_seats = [s for s in payload.seats if s not in seat_by_number]
-        if missing_seats:
-            raise HTTPException(status_code=404, detail=f"Seats not found on this flight: {', '.join(missing_seats)}")
-
-        already_booked = [s for s, seat in seat_by_number.items() if seat.is_booked]
-        if already_booked:
-            raise HTTPException(status_code=409, detail=f"Seats already booked: {', '.join(already_booked)}")
-
         pnr = _generate_pnr()
         passenger_name = payload.customerDetails.name if payload.customerDetails else None
         passenger_email = payload.customerDetails.email if payload.customerDetails else None
 
-        for seat_number in payload.seats:
-            seat = seat_by_number[seat_number]
-            seat.is_booked = True
-            db.add(
-                Booking(
-                    booking_reference=pnr,
-                    flight_id=flight.flight_id,
-                    seat_id=seat.seat_id,
-                    passenger_name=passenger_name,
-                    passenger_email=passenger_email,
-                    price_paid=flight.base_price,
-                    status="confirmed",
-                )
+        for flight in flights:
+            seats_result = await db.execute(
+                select(Seat).where(Seat.flight_id == flight.flight_id, Seat.seat_number.in_(payload.seats))
             )
+            seat_by_number = {seat.seat_number: seat for seat in seats_result.scalars().all()}
+
+            missing_seats = [s for s in payload.seats if s not in seat_by_number]
+            if missing_seats:
+                raise HTTPException(status_code=404, detail=f"Seats not found on this flight: {', '.join(missing_seats)}")
+
+            already_booked = [s for s, seat in seat_by_number.items() if seat.is_booked]
+            if already_booked:
+                raise HTTPException(status_code=409, detail=f"Seats already booked: {', '.join(already_booked)}")
+
+            for seat_number in payload.seats:
+                seat = seat_by_number[seat_number]
+                seat.is_booked = True
+                db.add(
+                    Booking(
+                        booking_reference=pnr,
+                        flight_id=flight.flight_id,
+                        seat_id=seat.seat_id,
+                        passenger_name=passenger_name,
+                        passenger_email=passenger_email,
+                        price_paid=flight.base_price,
+                        status="confirmed",
+                    )
+                )
 
         await db.commit()
 

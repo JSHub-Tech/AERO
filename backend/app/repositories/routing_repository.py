@@ -46,7 +46,8 @@ async def cheapest_path(origin: str, destination: str, max_hops: int = 3, max_pr
     WITH path, relationships(path) AS legs,
          [n IN nodes(path) | n.iata] AS iata_path,
          reduce(total = 0.0, r IN relationships(path) | total + r.base_price) AS total_price
-    WHERE $max_price IS NULL OR total_price <= $max_price
+    WHERE ($max_price IS NULL OR total_price <= $max_price)
+      AND ALL(i IN range(0, size(legs) - 2) WHERE legs[i].arrival_time <= legs[i + 1].departure_time)
     RETURN legs, iata_path, total_price
     ORDER BY total_price ASC
     LIMIT 5

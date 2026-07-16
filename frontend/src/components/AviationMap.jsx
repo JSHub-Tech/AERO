@@ -72,7 +72,7 @@ const airportIcon = L.divIcon({
   popupAnchor: [0, -7],
 });
 
-export const AviationMap = () => {
+export const AviationMap = ({ selectedFlightId, onSelectFlight }) => {
   const navigate = useNavigate();
   const mapCenter = [29.0, 60.0];
   const defaultZoom = 4;
@@ -116,19 +116,59 @@ export const AviationMap = () => {
   }, [airports]);
 
   useEffect(() => {
-    if (Object.keys(airportCoords).length === 0) return;
+    // 1. Setup the WebSocket connection
+    const ws = new WebSocket('ws://localhost:8000/ws/telemetry');
 
-    // TODO: IMPLEMENT REAL MONGODB API POLLING HERE
-    // Example:
-    // const fetchLiveFlights = async () => {
-    //   const res = await fetch('/api/flights/live');
-    //   const data = await res.json();
-    //   setLiveFlights(data);
-    // };
-    // fetchLiveFlights();
-    // const interval = setInterval(fetchLiveFlights, 30000); // 30 seconds
-    // return () => clearInterval(interval);
-    
+    ws.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload.type === 'FLIGHT_TELEMETRY_UPDATE') {
+          // payload.data is a list of TelemetryFlightOut from the backend
+          const updatedFlights = payload.data.map(f => {
+            const startCoords = airportCoords[f.departure];
+            const endCoords = airportCoords[f.dest];
+            let screenHeading = f.heading;
+            
+            // Calculate flat-map bearing so the icon perfectly aligns with the drawn Polyline
+            // Since Leaflet uses Web Mercator, we must project Latitude non-linearly to get the true visual screen angle.
+            if (startCoords && endCoords) {
+              const latToY = (lat) => Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI / 180) / 2));
+              const startY = latToY(startCoords[0]);
+              const endY = latToY(endCoords[0]);
+              const dx = (endCoords[1] - startCoords[1]) * (Math.PI / 180);
+              const dy = endY - startY;
+              
+              screenHeading = Math.atan2(dx, dy) * (180 / Math.PI);
+            }
+            
+            return {
+              id: f.id,
+              flightNumber: f.flightNumber,
+              source: f.departure || 'N/A',
+              destination: f.dest || 'N/A',
+              lat: f.lat,
+              lng: f.lng,
+              heading: screenHeading,
+              progress: f.progress,
+              status: f.status,
+              startCoords,
+              endCoords
+            };
+          });
+          setLiveFlights(updatedFlights);
+        }
+      } catch (error) {
+        console.error("Failed to parse telemetry:", error);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error("Telemetry WebSocket error:", error);
+    };
+
+    return () => {
+      ws.close();
+    };
   }, [airportCoords]);
 
 // Cache plane icons by rounded heading to prevent constant marker re-creation and popup closing
@@ -210,7 +250,7 @@ const getPlaneIcon = (heading) => {
           return (
             <React.Fragment key={flight.id}>
               {/* Path already covered (solid line) */}
-              {flight.startCoords && (
+              {flight.startCoords && flight.id === selectedFlightId && (
                 <Polyline 
                   key={`${flight.id}-covered`}
                   positions={[flight.startCoords, currentPos]} 
@@ -219,7 +259,7 @@ const getPlaneIcon = (heading) => {
               )}
               
               {/* Path remaining (dashed line) */}
-              {flight.endCoords && (
+              {flight.endCoords && flight.id === selectedFlightId && (
                 <Polyline 
                   key={`${flight.id}-remaining`}
                   positions={[currentPos, flight.endCoords]} 
@@ -230,6 +270,7 @@ const getPlaneIcon = (heading) => {
               <Marker 
                 position={currentPos}
                 icon={getPlaneIcon(flight.heading)}
+                eventHandlers={{ click: () => onSelectFlight && onSelectFlight(flight.id) }}
               >
               <Popup className="custom-light-popup">
                 <div className="flex flex-col w-full h-full overflow-hidden rounded-[14px]">
