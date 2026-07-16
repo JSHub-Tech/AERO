@@ -3,11 +3,14 @@ Central configuration. Every other module imports `settings` from here —
 never call os.getenv() directly elsewhere in the app.
 """
 from functools import lru_cache
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Get the absolute path to the backend directory where .env lives
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=BASE_DIR / ".env", extra="ignore")
 
     # --- Postgres (Supabase) ---
     DATABASE_URL: str  # postgresql+asyncpg://... (see note in db/postgres.py)

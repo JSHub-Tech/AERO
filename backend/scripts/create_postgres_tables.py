@@ -110,19 +110,37 @@ def build_seat_rows(flight_id: uuid.UUID, model: str) -> list[Seat]:
     """Generate individual Seat rows for a given aircraft model."""
     config = SEAT_CLASS_CONFIG.get(model, [("economy", 100)])
     rows = []
-    seat_num = 1
+    
+    # Calculate seats per row (defaults based on model size)
+    seats_per_row = 6
+    if "777" in model:
+        seats_per_row = 9
+    elif "ATR" in model:
+        seats_per_row = 4
+        
+    current_row = 1
+    current_col = 0
+    
     for seat_class, count in config:
         for _ in range(count):
+            letter = chr(65 + current_col) # 65 = 'A'
+            seat_number = f"{current_row}{letter}"
+            
             rows.append(
                 Seat(
                     seat_id=uuid.uuid4(),
                     flight_id=flight_id,
-                    seat_number=str(seat_num),
+                    seat_number=seat_number,
                     seat_class=seat_class,
                     is_booked=False,
                 )
             )
-            seat_num += 1
+            
+            current_col += 1
+            if current_col >= seats_per_row:
+                current_col = 0
+                current_row += 1
+                
     return rows
 
 

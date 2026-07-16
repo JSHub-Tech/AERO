@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { getAirports, getFleets, searchFlights, bookFlight } from '../services/api';
+import { getAirports, getFleets, searchFlights, bookFlight, getFlightSeats } from '../services/api';
 import Footer from '../components/Footer';
 import { Plane, Calendar, Users, ArrowRight, CheckCircle2, ChevronRight, ShieldCheck, ArrowLeft } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, Marker } from 'react-leaflet';
@@ -34,6 +34,7 @@ export default function Booking() {
   const [selectedFlight, setSelectedFlight] = useState(null);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [hoveredFlight, setHoveredFlight] = useState(null);
+  const [unavailableSeats, setUnavailableSeats] = useState([]);
   
   const [availableFlights, setAvailableFlights] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -87,9 +88,21 @@ export default function Booking() {
     }
   };
 
-  const handleSelectFlight = (flight) => {
+  const handleSelectFlight = async (flight) => {
     setSelectedFlight(flight);
+    setUnavailableSeats([]);
     setStep(3);
+    
+    // Fetch real seat availability (Postgres booked + Redis locked)
+    try {
+      // If it's a multi-leg flight (e.g. "uuid1+uuid2"), we'll just fetch the first leg for now 
+      // or map over them. Let's just fetch the first leg's seats for the seat map UI.
+      const firstLegId = flight.id.split('+')[0];
+      const seatsData = await getFlightSeats(firstLegId);
+      setUnavailableSeats(seatsData.booked_seats || []);
+    } catch (err) {
+      console.error("Failed to load seat availability", err);
+    }
   };
 
   const handleCheckout = async () => {
@@ -147,7 +160,7 @@ export default function Booking() {
         const letter = String.fromCharCode(65 + s);
         const seatId = `${r}${letter}`;
         const isSelected = selectedSeats.includes(seatId);
-        const isUnavailable = (r * s) % 7 === 0 && !isSelected;
+        const isUnavailable = unavailableSeats.includes(seatId);
         
         rowSeats.push(
           <button
