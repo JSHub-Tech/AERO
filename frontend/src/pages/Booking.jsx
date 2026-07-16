@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getAirports, getFleets, searchFlights, bookFlight, getFlightSeats } from '../services/api';
 import Footer from '../components/Footer';
-import { Plane, Calendar, Users, ArrowRight, CheckCircle2, ChevronRight, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { Plane, Calendar, Users, ArrowRight, CheckCircle2, ChevronRight, ShieldCheck, ArrowLeft, AlertTriangle, FileText, Download, X, QrCode } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -43,6 +43,8 @@ export default function Booking() {
   
   const [isBooking, setIsBooking] = useState(false);
   const [pnr, setPnr] = useState('');
+  const [confirmedAt, setConfirmedAt] = useState(null);
+  const [showReceipt, setShowReceipt] = useState(false);
 
   // Load Data via API
   useEffect(() => {
@@ -110,7 +112,8 @@ export default function Booking() {
     try {
       const result = await bookFlight(selectedFlight.id, selectedSeats, passengers);
       setPnr(result.pnr || `AERO-${Math.random().toString(36).substr(2, 6).toUpperCase()}`);
-      setStep(4);
+      setConfirmedAt(new Date());
+      setStep(5);
     } catch (error) {
       console.error("Booking failed:", error);
       if (error.response && error.response.data && error.response.data.detail) {
@@ -218,6 +221,91 @@ export default function Booking() {
     return aircraft ? aircraft.Model : 'Unknown Aircraft';
   };
 
+  // A flight can only be confirmed if we can actually resolve a real aircraft
+  // for it — never let someone book onto an "Unknown Aircraft".
+  const isFlightVerified = !!selectedFlight?.plane && getAircraftModel(selectedFlight?.plane) !== 'Unknown Aircraft';
+
+  const qrCodeUrl = (value) =>
+    `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&color=1C2B22&bgcolor=F8F9FA&data=${encodeURIComponent(value)}`;
+
+  const totalPrice = () => (selectedFlight ? parseInt(selectedFlight.price.replace('$', '')) * passengers : 0);
+
+  const buildReceiptHtml = () => {
+    const issued = (confirmedAt || new Date()).toLocaleString();
+    const qr = qrCodeUrl(selectedFlight?.flight_number || pnr);
+    return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>AeroSys E-Ticket Receipt - ${pnr}</title>
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; background:#F8F9FA; margin:0; padding:40px; color:#1C2B22; }
+  .card { max-width:600px; margin:0 auto; background:#ffffff; border-radius:24px; overflow:hidden; box-shadow:0 10px 40px rgba(0,79,48,0.08); border:1px solid #EDEDED; }
+  .header { background:#004F30; color:#fff; padding:28px 36px; }
+  .header h1 { margin:0; font-size:22px; letter-spacing:1px; }
+  .header p { margin:4px 0 0; font-size:12px; opacity:.8; text-transform:uppercase; letter-spacing:2px; }
+  .body { padding:32px 36px; }
+  .row { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px dashed #E5E7EB; font-size:14px; }
+  .row span:first-child { color:#6B7280; font-weight:bold; }
+  .row span:last-child { font-weight:bold; text-align:right; }
+  .qr { text-align:center; margin:28px 0; padding:20px; background:#F8F9FA; border-radius:16px; border:1px solid #E5E7EB; }
+  .qr img { border-radius:8px; }
+  .qr p { font-size:11px; color:#6B7280; text-transform:uppercase; letter-spacing:1px; margin-top:12px; font-weight:bold; }
+  .pnr { text-align:center; margin:24px 0; }
+  .pnr .code { font-size:28px; font-weight:bold; letter-spacing:2px; font-family:monospace; color:#1C2B22; }
+  .pnr .label { font-size:11px; color:#6B7280; text-transform:uppercase; letter-spacing:2px; }
+  .total { background:#F8F9FA; border-radius:16px; padding:16px 20px; margin-top:20px; display:flex; justify-content:space-between; align-items:center; }
+  .total span:first-child { font-size:12px; text-transform:uppercase; letter-spacing:1px; color:#6B7280; font-weight:bold; }
+  .total span:last-child { font-size:24px; font-weight:bold; }
+  .footer { padding:20px 36px; font-size:11px; color:#9CA3AF; text-align:center; border-top:1px solid #F0F0F0; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <h1>AeroSys</h1>
+      <p>E-Ticket Receipt</p>
+    </div>
+    <div class="body">
+      <div class="pnr">
+        <div class="label">Booking Reference (PNR)</div>
+        <div class="code">${pnr}</div>
+      </div>
+      <div class="row"><span>Route</span><span>${(selectedFlight?.path || [origin, destination]).join(' &rarr; ')}</span></div>
+      <div class="row"><span>Departure</span><span>${selectedFlight?.departureTime || ''} &middot; ${date}</span></div>
+      <div class="row"><span>Arrival</span><span>${selectedFlight?.arrivalTime || ''}</span></div>
+      <div class="row"><span>Duration</span><span>${selectedFlight?.duration || ''}</span></div>
+      <div class="row"><span>Aircraft</span><span>${getAircraftModel(selectedFlight?.plane)}</span></div>
+      <div class="row"><span>Passengers</span><span>${passengers}</span></div>
+      <div class="row"><span>Seat(s)</span><span>${selectedSeats.join(', ')}</span></div>
+      <div class="row"><span>Issued</span><span>${issued}</span></div>
+      <div class="qr">
+        <img src="${qr}" width="150" height="150" alt="Flight number QR code" />
+        <p>Scan QR code to see your flight number</p>
+      </div>
+      <div class="total">
+        <span>Total Paid</span>
+        <span>$${totalPrice()}</span>
+      </div>
+    </div>
+    <div class="footer">This receipt confirms your seat reservation. Please carry a valid ID at check-in.</div>
+  </div>
+</body>
+</html>`;
+  };
+
+  const handleDownloadReceipt = () => {
+    const blob = new Blob([buildReceiptHtml()], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `AeroSys-Receipt-${pnr || 'booking'}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="w-full min-h-screen pt-28 bg-[#F8F9FA] flex flex-col">
       <div className="max-w-6xl mx-auto px-4 flex-grow w-full pb-20">
@@ -225,9 +313,9 @@ export default function Booking() {
         {/* Progress Bar */}
         <div className="flex items-center justify-between mb-12 relative max-w-5xl mx-auto">
           <div className="absolute left-0 top-1/2 w-full h-1 bg-gray-200 -z-10 -translate-y-1/2 rounded-full"></div>
-          <div className="absolute left-0 top-1/2 h-1 bg-[#004F30] -z-10 -translate-y-1/2 rounded-full transition-all duration-500" style={{ width: `${((step - 1) / 3) * 100}%` }}></div>
+          <div className="absolute left-0 top-1/2 h-1 bg-[#004F30] -z-10 -translate-y-1/2 rounded-full transition-all duration-500" style={{ width: `${((step - 1) / 4) * 100}%` }}></div>
           
-          {['Search', 'Select', 'Seats', 'Checkout'].map((label, i) => (
+          {['Search', 'Select', 'Seats', 'Review', 'Confirmed'].map((label, i) => (
             <div key={i} className="flex flex-col items-center">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${step > i ? 'bg-[#004F30] text-white' : 'bg-white text-gray-400 border-2 border-gray-200'}`}>
                 {step > i + 1 ? <CheckCircle2 className="w-5 h-5" /> : i + 1}
@@ -433,34 +521,100 @@ export default function Booking() {
                 </div>
                 
                 <button 
-                  onClick={handleCheckout}
-                  disabled={selectedSeats.length !== passengers || isBooking}
+                  onClick={() => setStep(4)}
+                  disabled={selectedSeats.length !== passengers}
                   className={`w-full py-5 font-bold tracking-widest rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 ${
                     selectedSeats.length === passengers 
                     ? 'bg-[#004F30] hover:bg-[#1C2B22] text-white' 
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  } ${isBooking ? 'opacity-70' : ''}`}
+                  }`}
                 >
-                  {isBooking ? 'PROCESSING...' : 'CONTINUE TO CHECKOUT'} <ArrowRight className="w-5 h-5" />
+                  REVIEW BOOKING <ArrowRight className="w-5 h-5" />
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Step 4: Checkout & Success */}
+        {/* Step 4: Review & Confirm */}
         {step === 4 && (
           <div className="animate-fade-in max-w-2xl mx-auto flex-grow flex flex-col items-center justify-center pt-10">
-            <button onClick={() => { setStep(3); setPnr(''); }} className="mb-6 self-start inline-flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-[#1C2B22] uppercase tracking-wider transition-colors">
+            <button onClick={() => setStep(3)} className="mb-6 self-start inline-flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-[#1C2B22] uppercase tracking-wider transition-colors">
               <ArrowLeft className="w-4 h-4" /> Back to Seats
             </button>
+            <div className="bg-white p-10 md:p-12 rounded-3xl shadow-[0_10px_40px_rgba(0,79,48,0.06)] border border-gray-100 w-full">
+              <h2 className="text-3xl font-bold text-[#1C2B22] mb-2">Review your booking</h2>
+              <p className="text-gray-500 font-medium mb-8">Please check the details below before confirming. Nothing is booked yet.</p>
+
+              {!isFlightVerified && (
+                <div className="mb-8 flex items-start gap-3 bg-red-50 border border-red-100 rounded-2xl p-5">
+                  <AlertTriangle className="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-red-600">We couldn't verify the aircraft for this flight.</p>
+                    <p className="text-sm text-red-500 mt-1">For your safety, bookings can't be confirmed on an unverified aircraft. Please go back and choose a different flight.</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-[#F8F9FA] rounded-2xl p-6 border border-gray-200 mb-8">
+                <div className="flex justify-between mb-4">
+                  <span className="text-gray-500 font-medium">Route</span>
+                  <span className="font-bold text-[#1C2B22]">{(selectedFlight?.path || [origin, destination]).join(' → ')}</span>
+                </div>
+                <div className="flex justify-between mb-4">
+                  <span className="text-gray-500 font-medium">Date</span>
+                  <span className="font-bold text-[#1C2B22]">{date}</span>
+                </div>
+                <div className="flex justify-between mb-4">
+                  <span className="text-gray-500 font-medium">Departure</span>
+                  <span className="font-bold text-[#1C2B22]">{selectedFlight?.departureTime}</span>
+                </div>
+                <div className="flex justify-between mb-4">
+                  <span className="text-gray-500 font-medium">Arrival</span>
+                  <span className="font-bold text-[#1C2B22]">{selectedFlight?.arrivalTime}</span>
+                </div>
+                <div className="flex justify-between mb-4">
+                  <span className="text-gray-500 font-medium">Aircraft</span>
+                  <span className={`font-bold ${isFlightVerified ? 'text-[#1C2B22]' : 'text-red-500'}`}>{getAircraftModel(selectedFlight?.plane)}</span>
+                </div>
+                <div className="flex justify-between mb-4">
+                  <span className="text-gray-500 font-medium">Passengers</span>
+                  <span className="font-bold text-[#1C2B22]">{passengers}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500 font-medium">Seat(s)</span>
+                  <span className="font-bold text-[#004F30]">{selectedSeats.join(', ')}</span>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-end mb-8 pb-6 border-b border-dashed">
+                <span className="text-gray-400 font-bold uppercase tracking-wider text-sm">Total Price</span>
+                <span className="text-3xl font-bold text-[#1C2B22]">${totalPrice()}</span>
+              </div>
+
+              <button
+                onClick={handleCheckout}
+                disabled={!isFlightVerified || isBooking}
+                className={`w-full py-5 font-bold tracking-widest rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 ${
+                  isFlightVerified ? 'bg-[#004F30] hover:bg-[#1C2B22] text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                } ${isBooking ? 'opacity-70' : ''}`}
+              >
+                {isBooking ? 'CONFIRMING...' : 'CONFIRM BOOKING'} <CheckCircle2 className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 5: Booking Confirmed */}
+        {step === 5 && (
+          <div className="animate-fade-in max-w-2xl mx-auto flex-grow flex flex-col items-center justify-center pt-10">
             <div className="bg-white p-16 rounded-3xl shadow-[0_10px_40px_rgba(0,79,48,0.06)] border border-gray-100 text-center w-full">
               <div className="w-24 h-24 bg-[#004F30]/10 rounded-full flex items-center justify-center mx-auto mb-6">
                 <ShieldCheck className="w-12 h-12 text-[#004F30]" />
               </div>
               <h2 className="text-4xl font-bold text-[#1C2B22] mb-4">Booking Confirmed!</h2>
               <p className="text-gray-500 text-lg font-medium mb-10 leading-relaxed">
-                Your flight from <strong>{origin}</strong> to <strong>{destination}</strong> aboard a <strong>{getAircraftModel(selectedFlight?.plane)}</strong> has been successfully booked. Your e-tickets for seats <strong>{selectedSeats.join(', ')}</strong> have been sent to your email.
+                Your flight from <strong>{origin}</strong> to <strong>{destination}</strong> aboard a <strong>{getAircraftModel(selectedFlight?.plane)}</strong> has been successfully booked for seat(s) <strong>{selectedSeats.join(', ')}</strong>. You can view or download your e-ticket receipt below.
               </p>
               
               <div className="bg-[#F8F9FA] rounded-2xl p-6 border border-gray-200 mb-10 flex items-center justify-between text-left">
@@ -471,12 +625,95 @@ export default function Booking() {
                 <Plane className="w-10 h-10 text-[#004F30] opacity-20 transform rotate-45" />
               </div>
 
-              <button onClick={() => { setStep(1); setOrigin(''); setDestination(''); setDate(''); setSelectedSeats([]); setPnr(''); }} className="px-10 py-4 bg-[#004F30] hover:bg-[#1C2B22] text-white font-bold tracking-widest rounded-xl transition-all shadow-lg">
-                BOOK ANOTHER FLIGHT
-              </button>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button onClick={() => setShowReceipt(true)} className="flex-1 inline-flex items-center justify-center gap-2 px-10 py-4 bg-white border-2 border-[#004F30] text-[#004F30] hover:bg-[#004F30] hover:text-white font-bold tracking-widest rounded-xl transition-all">
+                  <FileText className="w-5 h-5" /> VIEW RECEIPT
+                </button>
+                <button onClick={() => { setStep(1); setOrigin(''); setDestination(''); setDate(''); setSelectedFlight(null); setSelectedSeats([]); setPnr(''); setConfirmedAt(null); setShowReceipt(false); }} className="flex-1 px-10 py-4 bg-[#004F30] hover:bg-[#1C2B22] text-white font-bold tracking-widest rounded-xl transition-all shadow-lg">
+                  BOOK ANOTHER FLIGHT
+                </button>
+              </div>
             </div>
           </div>
         )}
+
+      {/* Receipt Modal */}
+      {showReceipt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1C2B22]/50 backdrop-blur-sm">
+          <div className="bg-white rounded-[2rem] w-full max-w-md shadow-2xl relative flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="bg-[#004F30] px-8 py-6 flex items-center justify-between flex-shrink-0">
+              <div>
+                <div className="text-white font-bold text-lg tracking-wide">AeroSys</div>
+                <div className="text-white/70 text-xs font-bold uppercase tracking-widest">E-Ticket Receipt</div>
+              </div>
+              <button onClick={() => setShowReceipt(false)} className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            <div className="p-8 overflow-y-auto">
+              <div className="text-center mb-6">
+                <div className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-1">Booking Reference (PNR)</div>
+                <div className="text-2xl font-mono font-bold text-[#1C2B22] tracking-wider">{pnr}</div>
+              </div>
+
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between text-sm border-b border-dashed border-gray-200 pb-3">
+                  <span className="text-gray-500 font-medium">Route</span>
+                  <span className="font-bold text-[#1C2B22] text-right">{(selectedFlight?.path || [origin, destination]).join(' → ')}</span>
+                </div>
+                <div className="flex justify-between text-sm border-b border-dashed border-gray-200 pb-3">
+                  <span className="text-gray-500 font-medium">Date</span>
+                  <span className="font-bold text-[#1C2B22]">{date}</span>
+                </div>
+                <div className="flex justify-between text-sm border-b border-dashed border-gray-200 pb-3">
+                  <span className="text-gray-500 font-medium">Departure</span>
+                  <span className="font-bold text-[#1C2B22]">{selectedFlight?.departureTime}</span>
+                </div>
+                <div className="flex justify-between text-sm border-b border-dashed border-gray-200 pb-3">
+                  <span className="text-gray-500 font-medium">Arrival</span>
+                  <span className="font-bold text-[#1C2B22]">{selectedFlight?.arrivalTime}</span>
+                </div>
+                <div className="flex justify-between text-sm border-b border-dashed border-gray-200 pb-3">
+                  <span className="text-gray-500 font-medium">Duration</span>
+                  <span className="font-bold text-[#1C2B22]">{selectedFlight?.duration}</span>
+                </div>
+                <div className="flex justify-between text-sm border-b border-dashed border-gray-200 pb-3">
+                  <span className="text-gray-500 font-medium">Aircraft</span>
+                  <span className="font-bold text-[#1C2B22]">{getAircraftModel(selectedFlight?.plane)}</span>
+                </div>
+                <div className="flex justify-between text-sm border-b border-dashed border-gray-200 pb-3">
+                  <span className="text-gray-500 font-medium">Seat(s)</span>
+                  <span className="font-bold text-[#004F30]">{selectedSeats.join(', ')}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 font-medium">Issued</span>
+                  <span className="font-bold text-[#1C2B22]">{(confirmedAt || new Date()).toLocaleString()}</span>
+                </div>
+              </div>
+
+              <div className="bg-[#F8F9FA] rounded-2xl p-6 border border-gray-200 flex flex-col items-center mb-6">
+                <img src={qrCodeUrl(selectedFlight?.flight_number || pnr)} alt="Flight number QR code" width={150} height={150} className="rounded-xl mb-3" />
+                <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  <QrCode className="w-4 h-4" /> Scan QR code to see your flight number
+                </div>
+              </div>
+
+              <div className="bg-[#F8F9FA] rounded-2xl p-5 border border-gray-200 flex justify-between items-center mb-8">
+                <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Paid</span>
+                <span className="text-2xl font-bold text-[#1C2B22]">${totalPrice()}</span>
+              </div>
+
+              <button
+                onClick={handleDownloadReceipt}
+                className="w-full inline-flex items-center justify-center gap-2 py-4 bg-[#004F30] hover:bg-[#1C2B22] text-white font-bold tracking-widest rounded-xl transition-all shadow-lg"
+              >
+                <Download className="w-5 h-5" /> DOWNLOAD RECEIPT
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Error Modal */}
       {bookingError && (
