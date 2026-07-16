@@ -10,10 +10,22 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
+    "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.2",
+    "axios": "^1.18.1",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^1.24.0",
+    "papaparse": "^5.5.4",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "tailwindcss": "^4.3.2"
+    "react-globe.gl": "^2.38.0",
+    "react-leaflet": "^5.0.0",
+    "react-markdown": "^10.1.0",
+    "react-router-dom": "^7.18.1",
+    "tailwindcss": "^4.3.2",
+    "three": "^0.180.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

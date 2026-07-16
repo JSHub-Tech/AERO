@@ -55,16 +55,15 @@ LIVE_FLIGHTS_VALIDATOR = {
 
 
 async def main() -> None:
-    print("[mongo] Connecting to MongoDB Atlas...")
+    print("[mongo] Creating MongoDB collection...")
+
     db = get_client()[settings.MONGODB_DB_NAME]
     existing = await db.list_collection_names()
 
     # Drop if it already exists so we start clean
     if "live_flights" in existing:
-        print("[mongo] Dropping existing 'live_flights' collection...")
         await db.drop_collection("live_flights")
 
-    print("[mongo] Creating 'live_flights' with schema validator...")
     await db.create_collection("live_flights", validator=LIVE_FLIGHTS_VALIDATOR)
 
     col = db["live_flights"]
@@ -83,7 +82,9 @@ async def main() -> None:
 
     MARKER.parent.mkdir(parents=True, exist_ok=True)
     MARKER.write_text("done")
-    print("[mongo] ✅  'live_flights' collection created with validator and indexes.")
+
+    print("[mongo] Created successfully.")
+
     await close_mongo()
 
 

@@ -36,7 +36,8 @@ aero-adms-backend/
 │   ├── api/routes/                # one router per resource
 │   └── knowledge_base/            # static docs for the RAG system (baggage policy, refund rules...)
 ├── scripts/                      # ONE-TIME setup scripts, see below
-├── setup.bat                     # one-command, idempotent DB setup
+├── setup.bat                     # environment setup (venv + requirements)
+├── seed_all.bat                  # creates and seeds all 4 databases
 ├── run_dev.bat                   # starts uvicorn
 ├── requirements.txt
 └── .env.example
@@ -60,19 +61,20 @@ idempotent:
   creating the validated `live_flights` collection.
 - `verify_redis.py` — Redis is schemaless, so this just confirms Upstash is
   reachable and writable.
-- `setup_all.py` — runs all four in sequence (used internally by `setup.bat`).
+- `setup_all.py` — runs all four in sequence (used internally by `seed_all.bat`).
 
 On top of the idempotency built into each script, every step also writes a
-marker file to `scripts/.markers/<name>.done` once it succeeds. `setup.bat`
+marker file to `scripts/.markers/<name>.done` once it succeeds. `seed_all.bat`
 checks for that marker **first** and skips the whole script if present —
-so re-running `setup.bat` after a partial failure only redoes what didn't
+so re-running `seed_all.bat` after a partial failure only redoes what didn't
 finish. Run `scripts\reset_markers.bat` if you ever want to force
 everything to be re-checked (it does not drop any data).
 
 ## Running it
 
 ```bat
-setup.bat        REM creates venv, installs requirements, sets up all 4 databases
+setup.bat         REM one-time: creates venv, installs/updates requirements
+seed_all.bat      REM creates and seeds all 4 databases (re-run any time to reset)
 run_dev.bat       REM starts uvicorn on :8000 with --reload
 ```
 

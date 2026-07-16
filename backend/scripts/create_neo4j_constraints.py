@@ -4,9 +4,17 @@ scripts/create_neo4j_constraints.py
 Drops all existing Airport nodes and FLIGHT edges, recreates constraints /
 indexes, then seeds the routing graph from:
 
-    airport.csv          -> (:Airport) nodes
-    flight_schedule.csv  -> (:Airport)-[:FLIGHT]->(:Airport) edges
-    routes.csv           -> duration weights on edges
+    airport.csv  -> (:Airport) nodes
+    Postgres      -> (:Airport)-[:FLIGHT]->(:Airport) edges, mirrored 1:1
+                     from the `flight` table (the source of truth) rather
+                     than recomputed from flight_schedule.csv. This
+                     guarantees Neo4j and Postgres always agree on exact
+                     departure/arrival timestamps for the same flight_id —
+                     no independent "next occurrence from now" math here,
+                     which previously could drift between the two stores.
+
+IMPORTANT: run create_postgres_tables.py FIRST — this script reads the
+`flight` table it produces.
 
 Always runs end-to-end (no marker guard).
 
@@ -14,16 +22,17 @@ Run with:  python scripts/create_neo4j_constraints.py
 """
 
 import asyncio
-import csv
-import json
 import sys
-import uuid
-from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
+import csv
+from sqlalchemy import select
+
 from app.db.neo4j import neo4j_session, close_driver
+from app.db.postgres import AsyncSessionLocal
+from app.models.sql_models import Flight
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 SCRIPTS_DIR = Path(__file__).resolve().parent
@@ -31,81 +40,55 @@ ROOT_DIR    = SCRIPTS_DIR.parent
 PUBLIC_DIR  = ROOT_DIR.parent / "frontend" / "public"
 MARKER      = SCRIPTS_DIR / ".markers" / "neo4j.done"
 
-CSV_AIRPORTS        = PUBLIC_DIR / "airport.csv"
-CSV_FLIGHT_SCHEDULE = PUBLIC_DIR / "flight_schedule.csv"
-CSV_ROUTES          = PUBLIC_DIR / "routes.csv"
+CSV_AIRPORTS = PUBLIC_DIR / "airport.csv"
 
-PKR_TO_USD = 1 / 278.0
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def read_csv(path: Path) -> list[dict]:
     with open(path, newline="", encoding="utf-8-sig") as f:
         return list(csv.DictReader(f))
 
 
-def parse_days(raw: str) -> list[int]:
-    try:
-        return json.loads(raw.strip())
-    except Exception:
-        return list(range(1, 8))
-
-
-def next_departure_for_day(time_str: str, day_iso: int) -> datetime:
-    now_utc = datetime.now(timezone.utc)
-    h, m, s = (int(x) for x in time_str.split(":"))
-    for offset in range(7):
-        candidate = (now_utc + timedelta(days=offset)).replace(
-            hour=h, minute=m, second=s, microsecond=0
-        )
-        if candidate.isoweekday() == day_iso and candidate > now_utc:
-            return candidate
-    diff = (day_iso - now_utc.isoweekday()) % 7 or 7
-    return (now_utc + timedelta(days=diff)).replace(hour=h, minute=m, second=s, microsecond=0)
-
-
-def iso(dt: datetime) -> str:
-    """Convert datetime to ISO-8601 string Neo4j datetime() can parse."""
+def iso(dt) -> str:
+    """Convert a (possibly tz-aware) datetime to an ISO-8601 string Neo4j datetime() can parse."""
     return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 # ── Stage 0 – Wipe existing graph data ───────────────────────────────────────
 
 WIPE_STATEMENTS = [
-    # Drop all FLIGHT relationships first
     "MATCH ()-[f:FLIGHT]->() DELETE f",
-    # Drop all Airport nodes
     "MATCH (a:Airport) DELETE a",
 ]
 
 # ── Stage 1 – Constraints & indexes ──────────────────────────────────────────
 
 CONSTRAINT_STATEMENTS = [
-    # Unique constraint on Airport.iata (also creates an index)
     "CREATE CONSTRAINT airport_iata_unique IF NOT EXISTS "
     "FOR (a:Airport) REQUIRE a.iata IS UNIQUE",
 
-    # Index on FLIGHT.flight_number for fast lookup
+    # flight_id is the true unique identifier now — one relationship per Postgres row
+    "CREATE CONSTRAINT flight_id_unique IF NOT EXISTS "
+    "FOR ()-[f:FLIGHT]-() REQUIRE f.flight_id IS UNIQUE",
+
+    # flight_number is no longer unique (same template flies multiple days), kept as a
+    # non-unique index purely for lookup/display purposes
     "CREATE INDEX flight_number_index IF NOT EXISTS "
     "FOR ()-[f:FLIGHT]-() ON (f.flight_number)",
 
-    # Index on FLIGHT.base_price for price-range filtering
     "CREATE INDEX flight_price_index IF NOT EXISTS "
     "FOR ()-[f:FLIGHT]-() ON (f.base_price)",
 
-    # Index on FLIGHT.departure_time for time-window queries
     "CREATE INDEX flight_departure_index IF NOT EXISTS "
     "FOR ()-[f:FLIGHT]-() ON (f.departure_time)",
 ]
 
 
-# ── Stage 2 – Seed Airport nodes ─────────────────────────────────────────────
+# ── Stage 2 – Seed Airport nodes (still from CSV — airports don't change per-run) ────
 
-async def seed_airports(session) -> None:
-    print("[neo4j] Seeding Airport nodes...")
+async def seed_airports(session) -> int:
+    """Returns the number of Airport nodes upserted."""
     rows = read_csv(CSV_AIRPORTS)
 
-    # Batch UNWIND for performance
     nodes = [
         {
             "iata":    row["Airport_Code"].strip().upper(),
@@ -130,50 +113,32 @@ async def seed_airports(session) -> None:
         """,
         nodes=nodes,
     )
-    print(f"  -> {len(nodes)} Airport nodes upserted.")
+    return len(nodes)
 
 
-# ── Stage 3 – Seed FLIGHT edges ───────────────────────────────────────────────
+# ── Stage 3 – Seed FLIGHT edges, mirrored exactly from Postgres ─────────────
 
-async def seed_flights(session) -> None:
-    print("[neo4j] Seeding FLIGHT relationships...")
+async def seed_flights_from_postgres(session) -> int:
+    """Returns the number of FLIGHT edges created."""
+    async with AsyncSessionLocal() as pg_session:
+        result = await pg_session.execute(select(Flight))
+        flights = result.scalars().all()
 
-    # Build route duration lookup
-    route_duration: dict[tuple[str, str], int] = {}
-    for row in read_csv(CSV_ROUTES):
-        key = (
-            row["Source_Airport_Code"].strip().upper(),
-            row["Destination_Airport_Code"].strip().upper(),
-        )
-        route_duration[key] = int(row["Standard_Duration_Minutes"])
-
-    schedule_rows = read_csv(CSV_FLIGHT_SCHEDULE)
-    edges: list[dict] = []
-
-    for row in schedule_rows:
-        dep      = row["departure_airport"].strip().upper()
-        arr      = row["arrival_airport"].strip().upper()
-        time_str = row["departure_time_of_day"].strip()
-        days     = parse_days(row["days_of_week"])
-        base_usd = round(float(row["base_price"]) * PKR_TO_USD, 2)
-        fn_base  = row["flight_number"].strip()
-        duration = route_duration.get((dep, arr), 120)
-
-        for day_iso in days:
-            dep_dt = next_departure_for_day(time_str, day_iso)
-            arr_dt = dep_dt + timedelta(minutes=duration)
-
-            edges.append({
-                "flight_number":    f"{fn_base}_{day_iso}",
-                "from_iata":        dep,
-                "to_iata":          arr,
-                "base_price":       base_usd,
-                "departure_time":   iso(dep_dt),
-                "arrival_time":     iso(arr_dt),
-                "duration_minutes": duration,
-                "available_seats":  -1,   # -1 = unknown until Postgres confirms
-                "status":           "scheduled",
-            })
+    edges = [
+        {
+            "flight_id":        str(f.flight_id),
+            "flight_number":    f.flight_number,
+            "service_date":     f.service_date.isoformat(),
+            "from_iata":        f.departure_airport,
+            "to_iata":          f.arrival_airport,
+            "base_price":       f.base_price,
+            "departure_time":   iso(f.scheduled_departure),
+            "arrival_time":     iso(f.scheduled_arrival),
+            "duration_minutes": int((f.scheduled_arrival - f.scheduled_departure).total_seconds() // 60),
+            "status":           f.status,
+        }
+        for f in flights
+    ]
 
     # Batch in chunks of 200 to avoid oversized transactions
     CHUNK = 200
@@ -185,47 +150,42 @@ async def seed_flights(session) -> None:
             UNWIND $edges AS e
             MATCH (dep:Airport {iata: e.from_iata})
             MATCH (arr:Airport {iata: e.to_iata})
-            MERGE (dep)-[f:FLIGHT {flight_number: e.flight_number}]->(arr)
-            SET f.base_price       = e.base_price,
+            MERGE (dep)-[f:FLIGHT {flight_id: e.flight_id}]->(arr)
+            SET f.flight_number    = e.flight_number,
+                f.service_date     = date(e.service_date),
+                f.base_price       = e.base_price,
                 f.departure_time   = datetime(e.departure_time),
                 f.arrival_time     = datetime(e.arrival_time),
                 f.duration_minutes = e.duration_minutes,
-                f.available_seats  = e.available_seats,
                 f.status           = e.status
             """,
             edges=chunk,
         )
         total += len(chunk)
-        print(f"  ... {total}/{len(edges)} FLIGHT edges seeded")
 
-    print(f"  -> {total} FLIGHT edges created.")
+    return total
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 async def main() -> None:
-    print("[neo4j] Connecting to Neo4j Aura...")
+    print("[neo4j] Creating Neo4j graph...")
 
     async with neo4j_session() as session:
-        # 1. Wipe existing graph data
-        print("[neo4j] Wiping existing Airport nodes and FLIGHT edges...")
         for stmt in WIPE_STATEMENTS:
             await session.run(stmt)
-            print(f"  ok: {stmt[:60]}...")
 
-        # 2. Create constraints / indexes
-        print("[neo4j] Creating constraints and indexes...")
         for stmt in CONSTRAINT_STATEMENTS:
             await session.run(stmt)
-            print(f"  ok: {stmt[:60]}...")
 
-        # 3. Seed data
         await seed_airports(session)
-        await seed_flights(session)
+        await seed_flights_from_postgres(session)
 
     MARKER.parent.mkdir(parents=True, exist_ok=True)
     MARKER.write_text("done")
-    print("[neo4j] ✅  Graph schema and data seeded successfully.")
+
+    print("[neo4j] Created successfully.")
+
     await close_driver()
 
 

@@ -18,6 +18,7 @@ Stop with Ctrl-C.
 """
 
 import asyncio
+import math
 import sys
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
@@ -63,6 +64,18 @@ def interpolate_position(
     return GeoPoint(lat=lat, lng=lng)
 
 
+def compute_bearing(start: tuple[float, float], end: tuple[float, float]) -> float:
+    """Great-circle initial bearing in degrees (0-360) from start -> end, for the
+    `heading` field the frontend uses to rotate the plane icon."""
+    lat1, lon1 = math.radians(start[0]), math.radians(start[1])
+    lat2, lon2 = math.radians(end[0]), math.radians(end[1])
+    delta_lon = lon2 - lon1
+    x = math.sin(delta_lon) * math.cos(lat2)
+    y = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(delta_lon)
+    bearing = math.degrees(math.atan2(x, y))
+    return (bearing + 360) % 360
+
+
 # ── State-machine handlers ────────────────────────────────────────────────────
 
 async def _handle_pre_flight(
@@ -93,10 +106,15 @@ async def _handle_takeoff(
         print(f"[TAKEOFF]     {flight.flight_number} ✈")
 
         start = coords.get(flight.departure_airport.upper(), (0.0, 0.0))
+        end = coords.get(flight.arrival_airport.upper(), (0.0, 0.0))
         live = LiveFlight(
             flight_number=flight.flight_number,
             status="airborne",
+            departure=flight.departure_airport,
+            dest=flight.arrival_airport,
             position=GeoPoint(lat=start[0], lng=start[1]),
+            heading=compute_bearing(start, end),
+            progress=0.0,
             updated_at=now,
         )
         await live.insert()
@@ -118,15 +136,18 @@ async def _handle_airborne(
         live = await LiveFlight.find_one(LiveFlight.flight_number == flight.flight_number)
         if live:
             live.status = "completed"
+            live.progress = 1.0
             live.updated_at = now
             await live.save()
 
-        # Prune from Neo4j so completed routes vanish from search results
+        # Prune from Neo4j so completed routes vanish from search results.
+        # Must use flight_id (unique) — flight_number recurs across service_dates,
+        # so pruning by flight_number would delete every future occurrence too.
         try:
-            await prune_flight_edge(flight.flight_number)
-            print(f"[NEO4J PRUNE] {flight.flight_number} edge removed.")
+            await prune_flight_edge(flight.flight_id)
+            print(f"[NEO4J PRUNE] {flight.flight_number} ({flight.service_date}) edge removed.")
         except Exception as e:
-            print(f"[NEO4J WARN]  Could not prune {flight.flight_number}: {e}")
+            print(f"[NEO4J WARN]  Could not prune {flight.flight_number} ({flight.flight_id}): {e}")
 
     else:
         # ── In-flight telemetry update ──
@@ -138,9 +159,13 @@ async def _handle_airborne(
         end   = coords.get(flight.arrival_airport.upper(), (0.0, 0.0))
         pos   = interpolate_position(start, end, progress)
 
+        heading = compute_bearing(start, end)
+
         live = await LiveFlight.find_one(LiveFlight.flight_number == flight.flight_number)
         if live:
             live.position   = pos
+            live.heading    = heading
+            live.progress   = progress
             live.updated_at = now
             await live.save()
             print(
@@ -153,7 +178,11 @@ async def _handle_airborne(
             await LiveFlight(
                 flight_number=flight.flight_number,
                 status="airborne",
+                departure=flight.departure_airport,
+                dest=flight.arrival_airport,
                 position=pos,
+                heading=heading,
+                progress=progress,
                 updated_at=now,
             ).insert()
             print(f"[TELEMETRY]   {flight.flight_number} — late-join document created.")

@@ -32,12 +32,15 @@ class Settings(BaseSettings):
 
     # --- Gemini ---
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_MODEL: str = "gemini-3.1-flash-lite"
     GEMINI_EMBEDDING_MODEL: str = "gemini-embedding-001"
 
     # --- App ---
     ENV: str = "development"
     APP_NAME: str = "AERO ADMS"
+    # Set to true only when you need to debug raw SQL — off by default so
+    # scripts/setup.bat and the API server stay quiet.
+    DB_ECHO: bool = False
 
 
 @lru_cache
