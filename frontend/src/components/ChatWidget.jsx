@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MessageSquare, X, Maximize2, Send, Bot } from 'lucide-react';
 import { useChat } from '../context/ChatContext';
 import { sendChatMessage } from '../services/api';
+import ReactMarkdown from 'react-markdown';
 
 export default function ChatWidget() {
   const { messages, addMessage, isOpen, toggleChat, isTyping, setIsTyping } = useChat();
@@ -88,9 +89,13 @@ export default function ChatWidget() {
                   <div className={`max-w-[85%] p-3 rounded-2xl text-sm font-medium leading-relaxed ${
                     msg.sender === 'user' 
                     ? 'bg-[#004F30] text-white rounded-tr-sm' 
-                    : 'bg-white border border-gray-200 text-[#1C2B22] shadow-sm rounded-tl-sm'
+                    : 'bg-white border border-gray-200 text-[#1C2B22] shadow-sm rounded-tl-sm prose prose-sm max-w-none prose-p:my-1 prose-p:leading-relaxed prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-strong:text-[#1C2B22] prose-pre:bg-gray-100 prose-pre:text-gray-800'
                   }`}>
-                    {msg.text}
+                    {msg.sender === 'user' ? (
+                      msg.text
+                    ) : (
+                      <ReactMarkdown>{msg.text}</ReactMarkdown>
+                    )}
                   </div>
                 </div>
               ))
