@@ -83,23 +83,66 @@ class SeatsAvailabilityOut(BaseModel):
     booked_seats: list[str]
 
 
-# ---------- Booking checkout (api.md 1.6) ----------
+# ---------- Booking checkout (api.md 1.6, called by frontend as POST /api/v1/flights/book) ----------
 class CustomerDetails(BaseModel):
     name: str
     email: EmailStr
 
 
-class BookingCheckoutRequest(BaseModel):
-    flight_id: str  # Postgres Flight.flight_id UUID, matching FlightSearchResult.id (single-leg)
-    passengers: int = Field(gt=0)
+class BookFlightRequest(BaseModel):
+    """Matches services/api.js: bookFlight(flightId, seats, passengers) ->
+    POST /flights/book, body {flightId, seats, passengers}."""
+    flightId: str  # Postgres Flight.flight_id UUID, matching FlightSearchResult.id (single-leg)
     seats: list[str]
-    customer_details: CustomerDetails
+    passengers: int = Field(gt=0)
+    # Not sent by the current booking flow (no name/email step yet) — optional
+    # so /flights/book keeps working as-is; wire this up once that UI exists.
+    customerDetails: CustomerDetails | None = None
 
 
-class BookingCheckoutResponse(BaseModel):
-    status: str
-    booking_reference: str
-    message: str
+class BookFlightResponse(BaseModel):
+    """Matches services/api.js mock: resolve({ success: true, pnr }), and
+    Booking.jsx's `result.pnr`."""
+    success: bool
+    pnr: str
+
+
+# ---------- Live flight positions (AviationMap.jsx — not in api.md, required by UI design) ----------
+class LiveFlightMapOut(BaseModel):
+    """GET /api/v1/flights/live — matches the shape AviationMap.jsx's commented-out
+    `fetch('/api/flights/live')` TODO expects: a flat array, not wrapped in {data: [...]}."""
+    id: str
+    flightNumber: str
+    source: str | None = None
+    destination: str | None = None
+    lat: float
+    lng: float
+    heading: float
+    progress: float
+
+
+# ---------- Live Operations dashboard (LiveOperations.jsx — not in api.md, required by UI design) ----------
+class DashboardFlightItem(BaseModel):
+    """Shared shape for the 'Active In-Air' and 'Boarding' panels."""
+    flightNum: str
+    source: str
+    dest: str
+    targetTime: str | None = None  # ISO datetime — arrival ETA (active) or departure ETD (boarding)
+
+
+class DashboardDelayedItem(BaseModel):
+    flightNum: str
+    source: str
+    dest: str
+    delayTime: str  # display string, e.g. "45m"
+
+
+class DashboardFlightsResponse(BaseModel):
+    flights: list[DashboardFlightItem]
+
+
+class DashboardDelayedResponse(BaseModel):
+    flights: list[DashboardDelayedItem]
 
 
 # ---------- Telemetry websocket (api.md 2.1) ----------

@@ -47,26 +47,14 @@ STEPS = [
 
 
 async def main() -> None:
-    print("=" * 60)
-    print("  AERO ADMS — Full Database Reset & Seed")
-    print("=" * 60)
-
     for name, step in STEPS:
-        print(f"\n{'─' * 60}")
-        print(f"  {name}")
-        print(f"{'─' * 60}")
         try:
             await step()
         except Exception as exc:
-            print(f"\n[FAILED] {name}")
-            print(f"  Error: {exc}")
+            print(f"[FAILED] {name}: {exc}")
             raise
 
-    print("\n" + "=" * 60)
-    print("  ✅  All databases reset and seeded.")
-    print("  Run 'run_dev.bat' to start the API server.")
-    print("  Run 'python scripts/flight_simulator.py' for live telemetry.")
-    print("=" * 60)
+    print("All databases created successfully.")
 
 
 if __name__ == "__main__":

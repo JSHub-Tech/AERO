@@ -33,13 +33,21 @@ async def list_network_routes() -> list[dict]:
 
 
 async def cheapest_path(origin: str, destination: str, max_hops: int = 3, max_price: float | None = None):
-    """Cheapest path up to `max_hops` legs, optionally capped at max_price."""
+    """Cheapest path up to `max_hops` legs, optionally capped at max_price.
+
+    Explicitly projects `iata_path` (the airport codes along the route) in
+    Cypher rather than reading it off `relationship.start_node`/`.end_node`
+    in Python — those are only "stub" nodes (id only, no properties) unless
+    the nodes are themselves part of the RETURN clause, so leg.start_node["iata"]
+    would silently come back None.
+    """
     query = f"""
     MATCH path = (origin:Airport {{iata: $origin}})-[:FLIGHT*1..{max_hops}]->(dest:Airport {{iata: $destination}})
     WITH path, relationships(path) AS legs,
+         [n IN nodes(path) | n.iata] AS iata_path,
          reduce(total = 0.0, r IN relationships(path) | total + r.base_price) AS total_price
     WHERE $max_price IS NULL OR total_price <= $max_price
-    RETURN legs, total_price
+    RETURN legs, iata_path, total_price
     ORDER BY total_price ASC
     LIMIT 5
     """
@@ -52,14 +60,17 @@ async def fastest_path(origin: str, destination: str, max_hops: int = 3):
     """
     Fastest path enforcing chronological layover validity: each leg's
     departure must be >= the previous leg's arrival.
+
+    See `cheapest_path` docstring for why `iata_path` is projected explicitly
+    in Cypher instead of read from relationship.start_node/.end_node.
     """
     query = f"""
     MATCH path = (origin:Airport {{iata: $origin}})-[:FLIGHT*1..{max_hops}]->(dest:Airport {{iata: $destination}})
-    WITH path, relationships(path) AS legs
+    WITH path, relationships(path) AS legs, [n IN nodes(path) | n.iata] AS iata_path
     WHERE ALL(i IN range(0, size(legs) - 2) WHERE legs[i].arrival_time <= legs[i + 1].departure_time)
-    WITH path, legs,
+    WITH path, legs, iata_path,
          duration.between(legs[0].departure_time, legs[-1].arrival_time).minutes AS total_minutes
-    RETURN legs, total_minutes
+    RETURN legs, iata_path, total_minutes
     ORDER BY total_minutes ASC
     LIMIT 5
     """

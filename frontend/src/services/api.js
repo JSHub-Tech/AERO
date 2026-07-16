@@ -8,10 +8,10 @@ import Papa from 'papaparse';
 // When your backend teammates finish the real database, 
 // just change this to `false` and the entire frontend will 
 // instantly switch to the live backend!
-export const USE_MOCK_DATA = true;
+export const USE_MOCK_DATA = false;
 
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api/v1',
+  baseURL: 'http://localhost:8000/api/v1',
   headers: {
     'Content-Type': 'application/json'
   }

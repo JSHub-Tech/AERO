@@ -150,19 +150,15 @@ def determine_shard(iata: str) -> str:
 # ── Stage 0 – Drop & recreate schema ─────────────────────────────────────────
 
 async def drop_and_create_schema() -> None:
-    print("[postgres] Dropping all existing tables...")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
-        print("[postgres] Creating tables from ORM metadata...")
         await conn.run_sync(Base.metadata.create_all)
-    print("[postgres] Schema ready: " + ", ".join(Base.metadata.tables.keys()))
 
 
 # ── Stage 1 – Airports ───────────────────────────────────────────────────────
 
-async def seed_airports(session: AsyncSession) -> None:
-    print("[postgres] Seeding airports...")
-
+async def seed_airports(session: AsyncSession) -> int:
+    """Returns the number of airports inserted."""
     # Index airport_details by code for O(1) lookup
     details_map: dict[str, dict] = {}
     for row in read_csv(CSV_AIRPORT_DETAILS):
@@ -188,15 +184,13 @@ async def seed_airports(session: AsyncSession) -> None:
 
     session.add_all(airports)
     await session.flush()
-    print(f"  -> {len(airports)} airports inserted.")
+    return len(airports)
 
 
 # ── Stage 2 – Aircraft (fleet) ───────────────────────────────────────────────
 
 async def seed_aircraft(session: AsyncSession) -> dict[str, uuid.UUID]:
     """Returns mapping aircraft_id_str -> UUID for use in flight seeding."""
-    print("[postgres] Seeding aircraft fleet...")
-
     aircraft_map: dict[str, uuid.UUID] = {}
     for row in read_csv(CSV_FLEET):
         ac_id   = row["Aircraft_ID"].strip()
@@ -226,7 +220,6 @@ async def seed_aircraft(session: AsyncSession) -> dict[str, uuid.UUID]:
         aircraft_map[ac_id] = new_id
 
     await session.flush()
-    print(f"  -> {len(aircraft_map)} aircraft inserted.")
     return aircraft_map
 
 
@@ -235,14 +228,14 @@ async def seed_aircraft(session: AsyncSession) -> dict[str, uuid.UUID]:
 async def seed_flights_and_seats(
     session: AsyncSession,
     aircraft_map: dict[str, uuid.UUID],
-) -> None:
+) -> tuple[int, int]:
     """
     Each flight_schedule row has a `days_of_week` list.  We create one Flight
     (+ its Seat rows) for each (schedule, day) combination so the simulator
     has real upcoming departures across the week.
-    """
-    print("[postgres] Seeding flights and seats...")
 
+    Returns (total_flights, total_seats).
+    """
     # Build route duration lookup: (dep, arr) -> duration_minutes
     route_duration: dict[tuple[str, str], int] = {}
     for row in read_csv(CSV_ROUTES):
@@ -274,7 +267,7 @@ async def seed_flights_and_seats(
 
         pg_aircraft_id = aircraft_map.get(ac_id)
         if pg_aircraft_id is None:
-            print(f"  [warn] Unknown aircraft {ac_id} for flight {fn_base}, skipping.")
+            # Unknown aircraft_id in flight_schedule.csv — skip this row silently.
             continue
 
         for day_iso in days:
@@ -310,18 +303,18 @@ async def seed_flights_and_seats(
         # Flush periodically to avoid huge in-memory batches
         if total_flights % 50 == 0:
             await session.flush()
-            print(f"  ... {total_flights} flights seeded so far")
 
-    print(f"  -> {total_flights} flights and {total_seats} seats inserted.")
+    return total_flights, total_seats
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 async def main() -> None:
+    print("[postgres] Creating PostgreSQL database...")
+
     # Always drop + recreate — no marker guard
     await drop_and_create_schema()
 
-    print("\n[postgres] Starting data seeding...")
     async with AsyncSessionLocal() as session:
         async with session.begin():
             await seed_airports(session)
@@ -332,7 +325,9 @@ async def main() -> None:
     # Write / update the marker
     MARKER.parent.mkdir(parents=True, exist_ok=True)
     MARKER.write_text("done")
-    print("\n[postgres] ✅  All tables created and seeded successfully.")
+
+    print("[postgres] Created successfully.")
+
     await engine.dispose()
 
 
