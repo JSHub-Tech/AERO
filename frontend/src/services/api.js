@@ -161,3 +161,11 @@ export const bookFlight = async (flightId, seats, passengers) => {
   const response = await API.post('/flights/book', { flightId, seats, passengers });
   return response.data;
 };
+
+export const getFlightSeats = async (flightId) => {
+  if (USE_MOCK_DATA) {
+    return { booked_seats: [] };
+  }
+  const response = await API.get(`/flights/seats/${flightId}`);
+  return response.data;
+};
