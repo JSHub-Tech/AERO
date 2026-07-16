@@ -38,6 +38,7 @@ export default function Booking() {
   const [availableFlights, setAvailableFlights] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
+  const [bookingError, setBookingError] = useState(null);
   
   const [isBooking, setIsBooking] = useState(false);
   const [pnr, setPnr] = useState('');
@@ -99,7 +100,11 @@ export default function Booking() {
       setStep(4);
     } catch (error) {
       console.error("Booking failed:", error);
-      alert("Failed to book flight. Please try again.");
+      if (error.response && error.response.data && error.response.data.detail) {
+        setBookingError(error.response.data.detail);
+      } else {
+        setBookingError("Failed to book flight. Please try again.");
+      }
     } finally {
       setIsBooking(false);
     }
@@ -459,6 +464,27 @@ export default function Booking() {
             </div>
           </div>
         )}
+
+      {/* Error Modal */}
+      {bookingError && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1C2B22]/50 backdrop-blur-sm">
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full border border-red-100 shadow-2xl relative flex flex-col items-center text-center">
+            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
+              <span className="text-red-500 font-black text-2xl">!</span>
+            </div>
+            <h3 className="text-2xl font-black text-[#1C2B22] tracking-tighter mb-2">Booking Failed</h3>
+            <p className="text-gray-500 font-medium mb-8 leading-relaxed">
+              {bookingError}
+            </p>
+            <button 
+              onClick={() => setBookingError(null)}
+              className="w-full bg-[#1C2B22] text-white py-4 rounded-xl font-bold tracking-widest text-xs uppercase hover:bg-[#2A3F33] transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      )}
 
       </div>
       <Footer />

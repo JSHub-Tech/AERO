@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageSquare, X, Maximize2, Send, Bot } from 'lucide-react';
 import { useChat } from '../context/ChatContext';
+import { sendChatMessage } from '../services/api';
 
 export default function ChatWidget() {
-  const { messages, addMessage, isOpen, toggleChat } = useChat();
+  const { messages, addMessage, isOpen, toggleChat, isTyping, setIsTyping } = useChat();
   const [input, setInput] = useState('');
   const navigate = useNavigate();
   const messagesEndRef = useRef(null);
@@ -12,25 +13,33 @@ export default function ChatWidget() {
   // Auto-scroll to bottom of chat
   useEffect(() => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }, [messages, isOpen]);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
     
-    // Add User message
-    addMessage({ text: input, sender: 'user' });
+    const userText = input;
     setInput('');
     
-    // Simulate AI thinking and responding
-    setTimeout(() => {
+    // Add User message
+    addMessage({ text: userText, sender: 'user' });
+    
+    try {
+      setIsTyping(true);
+      // Call the live Gemini RAG API
+      const response = await sendChatMessage(userText);
+      addMessage({ text: response.answer, sender: 'ai' });
+    } catch (error) {
       addMessage({ 
-        text: "I am AERO AI. I am currently operating in offline simulation mode while my backend telemetry API is being configured.", 
+        text: "I am AERO AI. My connection to the live backend seems to be down at the moment.", 
         sender: 'ai' 
       });
-    }, 800);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const handleMaximize = () => {
@@ -86,6 +95,15 @@ export default function ChatWidget() {
                 </div>
               ))
             )}
+            {isTyping && (
+              <div className="flex justify-start animate-fade-in">
+                <div className="max-w-[85%] p-3 rounded-2xl bg-white border border-gray-200 text-[#1C2B22] shadow-sm rounded-tl-sm flex items-center gap-2 h-11">
+                  <div className="w-1.5 h-1.5 bg-[#004F30] rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                  <div className="w-1.5 h-1.5 bg-[#004F30] rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                  <div className="w-1.5 h-1.5 bg-[#004F30] rounded-full animate-bounce"></div>
+                </div>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
           
@@ -95,12 +113,13 @@ export default function ChatWidget() {
               type="text" 
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask AERO AI..."
-              className="flex-1 bg-[#F8F9FA] border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-[#004F30] transition-colors"
+              disabled={isTyping}
+              placeholder={isTyping ? "AERO AI is typing..." : "Ask AERO AI..."}
+              className="flex-1 bg-[#F8F9FA] border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-[#004F30] transition-colors disabled:opacity-50"
             />
             <button 
               type="submit"
-              disabled={!input.trim()}
+              disabled={!input.trim() || isTyping}
               className="bg-[#1C2B22] text-white p-3 rounded-xl hover:bg-[#004F30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               <Send size={18} />

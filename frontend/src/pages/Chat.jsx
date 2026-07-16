@@ -1,32 +1,41 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useChat } from '../context/ChatContext';
+import { sendChatMessage } from '../services/api';
 import { Send, Bot, User, Trash2 } from 'lucide-react';
 import Footer from '../components/Footer';
+import ReactMarkdown from 'react-markdown';
 
 export default function Chat() {
-  const { messages, addMessage, clearMessages } = useChat();
+  const { messages, addMessage, clearMessages, isTyping, setIsTyping } = useChat();
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }, [messages]);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
     
-    addMessage({ text: input, sender: 'user' });
+    const userText = input;
     setInput('');
+    addMessage({ text: userText, sender: 'user' });
     
-    setTimeout(() => {
+    try {
+      setIsTyping(true);
+      const response = await sendChatMessage(userText);
+      addMessage({ text: response.answer, sender: 'ai' });
+    } catch (error) {
       addMessage({ 
-        text: "I am AERO AI. I am currently operating in offline simulation mode while my backend telemetry API is being configured.", 
+        text: "I am AERO AI. My connection to the live backend seems to be down at the moment.", 
         sender: 'ai' 
       });
-    }, 800);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   return (
@@ -87,13 +96,29 @@ export default function Chat() {
                     <div className={`p-5 rounded-3xl text-sm md:text-base font-medium leading-relaxed shadow-sm ${
                       msg.sender === 'user'
                       ? 'bg-[#1C2B22] text-white rounded-tr-sm'
-                      : 'bg-white border border-gray-100 text-[#1C2B22] rounded-tl-sm'
+                      : 'bg-white border border-gray-100 text-[#1C2B22] rounded-tl-sm prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-100 prose-pre:text-gray-800'
                     }`}>
-                      {msg.text}
+                      {msg.sender === 'user' ? (
+                        msg.text
+                      ) : (
+                        <ReactMarkdown>{msg.text}</ReactMarkdown>
+                      )}
                     </div>
 
                   </div>
                 ))
+              )}
+              {isTyping && (
+                <div className="flex gap-4 max-w-[85%] md:max-w-[75%] self-start animate-fade-in">
+                  <div className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center shadow-sm bg-[#004F30] text-white">
+                    <Bot size={20} />
+                  </div>
+                  <div className="p-5 rounded-3xl bg-white border border-gray-100 text-[#1C2B22] rounded-tl-sm flex items-center gap-2 h-[60px]">
+                    <div className="w-2 h-2 bg-[#004F30] rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                    <div className="w-2 h-2 bg-[#004F30] rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                    <div className="w-2 h-2 bg-[#004F30] rounded-full animate-bounce"></div>
+                  </div>
+                </div>
               )}
               <div ref={messagesEndRef} />
            </div>
@@ -105,12 +130,13 @@ export default function Chat() {
                  type="text" 
                  value={input}
                  onChange={(e) => setInput(e.target.value)}
-                 placeholder="Type your transmission here..."
-                 className="w-full bg-[#F8F9FA] border border-gray-200 rounded-2xl pl-6 pr-16 py-5 text-[#1C2B22] font-medium focus:outline-none focus:border-[#004F30] focus:ring-2 focus:ring-[#004F30]/10 transition-all text-base placeholder-gray-400 shadow-inner"
+                 disabled={isTyping}
+                 placeholder={isTyping ? "AERO AI is transmitting..." : "Type your transmission here..."}
+                 className="w-full bg-[#F8F9FA] border border-gray-200 rounded-2xl pl-6 pr-16 py-5 text-[#1C2B22] font-medium focus:outline-none focus:border-[#004F30] focus:ring-2 focus:ring-[#004F30]/10 transition-all text-base placeholder-gray-400 shadow-inner disabled:opacity-50"
                />
                <button 
                  type="submit"
-                 disabled={!input.trim()}
+                 disabled={!input.trim() || isTyping}
                  className="absolute right-3 w-12 h-12 bg-[#004F30] text-white rounded-xl hover:bg-[#1C2B22] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-md"
                >
                  <Send size={20} className="ml-1" />

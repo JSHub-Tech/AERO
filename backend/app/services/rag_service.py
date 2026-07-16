@@ -20,7 +20,7 @@ def load_system_instructions() -> str:
         "Answer passenger questions politely and concisely.\n\n"
         "If a passenger asks about policies, use the OFFICIAL AIRLINE POLICIES provided below.\n"
         "If a passenger asks to find a flight, use the `search_cheapest_flight` tool. "
-        "When returning flight information, format it beautifully in Markdown.\n\n"
+        "When returning flight information, format it beautifully in Markdown. Do NOT use Markdown tables. Use beautifully formatted bulleted lists with bold labels instead.\n\n"
     )
     
     if KB_DIR.exists():
@@ -70,9 +70,12 @@ async def search_cheapest_flight(origin: str, destination: str) -> dict:
             
         best_path = paths[0]
         legs_data = []
-        for leg in best_path["legs"]:
+        iata_path = best_path["iata_path"]
+        for i, leg in enumerate(best_path["legs"]):
             legs_data.append({
                 "flight_number": leg["flight_number"],
+                "origin": iata_path[i],
+                "destination": iata_path[i+1],
                 "departure_time": str(leg["departure_time"]),
                 "arrival_time": str(leg["arrival_time"]),
                 "base_price": leg["base_price"]
@@ -102,9 +105,9 @@ async def process_chat(query: ChatQuery) -> ChatResponse:
     )
 
     try:
-        # 1. Send the initial query
+        # 1. First generate_content call
         response = await client.aio.models.generate_content(
-            model=settings.GEMINI_MODEL, 
+            model=settings.GEMINI_MODEL,
             contents=query.message,
             config=config
         )
@@ -119,17 +122,20 @@ async def process_chat(query: ChatQuery) -> ChatResponse:
                 # Execute the async function manually
                 flight_data = await search_cheapest_flight(origin, destination)
                 
-                # Format the result back to Gemini
-                part = types.Part.from_function_response(
-                    name="search_cheapest_flight",
-                    response={"result": flight_data}
+                # We prompt the model again with the result in text to bypass functionCall API
+                follow_up_prompt = (
+                    f"User asked: {query.message}\n"
+                    f"You requested to search flights from {origin} to {destination}.\n"
+                    f"The search returned this JSON data: {flight_data}\n"
+                    f"Please answer the user's question clearly and precisely based on this flight data."
                 )
-                
-                # 3. Send the function result back to get the final text answer
                 response = await client.aio.models.generate_content(
                     model=settings.GEMINI_MODEL,
-                    contents=[query.message, response.candidates[0].content, part],
-                    config=config
+                    contents=follow_up_prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=SYSTEM_INSTRUCTION,
+                        temperature=0.3
+                    )
                 )
                 
         return ChatResponse(

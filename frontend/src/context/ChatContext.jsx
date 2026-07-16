@@ -9,6 +9,7 @@ export const useChat = () => {
 export const ChatProvider = ({ children }) => {
   const [messages, setMessages] = useState([]);
   const [isOpen, setIsOpen] = useState(false); // Controls the floating widget
+  const [isTyping, setIsTyping] = useState(false); // AI typing state
 
   const addMessage = (message) => {
     setMessages((prev) => [...prev, message]);
@@ -23,7 +24,7 @@ export const ChatProvider = ({ children }) => {
   };
 
   return (
-    <ChatContext.Provider value={{ messages, addMessage, clearMessages, isOpen, setIsOpen, toggleChat }}>
+    <ChatContext.Provider value={{ messages, addMessage, clearMessages, isOpen, setIsOpen, toggleChat, isTyping, setIsTyping }}>
       {children}
     </ChatContext.Provider>
   );

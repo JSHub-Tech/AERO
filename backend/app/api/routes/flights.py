@@ -74,11 +74,13 @@ async def _legs_to_search_result(record, db: AsyncSession, route_type: str) -> F
     if not legs:
         return None
 
+    flight_id_objs = [uuid.UUID(leg["flight_id"]) for leg in legs]
     flight_ids = [leg["flight_id"] for leg in legs]
+    
     result = await db.execute(
         select(Flight, Aircraft)
         .join(Aircraft, Flight.aircraft_id == Aircraft.aircraft_id)
-        .where(Flight.flight_id.in_(flight_ids))
+        .where(Flight.flight_id.in_(flight_id_objs))
     )
     aircraft_by_flight_id = {str(f.flight_id): a for f, a in result.all()}
 
@@ -140,7 +142,6 @@ async def search_flights(
     cached_data = await r.get(cache_key)
     if cached_data:
         # Return instantly from cache
-        import json
         return [FlightSearchResult(**item) for item in json.loads(cached_data)]
 
     # 2. Cache Miss: Query Neo4j
