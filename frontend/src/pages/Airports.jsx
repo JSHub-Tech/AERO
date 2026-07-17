@@ -286,10 +286,10 @@ export default function Airports() {
       )}
 
       {/* SEARCH BAR (Expandable Icon) */}
-      <div className="absolute top-20 sm:top-24 md:top-28 right-4 sm:right-6 md:right-8 z-40 flex justify-end">
-         <div className={`bg-white/80 backdrop-blur-2xl border border-white shadow-[0_10px_30px_rgba(0,79,48,0.12)] rounded-full flex items-center transition-all duration-500 overflow-hidden ${isSearchOpen ? 'w-64 sm:w-80 px-4' : 'w-12 h-12 sm:w-14 sm:h-14 cursor-pointer hover:shadow-[0_15px_40px_rgba(0,79,48,0.2)] hover:scale-105'}`} onClick={!isSearchOpen ? toggleSearch : undefined}>
+      <div className="absolute top-24 sm:top-24 md:top-28 right-3 sm:right-6 md:right-8 left-3 sm:left-auto z-40 flex justify-end">
+         <div className={`bg-white/80 backdrop-blur-2xl border border-white shadow-[0_10px_30px_rgba(0,79,48,0.12)] rounded-full flex items-center transition-all duration-500 overflow-hidden ${isSearchOpen ? 'w-full sm:w-80 px-4' : 'w-11 h-11 sm:w-14 sm:h-14 cursor-pointer hover:shadow-[0_15px_40px_rgba(0,79,48,0.2)] hover:scale-105'}`} onClick={!isSearchOpen ? toggleSearch : undefined}>
             
-            <div className="h-12 w-12 sm:h-14 sm:w-14 flex items-center justify-center shrink-0 cursor-pointer" onClick={isSearchOpen ? toggleSearch : undefined}>
+            <div className="h-11 w-11 sm:h-14 sm:w-14 flex items-center justify-center shrink-0 cursor-pointer" onClick={isSearchOpen ? toggleSearch : undefined}>
               <span className="text-lg sm:text-xl opacity-70">🔍</span>
             </div>
             
@@ -347,13 +347,13 @@ export default function Airports() {
                key={details.Airport_Code} 
                data-index={slideIndex}
                ref={(el) => sectionRefs.current[slideIndex] = el}
-               className="min-h-screen w-full shrink-0 snap-start flex flex-col justify-center px-4 sm:px-6 md:px-16 lg:px-24 py-24 md:py-0"
+               className="min-h-screen w-full shrink-0 snap-start flex flex-col justify-center px-4 sm:px-6 md:px-16 lg:px-24 pt-28 pb-10 md:py-0"
              >
                 <div className={`w-full h-full md:max-h-[85vh] flex flex-col md:flex-row justify-between items-center gap-10 md:gap-0 py-6 md:py-20 transition-all duration-1000 delay-300 ${isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-24'}`}>
                   
                   {/* LEFT WING: Identity & Mission */}
                   <div className="flex flex-col w-full md:w-[40%] xl:w-[35%] items-center md:items-start text-center md:text-left shrink-0">
-                     <h2 className="text-[20vw] sm:text-[16vw] md:text-[7rem] font-black tracking-tighter text-[#1C2B22] leading-none drop-shadow-[0_10px_30px_rgba(255,255,255,1)]">
+                     <h2 className="text-[clamp(3.5rem,20vw,6rem)] md:text-[7rem] font-black tracking-tighter text-[#1C2B22] leading-none drop-shadow-[0_10px_30px_rgba(255,255,255,1)]">
                        {field(details.Airport_Code)}
                      </h2>
                      {details.Airport_Name && (
@@ -426,7 +426,7 @@ export default function Airports() {
                   <div className="flex flex-col w-full md:w-[35%] xl:w-[30%] max-w-sm mx-auto md:mx-0 items-center md:items-end text-center md:text-right shrink-0 gap-6 sm:gap-8 mt-2 md:mt-0 md:mr-8 lg:mr-16">
                      
                      {/* Media Stack (Clickable Lightbox) */}
-                     <div className="flex flex-col gap-3 w-full">
+                     <div className="grid grid-cols-2 sm:flex sm:flex-col gap-3 w-full">
                        <AirportImage
                          src={`/airport_pics/${details.Airport_Code}_1.jpg`}
                          alt={`${details.City || details.Airport_Code} Terminal 1`}
