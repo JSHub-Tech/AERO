@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 
 from app.config import settings
 from app.db.mongodb import init_mongo, close_mongo
@@ -53,6 +54,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Compresses any JSON response over 1KB (airports/routes/flights lists benefit most)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # --- REST endpoints, mounted to match what services/api.js actually calls ---
 app.include_router(airports.router, prefix="/api/v1/airports", tags=["airports"])

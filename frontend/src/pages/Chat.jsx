@@ -39,7 +39,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="w-full min-h-screen pt-[100px] flex flex-col bg-[#F8F9FA] relative">
+    <div className="w-full min-h-screen pt-[84px] sm:pt-[90px] md:pt-[100px] flex flex-col bg-[#F8F9FA] relative">
       
       {/* Background Graphic */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-50">
@@ -47,26 +47,26 @@ export default function Chat() {
          <div className="absolute bottom-[10%] right-[10%] w-[40%] h-[60%] bg-[radial-gradient(circle,_rgba(168,148,17,0.05)_0%,_transparent_70%)] rounded-full blur-3xl"></div>
       </div>
 
-      <div className="w-full max-w-6xl mx-auto px-4 md:px-8 pb-12 flex flex-col relative z-10" style={{ height: 'calc(100vh - 80px)' }}>
+      <div className="w-full max-w-6xl mx-auto px-4 md:px-8 pb-8 md:pb-12 flex flex-col relative z-10" style={{ height: 'calc(100vh - 64px)' }}>
         
         {/* Chat Interface Container */}
         <div className="flex-1 bg-white/80 backdrop-blur-3xl border border-white rounded-[2.5rem] shadow-[0_30px_80px_rgba(0,79,48,0.08)] flex flex-col overflow-hidden relative">
            
            {/* Internal Header Bar */}
-           <div className="p-6 md:px-10 md:py-6 border-b border-gray-100 flex items-center justify-between bg-white/50 backdrop-blur-md z-20">
+           <div className="p-4 sm:p-6 md:px-10 md:py-6 border-b border-gray-100 flex items-center justify-between bg-white/50 backdrop-blur-md z-20 gap-3">
               <div>
-                <h1 className="text-3xl font-black text-[#1C2B22] tracking-tighter">
+                <h1 className="text-xl sm:text-3xl font-black text-[#1C2B22] tracking-tighter">
                   AERO <span className="text-[#004F30]">AI</span>
                 </h1>
-                <p className="text-gray-500 font-bold tracking-widest text-[10px] uppercase">Intelligent Operations Assistant</p>
+                <p className="text-gray-500 font-bold tracking-widest text-[9px] sm:text-[10px] uppercase">Intelligent Operations Assistant</p>
               </div>
               
               {messages.length > 0 && (
                 <button 
                   onClick={clearMessages}
-                  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-red-500 hover:bg-red-50 rounded-xl text-xs font-bold tracking-widest transition-colors shadow-sm"
+                  className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-white border border-gray-200 text-red-500 hover:bg-red-50 rounded-xl text-[10px] sm:text-xs font-bold tracking-widest transition-colors shadow-sm shrink-0"
                 >
-                  <Trash2 size={14} /> CLEAR MEMORY
+                  <Trash2 size={14} /> <span className="hidden xs:inline">CLEAR MEMORY</span><span className="xs:hidden">CLEAR</span>
                 </button>
               )}
            </div>
