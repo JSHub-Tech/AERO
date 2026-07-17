@@ -49,11 +49,11 @@ export default function ChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-8 right-8 z-[100] flex flex-col items-end">
+    <div className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-[100] flex flex-col items-end">
       
       {/* Expanded Chat Window */}
       {isOpen && (
-        <div className="mb-4 w-[350px] md:w-[400px] h-[500px] bg-white/95 backdrop-blur-3xl border border-gray-200 rounded-[2rem] shadow-[0_20px_60px_rgba(0,79,48,0.15)] flex flex-col overflow-hidden animate-in slide-in-from-bottom-10 fade-in duration-300">
+        <div className="mb-4 w-[calc(100vw-2rem)] max-w-[350px] md:w-[400px] h-[70vh] max-h-[500px] bg-white/95 backdrop-blur-3xl border border-gray-200 rounded-[2rem] shadow-[0_20px_60px_rgba(0,79,48,0.15)] flex flex-col overflow-hidden animate-in slide-in-from-bottom-10 fade-in duration-300">
           
           {/* Header */}
           <div className="flex items-center justify-between p-4 bg-[#004F30] text-white">

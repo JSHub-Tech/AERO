@@ -101,6 +101,10 @@ export default function Home() {
         
         <div className={`text-left z-20 w-full md:w-[45%] h-full flex flex-col pt-10 md:pt-24 px-4 md:px-12 absolute left-0 pointer-events-none transition-all duration-700 ${selectedAirportCode ? 'md:bg-white/80 backdrop-blur-xl border-r border-gray-200 shadow-2xl justify-center pt-0' : ''}`}>
           
+          {!selectedAirportCode && (
+            <div className="md:hidden absolute inset-0 bg-gradient-to-b from-black/45 via-black/10 to-transparent pointer-events-none"></div>
+          )}
+          
           {selectedAirportCode && selectedDetails ? (
             
             <div className="pointer-events-auto h-full overflow-y-auto py-28 scrollbar-hide">
@@ -166,11 +170,11 @@ export default function Home() {
           ) : (
             
             <div className="w-full pointer-events-auto transform transition-all translate-x-0 opacity-100 mt-20 md:mt-0 pl-4 md:pl-8">
-              <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-[#1C2B22] leading-[1.05] mb-8">
-                THE FUTURE OF <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#004F30] to-[#A89411]">FLIGHT TELEMETRY.</span>
+              <h1 className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter text-white sm:text-[#1C2B22] leading-[1.05] mb-6 md:mb-8 drop-shadow-[0_4px_20px_rgba(0,0,0,0.35)] sm:drop-shadow-none">
+                THE FUTURE OF <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#7FE0B0] to-[#F0D97A] sm:from-[#004F30] sm:to-[#A89411]">FLIGHT TELEMETRY.</span>
               </h1>
               
-              <p className="text-gray-500 text-lg md:text-xl font-medium leading-relaxed mb-10 max-w-lg">
+              <p className="text-white sm:text-gray-500 text-base sm:text-lg md:text-xl font-medium leading-relaxed mb-10 max-w-lg drop-shadow-[0_2px_12px_rgba(0,0,0,0.4)] sm:drop-shadow-none">
                 Experience unprecedented visibility into global airspace. AERO provides real-time, high-fidelity tracking for Pakistan International Airlines.
               </p>
             </div>
@@ -199,19 +203,19 @@ export default function Home() {
 
       {!selectedAirportCode && (
         <>
-          <section className="snap-start shrink-0 w-full h-screen">
+          <section className="snap-start shrink-0 w-full min-h-screen md:h-screen">
             <FleetTeaser />
           </section>
-          <section className="snap-start shrink-0 w-full h-screen">
+          <section className="snap-start shrink-0 w-full min-h-screen md:h-screen">
             <LiveOpsTeaser />
           </section>
-          <section className="snap-start shrink-0 w-full h-screen">
+          <section className="snap-start shrink-0 w-full min-h-screen md:h-screen">
             <NetworkTeaser />
           </section>
-          <section className="snap-start shrink-0 w-full h-screen">
+          <section className="snap-start shrink-0 w-full min-h-screen md:h-screen">
             <About isSection={true} />
           </section>
-          <section className="snap-start shrink-0 w-full h-screen">
+          <section className="snap-start shrink-0 w-full min-h-screen md:h-screen">
             <Contact isSection={true} />
           </section>
           <section className="snap-start shrink-0 w-full">
