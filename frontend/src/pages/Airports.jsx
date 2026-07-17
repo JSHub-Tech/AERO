@@ -3,6 +3,31 @@ import GlobeViewer from '../components/GlobeViewer';
 import Footer from '../components/Footer';
 import { getAirports, getRoutes, getAirportDetails } from '../services/api';
 
+// Shows the airport photo if it loads; otherwise shows a clean placeholder
+// instead of leaving a blank gap in the layout.
+function AirportImage({ src, alt, onZoom }) {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) {
+    return (
+      <div className="w-full h-40 sm:h-48 md:h-56 rounded-3xl border-[4px] border-white/80 shadow-[0_15px_40px_rgba(0,0,0,0.1)] bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col items-center justify-center gap-2 text-gray-400">
+        <span className="text-2xl">✈️</span>
+        <span className="text-[10px] font-bold tracking-widest uppercase">No Image Available</span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onClick={() => onZoom(src)}
+      onError={() => setHasError(true)}
+      className="w-full h-40 sm:h-48 md:h-56 object-cover rounded-3xl shadow-[0_15px_40px_rgba(0,0,0,0.15)] border-[4px] border-white/80 cursor-pointer hover:scale-[1.02] transition-transform duration-300"
+    />
+  );
+}
+
 export default function Airports() {
   const [airports, setAirports] = useState([]);
   const [routes, setRoutes] = useState([]);
@@ -18,6 +43,23 @@ export default function Airports() {
   const searchInputRef = useRef(null);
   const scrollContainerRef = useRef(null);
   const sectionRefs = useRef([]);
+
+  // Renders any API value safely — never leaves a field visually blank.
+  // Treats 0 as a real value (e.g. sea-level elevation), only null/undefined/'' fall back.
+  const field = (value, { prefix = '', suffix = '' } = {}) => {
+    if (value === null || value === undefined || value === '') return 'N/A';
+    return `${prefix}${value}${suffix}`;
+  };
+
+  // "50,000,000" -> "50M" for compact badges/stats
+  const formatCompact = (value) => {
+    if (value === null || value === undefined || value === '') return null;
+    const num = Number(String(value).replace(/,/g, ''));
+    if (Number.isNaN(num)) return String(value);
+    if (num >= 1_000_000) return `${(num % 1_000_000 === 0 ? num / 1_000_000 : (num / 1_000_000).toFixed(1))}M`;
+    if (num >= 1_000) return `${(num % 1_000 === 0 ? num / 1_000 : (num / 1_000).toFixed(1))}K`;
+    return String(num);
+  };
 
   useEffect(() => {
     // Prevent Layout.jsx from scrolling, allow ONLY this container to scroll
@@ -67,11 +109,20 @@ export default function Airports() {
         }).filter(Boolean);
         setRoutes(mappedRoutes);
 
-        const enrichedDetails = detailsData.map(d => ({
-           ...d,
-           Latitude: aMap[d.Airport_Code]?.Latitude || 0,
-           Longitude: aMap[d.Airport_Code]?.Longitude || 0
-        }));
+        const enrichedDetails = detailsData.map(d => {
+           const info = aMap[d.Airport_Code];
+           return {
+             ...d,
+             // /airports/details only returns Airport_Code, Operational_Status,
+             // Annual_Passengers and Description_Blog — City/Country/name and
+             // coordinates live on the /airports endpoint, so merge them in here.
+             Airport_Name: info?.['Airport Name'] || info?.Airport_Name || null,
+             City: info?.City || null,
+             Country: info?.Country || null,
+             Latitude: info?.Latitude || 0,
+             Longitude: info?.Longitude || 0
+           };
+        });
         setAirportDetails(enrichedDetails);
 
         // JUMP LOGIC: Check URL for ?code=XXX and instantly scroll to it
@@ -128,7 +179,7 @@ export default function Airports() {
      const code = e.target.value.toUpperCase();
      setSearchQuery(code);
      if (code.length >= 3) {
-        const targetIndex = airportDetails.findIndex(a => a.Airport_Code.includes(code) || a.City.toUpperCase().includes(code));
+        const targetIndex = airportDetails.findIndex(a => a.Airport_Code.includes(code) || (a.City || '').toUpperCase().includes(code));
         if (targetIndex !== -1) {
            const targetEl = sectionRefs.current[targetIndex + 1];
            if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth' });
@@ -235,11 +286,11 @@ export default function Airports() {
       )}
 
       {/* SEARCH BAR (Expandable Icon) */}
-      <div className="absolute top-28 right-8 z-40 flex justify-end">
-         <div className={`bg-white/80 backdrop-blur-2xl border border-white shadow-[0_10px_30px_rgba(0,79,48,0.12)] rounded-full flex items-center transition-all duration-500 overflow-hidden ${isSearchOpen ? 'w-80 px-4' : 'w-14 cursor-pointer hover:shadow-[0_15px_40px_rgba(0,79,48,0.2)] hover:scale-105'}`} onClick={!isSearchOpen ? toggleSearch : undefined}>
+      <div className="absolute top-20 sm:top-24 md:top-28 right-4 sm:right-6 md:right-8 z-40 flex justify-end">
+         <div className={`bg-white/80 backdrop-blur-2xl border border-white shadow-[0_10px_30px_rgba(0,79,48,0.12)] rounded-full flex items-center transition-all duration-500 overflow-hidden ${isSearchOpen ? 'w-64 sm:w-80 px-4' : 'w-12 h-12 sm:w-14 sm:h-14 cursor-pointer hover:shadow-[0_15px_40px_rgba(0,79,48,0.2)] hover:scale-105'}`} onClick={!isSearchOpen ? toggleSearch : undefined}>
             
-            <div className="h-14 w-14 flex items-center justify-center shrink-0 cursor-pointer" onClick={isSearchOpen ? toggleSearch : undefined}>
-              <span className="text-xl opacity-70">🔍</span>
+            <div className="h-12 w-12 sm:h-14 sm:w-14 flex items-center justify-center shrink-0 cursor-pointer" onClick={isSearchOpen ? toggleSearch : undefined}>
+              <span className="text-lg sm:text-xl opacity-70">🔍</span>
             </div>
             
             <input 
@@ -249,7 +300,7 @@ export default function Airports() {
               value={searchQuery}
               onChange={handleSearch}
               onBlur={() => setIsSearchOpen(false)}
-              className={`w-full bg-transparent border-none outline-none text-[#1C2B22] font-bold tracking-widest placeholder-gray-400 py-3 transition-opacity duration-300 ${isSearchOpen ? 'opacity-100 block' : 'opacity-0 hidden'}`}
+              className={`w-full bg-transparent border-none outline-none text-[#1C2B22] font-bold tracking-widest placeholder-gray-400 py-3 text-sm sm:text-base transition-opacity duration-300 ${isSearchOpen ? 'opacity-100 block' : 'opacity-0 hidden'}`}
             />
          </div>
       </div>
@@ -275,11 +326,11 @@ export default function Airports() {
         <section 
           data-index={0}
           ref={(el) => sectionRefs.current[0] = el}
-          className="h-screen w-full shrink-0 snap-start flex flex-col justify-end items-center px-8 pb-2 pointer-events-none"
+          className="h-screen w-full shrink-0 snap-start flex flex-col justify-end items-center px-4 sm:px-8 pb-4 sm:pb-2 pointer-events-none"
         >
            <div className={`transition-opacity duration-1000 delay-500 ${activeIndex === 0 ? 'opacity-100' : 'opacity-0'}`}>
               <div className="animate-bounce flex flex-col items-center">
-                <span className="text-sm font-bold tracking-[0.3em] text-[#004F30] mb-2 drop-shadow-sm">SCROLL TO EXPLORE NETWORK</span>
+                <span className="text-xs sm:text-sm font-bold tracking-[0.2em] sm:tracking-[0.3em] text-[#004F30] mb-2 drop-shadow-sm text-center">SCROLL TO EXPLORE NETWORK</span>
                 <span className="text-3xl text-[#A89411] drop-shadow-md">↓</span>
               </div>
            </div>
@@ -296,30 +347,43 @@ export default function Airports() {
                key={details.Airport_Code} 
                data-index={slideIndex}
                ref={(el) => sectionRefs.current[slideIndex] = el}
-               className="h-screen w-full shrink-0 snap-start flex flex-col justify-center px-8 md:px-16 lg:px-24"
+               className="min-h-screen w-full shrink-0 snap-start flex flex-col justify-center px-4 sm:px-6 md:px-16 lg:px-24 py-24 md:py-0"
              >
-                <div className={`w-full h-full max-h-[85vh] flex flex-col md:flex-row justify-between items-center py-20 transition-all duration-1000 delay-300 ${isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-24'}`}>
+                <div className={`w-full h-full md:max-h-[85vh] flex flex-col md:flex-row justify-between items-center gap-10 md:gap-0 py-6 md:py-20 transition-all duration-1000 delay-300 ${isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-24'}`}>
                   
                   {/* LEFT WING: Identity & Mission */}
-                  <div className="flex flex-col w-full md:w-[40%] xl:w-[35%] items-start text-left shrink-0">
-                     <h2 className="text-[12vw] md:text-[7rem] font-black tracking-tighter text-[#1C2B22] leading-none drop-shadow-[0_10px_30px_rgba(255,255,255,1)]">
-                       {details.Airport_Code}
+                  <div className="flex flex-col w-full md:w-[40%] xl:w-[35%] items-center md:items-start text-center md:text-left shrink-0">
+                     <h2 className="text-[20vw] sm:text-[16vw] md:text-[7rem] font-black tracking-tighter text-[#1C2B22] leading-none drop-shadow-[0_10px_30px_rgba(255,255,255,1)]">
+                       {field(details.Airport_Code)}
                      </h2>
-                     <h3 className="text-3xl md:text-4xl font-extrabold text-[#004F30] mt-1 drop-shadow-[0_5px_15px_rgba(255,255,255,0.8)]">
-                       {details.City}, {details.Country}
+                     {details.Airport_Name && (
+                       <p className="text-lg sm:text-xl font-bold text-[#1C2B22] mt-3 drop-shadow-[0_5px_15px_rgba(255,255,255,0.8)]">
+                         {details.Airport_Name}
+                       </p>
+                     )}
+                     <h3 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#004F30] mt-1 tracking-widest uppercase drop-shadow-[0_5px_15px_rgba(255,255,255,0.8)]">
+                       {[details.City, details.Country].filter(Boolean).join(', ') || 'Location unavailable'}
                      </h3>
                      
-                     <div className="mt-6 flex gap-3 flex-wrap">
-                        <span className={`px-5 py-2 rounded-full text-xs font-bold tracking-widest uppercase shadow-md backdrop-blur-md ${details.Operational_Status === 'Active' ? 'bg-[#004F30]/20 text-[#004F30] border border-[#004F30]/30' : 'bg-red-500/20 text-red-700'}`}>
-                          {details.Operational_Status}
+                     <div className="mt-6 flex gap-3 flex-wrap justify-center md:justify-start">
+                        <span className={`px-5 py-2 rounded-full text-xs font-bold tracking-widest uppercase shadow-md backdrop-blur-md ${
+                          details.Operational_Status === 'Active' 
+                            ? 'bg-[#004F30]/20 text-[#004F30] border border-[#004F30]/30' 
+                            : details.Operational_Status 
+                              ? 'bg-red-500/20 text-red-700 border border-red-500/30'
+                              : 'bg-gray-200/60 text-gray-500 border border-gray-300/50'
+                        }`}>
+                          {details.Operational_Status || 'STATUS UNKNOWN'}
                         </span>
-                        <span className="px-5 py-2 rounded-full text-xs font-bold tracking-widest uppercase shadow-md backdrop-blur-md bg-white/70 text-[#1C2B22] border border-white">
-                          {details.Terminal_Count} TERMINALS
-                        </span>
+                        {formatCompact(details.Annual_Passengers) && (
+                          <span className="px-5 py-2 rounded-full text-xs font-bold tracking-widest uppercase shadow-md backdrop-blur-md bg-white/70 text-[#1C2B22] border border-white">
+                            {formatCompact(details.Annual_Passengers)} PASSENGERS/YR
+                          </span>
+                        )}
                      </div>
 
-                     <p className="mt-8 text-lg font-semibold text-gray-700 leading-relaxed bg-white/60 backdrop-blur-3xl p-6 rounded-3xl border border-white shadow-[0_15px_40px_rgba(0,0,0,0.05)] w-full">
-                       {details.Description_Blog}
+                     <p className="mt-8 text-base sm:text-lg font-semibold text-gray-700 leading-relaxed bg-white/60 backdrop-blur-3xl p-6 rounded-3xl border border-white shadow-[0_15px_40px_rgba(0,0,0,0.05)] w-full">
+                       {details.Description_Blog || 'No description is available for this airport yet.'}
                      </p>
 
                      {/* Dynamic Connected Flights Panel - OUTBOUND ONLY */}
@@ -331,7 +395,7 @@ export default function Airports() {
                            <p className="text-xs text-[#A89411] font-black tracking-widest mb-3 group-hover:text-[#004F30] transition-colors">
                              CONNECTED ROUTES ({allConnectedRoutes.length}) <span className="opacity-0 group-hover:opacity-100 transition-opacity">→</span>
                            </p>
-                           <div className="flex flex-wrap gap-2 pointer-events-none">
+                           <div className="flex flex-wrap gap-2 pointer-events-none justify-center md:justify-start">
                              {allConnectedRoutes.slice(0, 8).map((r, idx) => {
                                const isSource = r.Source_Airport_Code === details.Airport_Code;
                                const linkedAir = isSource ? r.Destination_Airport_Code : r.Source_Airport_Code;
@@ -348,49 +412,50 @@ export default function Airports() {
                            </div>
                         </div>
                      )}
+                     {isActive && allConnectedRoutes.length === 0 && (
+                        <div className="mt-6 w-full bg-white/50 backdrop-blur-3xl p-5 rounded-3xl border border-white shadow-[0_15px_40px_rgba(0,0,0,0.05)]">
+                           <p className="text-xs text-gray-400 font-bold tracking-widest text-center md:text-left">NO CONNECTED ROUTES ON RECORD</p>
+                        </div>
+                     )}
                   </div>
 
                   {/* CENTER GAP FOR THE GLOBE */}
                   <div className="hidden md:block flex-grow"></div>
 
                   {/* RIGHT WING: Telemetry & Media */}
-                  <div className="flex flex-col w-full md:w-[35%] xl:w-[30%] max-w-sm items-end text-right shrink-0 gap-8 mt-10 md:mt-0 md:mr-8 lg:mr-16">
+                  <div className="flex flex-col w-full md:w-[35%] xl:w-[30%] max-w-sm mx-auto md:mx-0 items-center md:items-end text-center md:text-right shrink-0 gap-6 sm:gap-8 mt-2 md:mt-0 md:mr-8 lg:mr-16">
                      
                      {/* Media Stack (Clickable Lightbox) */}
                      <div className="flex flex-col gap-3 w-full">
-                       <img 
-                         src={`/airport_pics/${details.Airport_Code}_1.jpg`} 
-                         alt={`${details.City} Terminal 1`} 
-                         onClick={() => setZoomedImage(`/airport_pics/${details.Airport_Code}_1.jpg`)}
-                         className="w-full h-48 md:h-56 object-cover rounded-3xl shadow-[0_15px_40px_rgba(0,0,0,0.15)] border-[4px] border-white/80 cursor-pointer hover:scale-[1.02] transition-transform duration-300" 
-                         onError={(e) => e.target.style.display='none'} 
+                       <AirportImage
+                         src={`/airport_pics/${details.Airport_Code}_1.jpg`}
+                         alt={`${details.City || details.Airport_Code} Terminal 1`}
+                         onZoom={setZoomedImage}
                        />
-                       <img 
-                         src={`/airport_pics/${details.Airport_Code}_2.jpg`} 
-                         alt={`${details.City} Terminal 2`} 
-                         onClick={() => setZoomedImage(`/airport_pics/${details.Airport_Code}_2.jpg`)}
-                         className="w-full h-48 md:h-56 object-cover rounded-3xl shadow-[0_15px_40px_rgba(0,0,0,0.15)] border-[4px] border-white/80 cursor-pointer hover:scale-[1.02] transition-transform duration-300" 
-                         onError={(e) => e.target.style.display='none'} 
+                       <AirportImage
+                         src={`/airport_pics/${details.Airport_Code}_2.jpg`}
+                         alt={`${details.City || details.Airport_Code} Terminal 2`}
+                         onZoom={setZoomedImage}
                        />
                      </div>
                      
                      {/* Telemetry Stack */}
-                     <div className="w-full bg-white/70 backdrop-blur-3xl p-6 rounded-3xl border border-white shadow-[0_20px_50px_rgba(0,79,48,0.1)] flex flex-col gap-4">
-                        <div className="flex justify-between items-center border-b border-gray-200/50 pb-3">
-                          <p className="text-[10px] text-gray-500 font-black tracking-widest">ELEVATION</p>
-                          <p className="text-lg text-[#1C2B22] font-extrabold">{details.Elevation_Meters}</p>
+                     <div className="w-full bg-white/70 backdrop-blur-3xl p-5 sm:p-6 rounded-3xl border border-white shadow-[0_20px_50px_rgba(0,79,48,0.1)] grid grid-cols-2 gap-x-4 gap-y-5">
+                        <div>
+                          <p className="text-[10px] text-gray-500 font-black tracking-widest mb-1">ANNUAL PASSENGERS</p>
+                          <p className="text-base sm:text-lg text-[#1C2B22] font-extrabold">{field(details.Annual_Passengers)}</p>
                         </div>
-                        <div className="flex justify-between items-center border-b border-gray-200/50 pb-3">
-                          <p className="text-[10px] text-gray-500 font-black tracking-widest">RUNWAYS</p>
-                          <p className="text-lg text-[#1C2B22] font-extrabold">{details.Number_Of_Runways} <span className="text-[#004F30] text-xs font-bold">({details.Primary_Runway_Length})</span></p>
+                        <div>
+                          <p className="text-[10px] text-gray-500 font-black tracking-widest mb-1">STATUS</p>
+                          <p className="text-base sm:text-lg text-[#1C2B22] font-extrabold">{field(details.Operational_Status)}</p>
                         </div>
-                        <div className="flex justify-between items-center border-b border-gray-200/50 pb-3">
-                          <p className="text-[10px] text-gray-500 font-black tracking-widest">TIMEZONE</p>
-                          <p className="text-lg text-[#1C2B22] font-extrabold">{details.Timezone_Offset}</p>
+                        <div>
+                          <p className="text-[10px] text-gray-500 font-black tracking-widest mb-1">CITY / COUNTRY</p>
+                          <p className="text-base sm:text-lg text-[#1C2B22] font-extrabold truncate">{field([details.City, details.Country].filter(Boolean).join(', ') || null)}</p>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <p className="text-[10px] text-gray-500 font-black tracking-widest">LAT / LNG</p>
-                          <p className="text-lg text-[#A89411] font-extrabold">{details.Latitude.toFixed(2)}, {details.Longitude.toFixed(2)}</p>
+                        <div>
+                          <p className="text-[10px] text-gray-500 font-black tracking-widest mb-1">LAT / LNG</p>
+                          <p className="text-sm sm:text-base text-[#A89411] font-extrabold">{Number(details.Latitude || 0).toFixed(2)}, {Number(details.Longitude || 0).toFixed(2)}</p>
                         </div>
                      </div>
 
