@@ -363,26 +363,26 @@ export default function LiveOperations() {
           {/* Top Row: Active In-Air & Map */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[500px]">
             {/* Active In-Air */}
-            <div className="lg:col-span-4 xl:col-span-3 flex flex-col h-[500px]">
+            <div className="lg:col-span-4 xl:col-span-3 flex flex-col h-[500px] min-h-0">
               <GlassCard title="Active In-Air" isLoading={loadingActive} onRefresh={fetchActiveData} onClick={() => setExpandedCategory('Active')}>
                 {renderActiveFlights()}
               </GlassCard>
             </div>
 
             {/* Aviation Map */}
-            <div className="lg:col-span-8 xl:col-span-9 h-[500px]">
+            <div className="lg:col-span-8 xl:col-span-9 h-[500px] min-h-0">
               <AviationMap selectedFlightId={selectedFlightId} onSelectFlight={setSelectedFlightId} />
             </div>
           </div>
 
           {/* Bottom Row: Boarding & Delayed */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[250px]">
-            <div className="h-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[350px] mb-12">
+            <div className="h-full min-h-0">
               <GlassCard title="Boarding" isLoading={loadingBoarding} onClick={() => setExpandedCategory('Boarding')}>
                 {renderOnBoarding()}
               </GlassCard>
             </div>
-            <div className="h-full">
+            <div className="h-full min-h-0">
               <GlassCard title="Delayed Warnings" isLoading={loadingDelayed} onClick={() => setExpandedCategory('Delayed')}>
                 {renderDelayedFlights()}
               </GlassCard>
