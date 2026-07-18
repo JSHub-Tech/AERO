@@ -208,7 +208,8 @@ export default function LiveOperations() {
     const interval = setInterval(fetchActiveData, 15000);
 
     // 2. WebSocket for real-time Boarding and Delayed updates
-    const ws = new WebSocket('ws://localhost:8000/ws/operations');
+    const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000';
+    const ws = new WebSocket(`${WS_URL}/ws/operations`);
 
     ws.onmessage = (event) => {
       try {
