@@ -24,6 +24,7 @@ from app.api.routes import (
 )
 from app.api.routes.operations import watch_operations
 from app.api.routes.telemetry import watch_telemetry
+from scripts.flight_simulator import run_simulator_loop
 
 
 @asynccontextmanager
@@ -35,12 +36,16 @@ async def lifespan(app: FastAPI):
     # Background broadcasters backing the two ws/* channels
     telemetry_task = asyncio.create_task(watch_telemetry())
     operations_task = asyncio.create_task(watch_operations())
+    
+    # Run the flight simulator in the background so it works automatically on Render
+    simulator_task = asyncio.create_task(run_simulator_loop(skip_db_init=True))
 
     yield
 
     # Shutdown: close everything cleanly
     telemetry_task.cancel()
     operations_task.cancel()
+    simulator_task.cancel()
     await close_mongo()
     await close_neo4j()
     await dispose_engine()
