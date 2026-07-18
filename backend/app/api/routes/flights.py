@@ -1,7 +1,7 @@
 """Flight schedule, search, and seat-availability endpoints (api.md 1.4 / 1.5 / 1.8)."""
 import uuid
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
@@ -9,9 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.postgres import get_db
 from app.db.redis_client import get_redis
+from app.api.dependencies import require_admin
 from app.models.mongo_models import LiveFlight
-from app.models.schemas import FlightScheduleOut, FlightSearchResult, LiveFlightMapOut, SeatsAvailabilityOut
-from app.models.sql_models import Aircraft, Flight, Seat
+from app.models.schemas import FlightScheduleOut, FlightSearchResult, LiveFlightMapOut, SeatsAvailabilityOut, FlightDelayRequest
+from app.models.sql_models import Aircraft, Flight, Seat, User
 from app.repositories.routing_repository import cheapest_path, fastest_path
 
 router = APIRouter()
@@ -217,3 +218,44 @@ async def get_flight_seats(flight_id: str, db: AsyncSession = Depends(get_db)):
         pass
 
     return SeatsAvailabilityOut(booked_seats=booked_seats)
+
+@router.post("/{flight_id}/delay")
+async def delay_flight(
+    flight_id: str,
+    payload: FlightDelayRequest,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    """Delay a flight by a given number of minutes. Requires admin privileges."""
+    try:
+        parsed_id = uuid.UUID(flight_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="flight_id must be a valid flight UUID.")
+        
+    result = await db.execute(select(Flight).where(Flight.flight_id == parsed_id))
+    flight = result.scalar_one_or_none()
+    
+    if not flight:
+        raise HTTPException(status_code=404, detail="Flight not found.")
+        
+    if flight.status in ["completed", "cancelled"]:
+        raise HTTPException(status_code=400, detail=f"Cannot delay a flight that is {flight.status}.")
+        
+    flight.status = "delayed"
+    flight.delay_reason = payload.delay_reason
+    
+    base_departure = flight.estimated_departure or flight.scheduled_departure
+    base_arrival = flight.estimated_arrival or flight.scheduled_arrival
+    
+    flight.estimated_departure = base_departure + timedelta(minutes=payload.delay_minutes)
+    flight.estimated_arrival = base_arrival + timedelta(minutes=payload.delay_minutes)
+    
+    await db.commit()
+    
+    return {
+        "message": "Flight delayed successfully", 
+        "status": flight.status, 
+        "delay_minutes": payload.delay_minutes,
+        "estimated_departure": flight.estimated_departure.isoformat(),
+        "estimated_arrival": flight.estimated_arrival.isoformat()
+    }

@@ -21,6 +21,7 @@ from app.api.routes import (
     operations,
     routing,
     telemetry,
+    auth,
 )
 from app.api.routes.operations import watch_operations
 from app.api.routes.telemetry import watch_telemetry
@@ -73,6 +74,7 @@ app.include_router(fleet.router, prefix="/api/v1/fleets", tags=["fleet"])
 app.include_router(bookings.router, prefix="/api/v1/flights", tags=["booking"])
 # Not in api.md — LiveOperations.jsx already polls these three routes; required by the UI design.
 app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["dashboard"])
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 
 # --- Supporting APIs not in api.md, kept for the natural-language chat feature ---
 app.include_router(routing.router, prefix="/api/v1/routing", tags=["routing"])

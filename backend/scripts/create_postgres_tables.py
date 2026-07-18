@@ -32,7 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.postgres import engine, Base, AsyncSessionLocal
 from app.models import sql_models  # registers all ORM classes on Base.metadata
-from app.models.sql_models import Airport, Aircraft, Flight, Seat
+from app.models.sql_models import Airport, Aircraft, Flight, Seat, User
 
 # ── Paths ────────────────────────────────────────────────────────────────────
 SCRIPTS_DIR  = Path(__file__).resolve().parent
@@ -172,6 +172,24 @@ async def drop_and_create_schema() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+
+
+# ── Stage 0.5 – Users ────────────────────────────────────────────────────────
+
+async def seed_users(session: AsyncSession) -> None:
+    admin = User(
+        user_id=uuid.uuid4(),
+        email="admin@aero.com",
+        password_hash="dummy_hash_admin",
+        role="admin"
+    )
+    passenger = User(
+        user_id=uuid.uuid4(),
+        email="passenger@aero.com",
+        password_hash="dummy_hash_passenger",
+        role="user"
+    )
+    session.add_all([admin, passenger])
 
 
 # ── Stage 1 – Airports ───────────────────────────────────────────────────────
@@ -336,6 +354,7 @@ async def main() -> None:
 
     async with AsyncSessionLocal() as session:
         async with session.begin():
+            await seed_users(session)
             await seed_airports(session)
             aircraft_map = await seed_aircraft(session)
             await seed_flights_and_seats(session, aircraft_map)
