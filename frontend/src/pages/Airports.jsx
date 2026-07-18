@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import GlobeViewer from '../components/GlobeViewer';
 import Footer from '../components/Footer';
 import { getAirports, getRoutes, getAirportDetails } from '../services/api';
@@ -21,6 +21,8 @@ function AirportImage({ src, alt, onZoom }) {
     <img
       src={src}
       alt={alt}
+      loading="lazy"
+      decoding="async"
       onClick={() => onZoom(src)}
       onError={() => setHasError(true)}
       className="w-full h-40 sm:h-48 md:h-56 object-cover rounded-3xl shadow-[0_15px_40px_rgba(0,0,0,0.15)] border-[4px] border-white/80 cursor-pointer hover:scale-[1.02] transition-transform duration-300"
@@ -213,6 +215,16 @@ export default function Airports() {
      return found ? found.City : code;
   };
 
+  // IMPORTANT: this must stay memoized. `activeIndex` (and therefore this
+  // component) re-renders on every scroll tick via the IntersectionObserver
+  // above. Without useMemo, `routes.map(...)` below would create a brand
+  // new array *reference* on every single one of those re-renders even
+  // though the underlying route data never changed — and GlobeViewer/
+  // react-globe.gl rebuilds all flight-arc 3D geometry from scratch
+  // whenever its `arcsData` reference changes. That was making every
+  // scroll on this page redo expensive WebGL work for no reason.
+  const arcPoints = useMemo(() => routes.map(r => r.points), [routes]);
+
   return (
     <div className="w-full h-screen bg-[#F8F9FA] relative flex flex-col">
       
@@ -309,7 +321,7 @@ export default function Airports() {
       <div className="absolute inset-0 w-full h-full z-0 pointer-events-none translate-x-0">
         <GlobeViewer 
           airports={airports}
-          routes={routes.map(r => r.points)} 
+          routes={arcPoints} 
           flights={[]}
           selectedAirportCode={activeAirportCode}
         />

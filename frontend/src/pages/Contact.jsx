@@ -6,7 +6,7 @@ export default function Contact({ isSection = false }) {
   const navigate = useNavigate();
 
   return (
-    <div id="contact" className={`w-full flex flex-col bg-[#F8F9FA] relative overflow-hidden ${isSection ? 'min-h-screen md:h-screen justify-center py-16 md:py-0' : 'min-h-screen pt-[80px]'}`}>
+    <div id="contact" className={`w-full flex flex-col bg-[#F8F9FA] relative overflow-hidden ${isSection ? 'min-h-screen justify-center py-16 sm:py-20 lg:py-24' : 'min-h-screen pt-[80px]'}`}>
       
       {/* Abstract Grid Background */}
       <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">

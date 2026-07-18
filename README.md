@@ -8,6 +8,7 @@
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
+[![Tailwind](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![Neo4j](https://img.shields.io/badge/Neo4j-Aura-008CC1?style=flat-square&logo=neo4j&logoColor=white)](https://neo4j.com/cloud/aura/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white)](https://www.mongodb.com/atlas)
@@ -33,6 +34,8 @@ AERO simultaneously:
 - 📄 **Retrieves baggage & transit policies** via RAG over a curated knowledge base
 - 🛫 **Streams live aircraft positions** from MongoDB telemetry updated by the flight simulator
 
+The full experience — the natural language chat agent, the 3D global route map, the live operations dashboard, and the airport/fleet explorers — is built as a single responsive web app that works the same on a phone, a tablet, and a desktop.
+
 ---
 
 ## 🏗️ Architecture
@@ -40,11 +43,11 @@ AERO simultaneously:
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        React Frontend                           │
-│           Natural Language Chat  •  Live Flight Map             │
+│   Natural Language Chat • 3D Globe • Live Flight Map • Fleet    │
 └──────────────────────┬──────────────────────────────────────────┘
                        │  HTTP / WebSocket
 ┌──────────────────────▼──────────────────────────────────────────┐
-│                   FastAPI Backend (async)                       │
+│                   FastAPI Backend (async, gzip)                 │
 │                                                                 │
 │  ┌─────────────┐  ┌──────────────┐  ┌─────────────────────┐     │
 │  │  Chat Route │  │ Routing Repo │  │  Live Flights Route │     │
@@ -70,7 +73,7 @@ AERO simultaneously:
 | **Neo4j** | Aura | Airport network topology, multi-hop route discovery, chronological layover validation |
 | **PostgreSQL** | Supabase | Flights, seats, bookings, passengers — ACID transactional ground truth |
 | **MongoDB** | Atlas | Real-time aircraft telemetry (position, status) — updated by the flight simulator |
-| **Redis** | Upstash | Distributed seat locks (prevents double-booking), routing result cache |
+| **Redis** | Upstash | Distributed seat locks (prevents double-booking), routing/flight-search cache, airport & network-route response cache |
 
 ---
 
@@ -99,6 +102,13 @@ scheduled → boarding → final_call → airborne → completed
 
 While airborne, it interpolates aircraft position between airports and streams updates to the frontend map via MongoDB Change Streams + WebSocket.
 
+### 📱 Fully Responsive, Production-Grade UI
+Every screen — hero globe, airport explorer, live operations dashboard, fleet showroom, chat, booking, about, and contact — is built mobile-first with Tailwind CSS v4 and verified across phone, tablet, and desktop breakpoints:
+- Collapsible mobile navigation with a full-screen drawer menu
+- Fluid, `clamp()`-based typography that scales continuously with viewport width instead of jumping between fixed sizes, so headlines never overflow or clip at in-between window sizes
+- Content-driven section heights (`min-h-screen`) instead of rigid, clipping-prone fixed viewport heights
+- Touch-friendly tap targets, responsive image grids, and a chat widget/panel that adapts to any screen size
+
 ---
 
 ## 📁 Project Structure
@@ -112,6 +122,12 @@ AERO/
 │   │   │   ├── flights.py           # Flight search & detail endpoints
 │   │   │   ├── routing.py           # Multi-hop route resolver
 │   │   │   ├── bookings.py          # Booking & seat management
+│   │   │   ├── dashboard.py         # Aggregated dashboard/stats endpoint
+│   │   │   ├── operations.py        # Live operations data
+│   │   │   ├── telemetry.py         # Aircraft telemetry endpoints
+│   │   │   ├── network.py           # Distinct network connections (Redis-cached)
+│   │   │   ├── fleet.py             # Fleet endpoint
+│   │   │   ├── airports.py          # Airport listing/detail endpoints (Redis-cached)
 │   │   │   └── live_flights.py      # WebSocket live telemetry
 │   │   ├── db/
 │   │   │   ├── postgres.py          # SQLAlchemy async engine (Supabase)
@@ -127,7 +143,7 @@ AERO/
 │   │   ├── knowledge_base/
 │   │   │   └── baggage_policy.md    # RAG source document
 │   │   ├── config.py                # Pydantic settings (reads .env)
-│   │   └── main.py                  # FastAPI app + lifespan
+│   │   └── main.py                  # FastAPI app + lifespan + GZip compression
 │   ├── scripts/
 │   │   ├── create_postgres_tables.py  # Drop + create + seed Postgres
 │   │   ├── create_neo4j_constraints.py # Wipe + recreate + seed Neo4j
@@ -146,8 +162,32 @@ AERO/
     │   ├── fleet.csv                # 65 aircraft (B777, A320, ATR)
     │   ├── flight_schedule.csv      # 80 scheduled routes
     │   ├── routes.csv               # 700 O&D pairs with distance + duration
-    │   └── Team/                    # Airport imagery assets
-    └── src/                         # React application
+    │   ├── airport_pics/            # Airport terminal imagery
+    │   └── Team/                    # Team/asset imagery
+    └── src/
+        ├── pages/
+        │   ├── Home.jsx             # 3D globe hero + snap-scroll landing sections
+        │   ├── Airports.jsx         # Interactive globe airport explorer
+        │   ├── Fleet.jsx            # 3D fleet showroom
+        │   ├── LiveOperations.jsx   # Live flight tracking dashboard
+        │   ├── Booking.jsx          # Flight search & booking flow
+        │   ├── BookingDemo.jsx      # Booking demo/preview
+        │   ├── Chat.jsx             # Full-page AERO AI chat
+        │   ├── About.jsx            # Platform/tech-stack overview
+        │   └── Contact.jsx          # Contact form
+        ├── components/
+        │   ├── Header.jsx           # Responsive nav with mobile drawer menu
+        │   ├── Footer.jsx           # Site footer
+        │   ├── Layout.jsx           # Page shell (header + content + chat widget)
+        │   ├── ChatWidget.jsx       # Floating AERO AI chat widget
+        │   ├── GlobeViewer.jsx      # Three.js 3D globe renderer
+        │   ├── AviationMap.jsx      # Leaflet live-flight map
+        │   └── home/
+        │       ├── FleetTeaser.jsx     # Home page fleet preview section
+        │       ├── LiveOpsTeaser.jsx   # Home page live-ops preview section
+        │       └── NetworkTeaser.jsx   # Home page network/airports preview section
+        └── services/
+            └── api.js               # API client (airports, routes, flights, bookings, chat)
 ```
 
 ---
@@ -199,6 +239,8 @@ npm install
 npm run dev
 ```
 
+Frontend available at `http://localhost:5173` (or the port Vite reports). Fully usable on desktop and mobile viewport sizes — resize the browser or open dev tools' device toolbar to check any breakpoint.
+
 ---
 
 ## 🔧 Environment Variables
@@ -246,19 +288,29 @@ The system is seeded from five CSV files covering Pakistan International Airline
 
 ---
 
+## 🚀 Performance Notes
+
+- **Backend:** fully async end-to-end (asyncpg, Motor, async Neo4j driver), with `GZipMiddleware` compressing any JSON response over 1KB — meaningful for the airports/routes/flights list endpoints.
+- **Redis-cached endpoints:** `/airports`, `/airports/details`, and `/network` (distinct airport-to-airport connections powering the globe arcs and 2D map lines) are cached in Upstash Redis with a 1-hour TTL. This data only changes when the schedule is reseeded, so after the first request each call is served straight from Redis instead of re-scanning Postgres or re-running the full `MATCH (a)-[:FLIGHT]->(b)` Neo4j query — the Home and Airports pages both hit these endpoints on every load, so this removes several redundant round trips per page view. `/flights/search` uses the same short-TTL caching pattern.
+- **Frontend:** routes are code-split with `React.lazy`/`Suspense`, so visiting one page doesn't pull in the JS for every other page. The 3D globe and map libraries are only initialized when their section actually scrolls into view.
+- **Suggested next steps:** combine the Home/Airports page's parallel `getAirports`/`getRoutes`/`getFlights` calls into a single bootstrap endpoint; add database indexes on `Flight.status`/`departure_airport`/`arrival_airport`.
+
+---
+
 ## 🛠️ Tech Stack
 
 | Layer | Technology |
 |---|---|
 | **LLM** | Google Gemini 2.5 Flash |
 | **Embeddings** | Gemini Embedding 001 |
-| **Backend** | FastAPI (fully async) |
+| **Backend** | FastAPI (fully async, GZip compression) |
 | **Graph DB** | Neo4j Aura |
 | **Relational DB** | PostgreSQL via Supabase |
 | **Document DB** | MongoDB Atlas via Motor + Beanie |
 | **Cache / Locks** | Redis via Upstash |
 | **ORM** | SQLAlchemy 2.0 (async) |
-| **Frontend** | React 18 + Tailwind CSS |
+| **Frontend** | React 18 + Tailwind CSS v4 (mobile-first, responsive) |
+| **3D / Maps** | Three.js (globe & fleet showroom), Leaflet (live flight map) |
 | **Real-time** | WebSocket + MongoDB Change Streams |
 
 ---
