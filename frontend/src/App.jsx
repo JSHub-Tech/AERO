@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import React, { Suspense, lazy } from 'react';
 import { ChatProvider } from './context/ChatContext';
+import { AuthProvider } from './context/AuthContext';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import About from './pages/About';
@@ -12,6 +13,7 @@ const Airports = lazy(() => import('./pages/Airports'));
 const LiveOperations = lazy(() => import('./pages/LiveOperations'));
 const Fleet = lazy(() => import('./pages/Fleet'));
 const Booking = lazy(() => import('./pages/Booking'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
 // Sleek loading screen for Suspense fallback
 const PageLoader = () => (
@@ -24,24 +26,27 @@ const PageLoader = () => (
 
 function App() {
   return (
-    <ChatProvider>
-      <Router>
-        <Layout>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/airports" element={<Airports />} />
-              <Route path="/live-ops" element={<LiveOperations />} />
-              <Route path="/booking" element={<Booking />} />
-              <Route path="/fleet" element={<Fleet />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/chat" element={<Chat />} />
-            </Routes>
-          </Suspense>
-        </Layout>
-      </Router>
-    </ChatProvider>
+    <AuthProvider>
+      <ChatProvider>
+        <Router>
+          <Layout>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/airports" element={<Airports />} />
+                <Route path="/live-ops" element={<LiveOperations />} />
+                <Route path="/booking" element={<Booking />} />
+                <Route path="/fleet" element={<Fleet />} />
+                <Route path="/command-center" element={<AdminDashboard />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/chat" element={<Chat />} />
+              </Routes>
+            </Suspense>
+          </Layout>
+        </Router>
+      </ChatProvider>
+    </AuthProvider>
   );
 }
 

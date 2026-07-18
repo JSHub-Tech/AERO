@@ -50,12 +50,6 @@ const ExpandedTableModal = ({ category, flights, airports, onClose }) => {
 
   if (!category) return null;
 
-  const getCity = (code) => {
-    if (!airports) return code;
-    const a = airports.find(x => x.Airport_Code === code);
-    return a ? `${code} (${a.City})` : code;
-  };
-
   const getActiveStatus = (targetTimeIso) => {
     if (!targetTimeIso) return 'IN-TRANSIT';
     const target = new Date(targetTimeIso).getTime();
@@ -138,6 +132,12 @@ export default function LiveOperations() {
   // Background globe state
   const [airports, setAirports] = useState([]);
   const [routes, setRoutes] = useState([]);
+
+  const getCity = (code) => {
+    if (!airports) return code;
+    const a = airports.find(x => x.Airport_Code === code);
+    return a ? `${code} (${a.City})` : code;
+  };
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -274,26 +274,26 @@ export default function LiveOperations() {
 
   const renderOnBoarding = () => (
     <table className="w-full text-left text-sm">
-      <thead className="text-[10px] uppercase font-bold tracking-widest text-gray-400 border-b border-gray-100">
+      <thead className="text-[11px] uppercase font-bold tracking-widest text-gray-400 border-b-2 border-gray-100 sticky top-0 bg-white/50 backdrop-blur-sm z-10">
         <tr>
-          <th className="pb-3">Route</th>
-          <th className="pb-3">Flight</th>
+          <th className="pb-3 pl-4">Flight No</th>
+          <th className="pb-3">Origin</th>
+          <th className="pb-3">Destination</th>
           <th className="pb-3">Status</th>
-          <th className="pb-3 text-right">Take-Off Time</th>
+          <th className="pb-3 text-right pr-4">Take-Off Time</th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-gray-100/50">
+      <tbody className="divide-y divide-gray-50">
         {onBoardingFlights.length === 0 && !loadingBoarding ? (
-           <tr><td colSpan="4" className="py-6 text-center text-xs font-bold text-gray-400">NO FLIGHTS BOARDING</td></tr>
+           <tr><td colSpan="5" className="py-12 text-center text-sm font-bold text-gray-400">NO FLIGHTS BOARDING</td></tr>
         ) : (
            onBoardingFlights.map((f, i) => (
-             <tr key={i} className="group transition-colors">
-               <td className="py-3 font-bold text-[#1C2B22] text-xs">
-                 {f.source} <span className="text-gray-400">→</span> {f.dest}
-               </td>
-               <td className="py-3 font-black text-[#1C2B22]">{f.flightNum}</td>
-               <td className="py-3 font-bold text-[#004F30] text-xs">BOARDING</td>
-               <td className="py-3 text-right font-bold text-gray-500 text-xs">{f.targetTime ? new Date(f.targetTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</td>
+             <tr key={i} className="hover:bg-gray-50 transition-colors group">
+               <td className="py-4 pl-4 font-black text-[#004F30]">{f.flightNum}</td>
+               <td className="py-4 font-bold text-[#1C2B22] text-xs">{getCity(f.source)}</td>
+               <td className="py-4 font-bold text-[#1C2B22] text-xs">{getCity(f.dest)}</td>
+               <td className="py-4 font-black text-[#A89411] text-xs">BOARDING</td>
+               <td className="py-4 text-right pr-4 font-bold text-gray-500 text-xs">{f.targetTime ? new Date(f.targetTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</td>
              </tr>
            ))
         )}
@@ -303,24 +303,24 @@ export default function LiveOperations() {
 
   const renderDelayedFlights = () => (
     <table className="w-full text-left text-sm">
-      <thead className="text-[10px] uppercase font-bold tracking-widest text-gray-400 border-b border-gray-100">
+      <thead className="text-[11px] uppercase font-bold tracking-widest text-gray-400 border-b-2 border-gray-100 sticky top-0 bg-white/50 backdrop-blur-sm z-10">
         <tr>
-          <th className="pb-3">Route</th>
-          <th className="pb-3">Flight</th>
-          <th className="pb-3 text-right">Delay</th>
+          <th className="pb-3 pl-4">Flight No</th>
+          <th className="pb-3">Origin</th>
+          <th className="pb-3">Destination</th>
+          <th className="pb-3 text-right pr-4">Delay</th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-gray-100/50">
+      <tbody className="divide-y divide-gray-50">
         {delayedFlights.length === 0 && !loadingDelayed ? (
-           <tr><td colSpan="3" className="py-6 text-center text-xs font-bold text-gray-400">ALL OPERATIONS NOMINAL</td></tr>
+           <tr><td colSpan="4" className="py-12 text-center text-sm font-bold text-gray-400">ALL OPERATIONS NOMINAL</td></tr>
         ) : (
            delayedFlights.map((f, i) => (
-             <tr key={i} className="group transition-colors">
-               <td className="py-3 font-bold text-[#1C2B22] text-xs">
-                 {f.source} <span className="text-red-400">→</span> {f.dest}
-               </td>
-               <td className="py-3 font-black text-red-600">{f.flightNum}</td>
-               <td className="py-3 text-right font-black text-red-500 text-xs">{f.delayTime}</td>
+             <tr key={i} className="hover:bg-gray-50 transition-colors group">
+               <td className="py-4 pl-4 font-black text-red-600">{f.flightNum}</td>
+               <td className="py-4 font-bold text-[#1C2B22] text-xs">{getCity(f.source)}</td>
+               <td className="py-4 font-bold text-[#1C2B22] text-xs">{getCity(f.dest)}</td>
+               <td className="py-4 text-right pr-4 font-black text-red-500 text-xs uppercase">{f.delayTime}</td>
              </tr>
            ))
         )}

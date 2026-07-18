@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getAirports, getFleets, searchFlights, bookFlight, getFlightSeats } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import Footer from '../components/Footer';
-import { Plane, Calendar, Users, ArrowRight, CheckCircle2, ChevronRight, ShieldCheck, ArrowLeft, AlertTriangle, FileText, Download, X, QrCode } from 'lucide-react';
+import { Plane, Calendar, Users, ArrowRight, CheckCircle2, ChevronRight, ShieldCheck, ArrowLeft, AlertTriangle, FileText, Download, X, QrCode, Mail, Lock } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -19,6 +20,11 @@ L.Icon.Default.mergeOptions({
 });
 
 export default function Booking() {
+  const { user, login } = useAuth();
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [authMode, setAuthMode] = useState('login'); // login or register
+  
   const [step, setStep] = useState(1);
   const [airports, setAirports] = useState([]);
   const [fleets, setFleets] = useState([]);
@@ -248,13 +254,6 @@ export default function Booking() {
   .row { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px dashed #E5E7EB; font-size:14px; }
   .row span:first-child { color:#6B7280; font-weight:bold; }
   .row span:last-child { font-weight:bold; text-align:right; }
-  .qr { text-align:center; margin:28px 0; padding:20px; background:#F8F9FA; border-radius:16px; border:1px solid #E5E7EB; }
-  .qr img { border-radius:8px; }
-  .qr p { font-size:11px; color:#6B7280; text-transform:uppercase; letter-spacing:1px; margin-top:12px; font-weight:bold; }
-  .pnr { text-align:center; margin:24px 0; }
-  .pnr .code { font-size:28px; font-weight:bold; letter-spacing:2px; font-family:monospace; color:#1C2B22; }
-  .pnr .label { font-size:11px; color:#6B7280; text-transform:uppercase; letter-spacing:2px; }
-  .total { background:#F8F9FA; border-radius:16px; padding:16px 20px; margin-top:20px; display:flex; justify-content:space-between; align-items:center; }
   .total span:first-child { font-size:12px; text-transform:uppercase; letter-spacing:1px; color:#6B7280; font-weight:bold; }
   .total span:last-child { font-size:24px; font-weight:bold; }
   .footer { padding:20px 36px; font-size:11px; color:#9CA3AF; text-align:center; border-top:1px solid #F0F0F0; }
@@ -293,6 +292,84 @@ export default function Booking() {
 </body>
 </html>`;
   };
+
+  const handleLoginSubmit = (e) => {
+    e.preventDefault();
+    if (loginEmail && loginPassword) {
+      login(loginEmail, loginPassword);
+    }
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-[calc(100vh-80px)] mt-[80px] bg-[#F8F9FA] relative flex flex-col justify-center items-center py-12 px-6">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(0,79,48,0.05)_0%,_transparent_50%)] z-0"></div>
+        
+        <div className="z-10 max-w-md w-full bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+          <div className="bg-[#1C2B22] p-8 text-white text-center relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10"></div>
+            <Plane size={36} className="mx-auto mb-4 text-[#A89411]" />
+            <h1 className="text-2xl font-black tracking-tighter mb-1">AERO MEMBER LOGIN</h1>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Access global reservations</p>
+          </div>
+          
+          <div className="p-8">
+            <div className="flex border-b border-gray-100 mb-8">
+              <button 
+                onClick={() => setAuthMode('login')}
+                className={`flex-1 pb-4 text-xs font-black tracking-widest uppercase transition-colors ${authMode === 'login' ? 'text-[#004F30] border-b-2 border-[#004F30]' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                Sign In
+              </button>
+              <button 
+                onClick={() => setAuthMode('register')}
+                className={`flex-1 pb-4 text-xs font-black tracking-widest uppercase transition-colors ${authMode === 'register' ? 'text-[#004F30] border-b-2 border-[#004F30]' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                Create Account
+              </button>
+            </div>
+            
+            <form onSubmit={handleLoginSubmit} className="flex flex-col gap-5">
+              <div>
+                <label className="block text-[10px] font-black tracking-widest text-gray-400 uppercase mb-2">Email Address</label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input 
+                    type="email" 
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    placeholder="user@aero.com"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-12 pr-4 py-3 text-sm font-bold text-[#1C2B22] outline-none focus:border-[#004F30] focus:ring-1 focus:ring-[#004F30] transition-all"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-[10px] font-black tracking-widest text-gray-400 uppercase mb-2">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input 
+                    type="password" 
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-12 pr-4 py-3 text-sm font-bold text-[#1C2B22] outline-none focus:border-[#004F30] focus:ring-1 focus:ring-[#004F30] transition-all"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <button type="submit" className="mt-4 w-full bg-[#004F30] hover:bg-[#1C2B22] text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-[#004F30]/20 text-xs uppercase tracking-widest flex items-center justify-center gap-2 group">
+                {authMode === 'login' ? 'Authenticate' : 'Register Account'}
+                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleDownloadReceipt = () => {
     const blob = new Blob([buildReceiptHtml()], { type: 'text/html' });
