@@ -15,8 +15,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.postgres import get_db
 from app.db.redis_client import acquire_lock, release_lock
-from app.models.schemas import BookFlightRequest, BookFlightResponse
-from app.models.sql_models import Booking, Flight, Seat
+from app.api.dependencies import get_current_user
+from app.models.schemas import BookFlightRequest, BookFlightResponse, BookingOut
+from app.models.sql_models import Booking, Flight, Seat, User
 
 router = APIRouter()
 
@@ -27,7 +28,11 @@ def _generate_pnr() -> str:
 
 
 @router.post("/book", response_model=BookFlightResponse)
-async def book_flight(payload: BookFlightRequest, db: AsyncSession = Depends(get_db)):
+async def book_flight(
+    payload: BookFlightRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Submits the final passenger booking and locks in the selected seats.
 
     `flightId` is the Postgres Flight.flight_id UUID — the same identifier the
@@ -48,7 +53,7 @@ async def book_flight(payload: BookFlightRequest, db: AsyncSession = Depends(get
     if len(flights) != len(parsed_flight_ids):
         raise HTTPException(status_code=404, detail="One or more flights not found.")
 
-    lock_owner = payload.customerDetails.email if payload.customerDetails else f"guest:{payload.flightId}"
+    lock_owner = f"user:{current_user.user_id}"
     
     lock_keys = []
     for flight in flights:
@@ -92,6 +97,7 @@ async def book_flight(payload: BookFlightRequest, db: AsyncSession = Depends(get
                 db.add(
                     Booking(
                         booking_reference=pnr,
+                        user_id=current_user.user_id,
                         flight_id=flight.flight_id,
                         seat_id=seat.seat_id,
                         passenger_name=passenger_name,
@@ -115,3 +121,16 @@ async def book_flight(payload: BookFlightRequest, db: AsyncSession = Depends(get
         # Always release whatever locks this request acquired, success or failure.
         for key in acquired_keys:
             await release_lock(key)
+
+@router.get("", response_model=list[BookingOut])
+async def get_bookings(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Retrieve bookings based on role. Admins see all, users see their own."""
+    query = select(Booking)
+    if current_user.role != "admin":
+        query = query.where(Booking.user_id == current_user.user_id)
+        
+    result = await db.execute(query)
+    return result.scalars().all()

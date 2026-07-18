@@ -50,6 +50,11 @@ class FlightScheduleOut(BaseModel):
     arrival_time_of_day: str    # "HH:MM"
 
 
+class FlightDelayRequest(BaseModel):
+    delay_minutes: int
+    delay_reason: str | None = None
+
+
 # ---------- Flight search (api.md 1.5) ----------
 class FlightSearchResult(BaseModel):
     """GET /api/v1/flights/search — Booking Portal results.
@@ -230,8 +235,28 @@ class SeatOut(BaseModel):
     is_booked: bool
 
 
+# ---------- User ----------
+class UserCreate(BaseModel):
+    email: EmailStr
+    password_hash: str
+    role: str = "user"
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class UserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    user_id: uuid.UUID
+    email: EmailStr
+    role: str
+    created_at: datetime
+
+
 # ---------- Booking ----------
 class BookingCreate(BaseModel):
+    user_id: uuid.UUID
     flight_id: uuid.UUID
     seat_id: uuid.UUID
     passenger_name: str
@@ -241,6 +266,7 @@ class BookingCreate(BaseModel):
 class BookingOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     booking_id: uuid.UUID
+    user_id: uuid.UUID
     flight_id: uuid.UUID
     seat_id: uuid.UUID
     passenger_name: str
@@ -270,8 +296,12 @@ class RouteOut(BaseModel):
 
 
 # ---------- Natural-language / RAG chat ----------
+class ChatMessage(BaseModel):
+    text: str
+    sender: str
+
 class ChatQuery(BaseModel):
-    message: str
+    messages: list[ChatMessage]
     max_price: float | None = None
 
 
