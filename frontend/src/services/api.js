@@ -169,3 +169,34 @@ export const getFlightSeats = async (flightId) => {
   const response = await API.get(`/flights/seats/${flightId}`);
   return response.data;
 };
+
+// --- Auth Endpoints ---
+export const authLogin = async (email, password) => {
+  if (USE_MOCK_DATA) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          user_id: 'mock-uuid-1234',
+          email,
+          role: email === 'admin@aero.com' ? 'admin' : 'user'
+        });
+      }, 800);
+    });
+  }
+  const response = await API.post('/auth/login', { email, password });
+  return response.data;
+};
+
+// --- Admin Endpoints ---
+export const delayFlight = async (flightId, delayMinutes, delayReason, adminUserId) => {
+  if (USE_MOCK_DATA) {
+    return new Promise((resolve) => {
+      setTimeout(() => resolve({ message: 'Mock delay successful' }), 800);
+    });
+  }
+  const response = await API.post(`/flights/${flightId}/delay`, 
+    { delay_minutes: delayMinutes, delay_reason: delayReason },
+    { headers: { 'X-User-Id': adminUserId } }
+  );
+  return response.data;
+};

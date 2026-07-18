@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Lock, Unlock, ShieldCheck, LogOut } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const NAV_LINKS = [
   { to: '/', label: 'HOME' },
@@ -15,6 +16,7 @@ const NAV_LINKS = [
 export default function Header() {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   // Close the mobile drawer whenever the route changes
   useEffect(() => {
@@ -74,6 +76,22 @@ export default function Header() {
               <span className={`w-2 h-2 rounded-full animate-pulse ${location.pathname === '/chat' ? 'bg-white' : 'bg-[#004F30]'}`}></span>
               AERO AI
             </Link>
+
+            {/* Auth Icon */}
+            {user ? (
+              <div className="flex items-center gap-1 ml-1 group">
+                <Link to="/login" title="My Profile" className="p-2 rounded-full bg-gray-50 text-[#004F30] hover:bg-[#004F30] hover:text-white transition-all border border-gray-100 flex items-center justify-center">
+                  <Unlock size={16} />
+                </Link>
+                <button onClick={logout} title="Sign Out" className="p-2 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all border border-red-100 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 pointer-events-none group-hover:pointer-events-auto">
+                  <LogOut size={16} />
+                </button>
+              </div>
+            ) : (
+              <Link to="/login" title="Sign In" className="ml-1 p-2 rounded-full bg-gray-50 text-gray-400 hover:bg-[#1C2B22] hover:text-white transition-all border border-gray-100 flex items-center justify-center group">
+                <Lock size={16} className="group-hover:scale-110 transition-transform" />
+              </Link>
+            )}
           </nav>
 
           {/* Mobile/tablet controls: AERO AI shortcut + hamburger */}
@@ -113,6 +131,25 @@ export default function Header() {
         {NAV_LINKS.map(({ to, label }) => (
           <Link key={to} to={to} className={getMobileLinkClass(to)}>{label}</Link>
         ))}
+
+        <div className="pt-4 border-t border-gray-100/50 mt-4">
+          <Link to="/chat" className={`${getMobileLinkClass('/chat')} flex items-center justify-center gap-2 !bg-[#004F30] !text-white`}>
+            <span className="w-2 h-2 rounded-full bg-[#A89411] animate-pulse"></span>
+            AERO AI
+          </Link>
+          
+          {user ? (
+            <>
+              <button onClick={() => { logout(); setIsMenuOpen(false); }} className="mt-4 w-full text-center text-sm font-bold text-gray-400 hover:text-red-500 uppercase tracking-widest py-4">
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <Link to="/login" className="mt-4 w-full flex items-center justify-center gap-2 text-sm font-bold text-[#1C2B22] uppercase tracking-widest py-4 border border-gray-200 rounded-2xl hover:bg-gray-50">
+              <Lock size={16} /> Sign In / Register
+            </Link>
+          )}
+        </div>
       </nav>
     </>
   );
