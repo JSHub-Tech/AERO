@@ -33,7 +33,7 @@ async def get_active_flights(db: AsyncSession = Depends(get_db)):
                 "flightNum": f.flight_number,
                 "source": f.departure_airport,
                 "dest": f.arrival_airport,
-                "targetTime": (f.estimated_arrival or f.scheduled_arrival).isoformat(),
+                "targetTime": _ensure_tz(f.estimated_arrival or f.scheduled_arrival).isoformat(),
             }
             for f in flights
         ]
@@ -51,7 +51,7 @@ async def get_onboarding_flights(db: AsyncSession = Depends(get_db)):
                 "flightNum": f.flight_number,
                 "source": f.departure_airport,
                 "dest": f.arrival_airport,
-                "targetTime": (f.estimated_departure or f.scheduled_departure).isoformat(),
+                "targetTime": _ensure_tz(f.estimated_departure or f.scheduled_departure).isoformat(),
             }
             for f in flights
         ]
