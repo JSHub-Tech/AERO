@@ -22,6 +22,7 @@ import math
 import sys
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
+import pymongo
 
 # Allow importing from the project root
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -40,7 +41,7 @@ from app.repositories.routing_repository import prune_flight_edge
 POLL_INTERVAL_SECONDS = 5
 
 # How many minutes before scheduled departure each state gate opens
-BOARDING_GATE_MINUTES   = 45
+BOARDING_GATE_MINUTES   = 120
 FINAL_CALL_GATE_MINUTES = 15
 
 ACTIVE_STATUSES = ("scheduled", "boarding", "final_call", "delayed", "airborne")
@@ -107,17 +108,33 @@ async def _handle_takeoff(
 
         start = coords.get(flight.departure_airport.upper(), (0.0, 0.0))
         end = coords.get(flight.arrival_airport.upper(), (0.0, 0.0))
-        live = LiveFlight(
-            flight_number=flight.flight_number,
-            status="airborne",
-            departure=flight.departure_airport,
-            dest=flight.arrival_airport,
-            position=GeoPoint(lat=start[0], lng=start[1]),
-            heading=compute_bearing(start, end),
-            progress=0.0,
-            updated_at=now,
-        )
-        await live.insert()
+        
+        live = await LiveFlight.find_one(LiveFlight.flight_number == flight.flight_number)
+        if live:
+            live.status = "airborne"
+            live.departure = flight.departure_airport
+            live.dest = flight.arrival_airport
+            live.position = GeoPoint(lat=start[0], lng=start[1])
+            live.heading = compute_bearing(start, end)
+            live.progress = 0.0
+            live.updated_at = now
+            await live.save()
+        else:
+            live = LiveFlight(
+                flight_number=flight.flight_number,
+                status="airborne",
+                departure=flight.departure_airport,
+                dest=flight.arrival_airport,
+                position=GeoPoint(lat=start[0], lng=start[1]),
+                heading=compute_bearing(start, end),
+                progress=0.0,
+                updated_at=now,
+            )
+            try:
+                await live.insert()
+            except pymongo.errors.DuplicateKeyError:
+                # If it already exists despite the find_one check (e.g. concurrent insert or stale index), ignore
+                pass
 
 
 async def _handle_airborne(
@@ -163,6 +180,9 @@ async def _handle_airborne(
 
         live = await LiveFlight.find_one(LiveFlight.flight_number == flight.flight_number)
         if live:
+            live.status     = "airborne"
+            live.departure  = flight.departure_airport
+            live.dest       = flight.arrival_airport
             live.position   = pos
             live.heading    = heading
             live.progress   = progress
@@ -175,17 +195,20 @@ async def _handle_airborne(
             )
         else:
             # Simulator restarted after takeoff — re-create the document
-            await LiveFlight(
-                flight_number=flight.flight_number,
-                status="airborne",
-                departure=flight.departure_airport,
-                dest=flight.arrival_airport,
-                position=pos,
-                heading=heading,
-                progress=progress,
-                updated_at=now,
-            ).insert()
-            print(f"[TELEMETRY]   {flight.flight_number} — late-join document created.")
+            try:
+                await LiveFlight(
+                    flight_number=flight.flight_number,
+                    status="airborne",
+                    departure=flight.departure_airport,
+                    dest=flight.arrival_airport,
+                    position=pos,
+                    heading=heading,
+                    progress=progress,
+                    updated_at=now,
+                ).insert()
+                print(f"[TELEMETRY]   {flight.flight_number} — late-join document created.")
+            except pymongo.errors.DuplicateKeyError:
+                pass
 
 
 # ── Main loop ─────────────────────────────────────────────────────────────────
@@ -215,19 +238,22 @@ async def run_simulator_loop() -> None:
                     }
 
                     for flight in active_flights:
-                        dep_time = _ensure_tz(
-                            flight.estimated_departure or flight.scheduled_departure
-                        )
-                        arr_time = _ensure_tz(
-                            flight.estimated_arrival or flight.scheduled_arrival
-                        )
+                        try:
+                            dep_time = _ensure_tz(
+                                flight.estimated_departure or flight.scheduled_departure
+                            )
+                            arr_time = _ensure_tz(
+                                flight.estimated_arrival or flight.scheduled_arrival
+                            )
 
-                        if flight.status == "airborne":
-                            await _handle_airborne(flight, now, dep_time, arr_time, coords)
-                        else:
-                            await _handle_pre_flight(flight, now, dep_time)
-                            # Check again after possible state advance
-                            await _handle_takeoff(flight, now, dep_time, coords)
+                            if flight.status == "airborne":
+                                await _handle_airborne(flight, now, dep_time, arr_time, coords)
+                            else:
+                                await _handle_pre_flight(flight, now, dep_time)
+                                # Check again after possible state advance
+                                await _handle_takeoff(flight, now, dep_time, coords)
+                        except Exception as e:
+                            print(f"[ERROR] Failed to process flight {flight.flight_number}: {e}")
 
                     await session.commit()
 
