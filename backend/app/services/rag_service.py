@@ -105,10 +105,16 @@ async def process_chat(query: ChatQuery) -> ChatResponse:
     )
 
     try:
+        # Map our schema messages to Gemini Content objects
+        contents = []
+        for msg in query.messages:
+            role = "user" if msg.sender == "user" else "model"
+            contents.append(types.Content(role=role, parts=[types.Part.from_text(text=msg.text)]))
+
         # 1. First generate_content call
         response = await client.aio.models.generate_content(
             model=settings.GEMINI_MODEL,
-            contents=query.message,
+            contents=contents,
             config=config
         )
         
@@ -124,14 +130,19 @@ async def process_chat(query: ChatQuery) -> ChatResponse:
                 
                 # We prompt the model again with the result in text to bypass functionCall API
                 follow_up_prompt = (
-                    f"User asked: {query.message}\n"
+                    f"User asked: {query.messages[-1].text}\n"
                     f"You requested to search flights from {origin} to {destination}.\n"
                     f"The search returned this JSON data: {flight_data}\n"
                     f"Please answer the user's question clearly and precisely based on this flight data."
                 )
+                
+                # Replace the last user message with this follow-up prompt so it keeps history
+                follow_up_msg = types.Content(role="user", parts=[types.Part.from_text(text=follow_up_prompt)])
+                updated_contents = contents[:-1] + [follow_up_msg]
+                
                 response = await client.aio.models.generate_content(
                     model=settings.GEMINI_MODEL,
-                    contents=follow_up_prompt,
+                    contents=updated_contents,
                     config=types.GenerateContentConfig(
                         system_instruction=SYSTEM_INSTRUCTION,
                         temperature=0.3

@@ -21,9 +21,11 @@ from app.api.routes import (
     operations,
     routing,
     telemetry,
+    auth,
 )
 from app.api.routes.operations import watch_operations
 from app.api.routes.telemetry import watch_telemetry
+from scripts.flight_simulator import run_simulator_loop
 
 
 @asynccontextmanager
@@ -35,12 +37,16 @@ async def lifespan(app: FastAPI):
     # Background broadcasters backing the two ws/* channels
     telemetry_task = asyncio.create_task(watch_telemetry())
     operations_task = asyncio.create_task(watch_operations())
+    
+    # Run the flight simulator in the background so it works automatically on Render
+    simulator_task = asyncio.create_task(run_simulator_loop(skip_db_init=True))
 
     yield
 
     # Shutdown: close everything cleanly
     telemetry_task.cancel()
     operations_task.cancel()
+    simulator_task.cancel()
     await close_mongo()
     await close_neo4j()
     await dispose_engine()
@@ -68,6 +74,7 @@ app.include_router(fleet.router, prefix="/api/v1/fleets", tags=["fleet"])
 app.include_router(bookings.router, prefix="/api/v1/flights", tags=["booking"])
 # Not in api.md — LiveOperations.jsx already polls these three routes; required by the UI design.
 app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["dashboard"])
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 
 # --- Supporting APIs not in api.md, kept for the natural-language chat feature ---
 app.include_router(routing.router, prefix="/api/v1/routing", tags=["routing"])

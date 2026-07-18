@@ -12,8 +12,12 @@ from sqlalchemy import select
 
 from app.db.postgres import db_session
 from app.models.sql_models import Flight
+from datetime import datetime, timezone
 
 router = APIRouter()
+
+def _ensure_tz(dt: datetime) -> datetime:
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 POLL_INTERVAL_SECONDS = 5
 DEFAULT_DELAY_REASON = "Operational delay"
@@ -51,15 +55,15 @@ async def _fetch_operational_snapshot() -> dict:
 
         boarding = [
             {
-                "route": f"{f.departure_airport} - {f.arrival_airport}",
+                "route": f"{f.departure_airport}-{f.arrival_airport}",
                 "flight": f.flight_number,
-                "time": (f.estimated_departure or f.scheduled_departure).strftime("%H:%M"),
+                "time": _ensure_tz(f.estimated_departure or f.scheduled_departure).isoformat(),
             }
             for f in boarding_result.scalars().all()
         ]
         delayed = [
             {
-                "route": f"{f.departure_airport} - {f.arrival_airport}",
+                "route": f"{f.departure_airport}-{f.arrival_airport}",
                 "flight": f.flight_number,
                 "reason": f.delay_reason or DEFAULT_DELAY_REASON,
             }

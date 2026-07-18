@@ -11,7 +11,7 @@ import Papa from 'papaparse';
 export const USE_MOCK_DATA = false;
 
 const API = axios.create({
-  baseURL: 'http://localhost:8000/api/v1',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1',
   headers: {
     'Content-Type': 'application/json'
   }
@@ -79,7 +79,7 @@ export const getFlightSchedule = async () => {
   return response.data;
 };
 
-export const sendChatMessage = async (message) => {
+export const sendChatMessage = async (messages) => {
   if (USE_MOCK_DATA) {
     return new Promise(resolve => {
       setTimeout(() => {
@@ -87,7 +87,7 @@ export const sendChatMessage = async (message) => {
       }, 800);
     });
   }
-  const response = await API.post('/chat', { message });
+  const response = await API.post('/chat', { messages });
   return response.data;
 };
 

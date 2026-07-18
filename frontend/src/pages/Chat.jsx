@@ -21,12 +21,15 @@ export default function Chat() {
     if (!input.trim()) return;
     
     const userText = input;
+    const userMessage = { text: userText, sender: 'user' };
+    const newMessages = [...messages, userMessage];
+    
     setInput('');
-    addMessage({ text: userText, sender: 'user' });
+    addMessage(userMessage);
     
     try {
       setIsTyping(true);
-      const response = await sendChatMessage(userText);
+      const response = await sendChatMessage(newMessages);
       addMessage({ text: response.answer, sender: 'ai' });
     } catch (error) {
       addMessage({ 
