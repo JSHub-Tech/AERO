@@ -1,22 +1,25 @@
 import { Database, Network, Zap, Cuboid } from 'lucide-react';
 import Footer from '../components/Footer';
+import { useAnimateOnScroll } from '../components/animation';
 
 export default function About({ isSection = false }) {
+  const [containerRef, isInView] = useAnimateOnScroll();
+
   return (
-    <div id="about" className={`w-full flex flex-col bg-white relative overflow-hidden ${isSection ? 'min-h-screen md:h-screen justify-center py-16 md:py-0' : 'min-h-screen'}`}>
+    <div id="about" ref={containerRef} className={`w-full flex flex-col bg-white relative overflow-hidden ${isSection ? 'min-h-screen justify-center py-16 sm:py-20 lg:py-24' : 'min-h-screen'}`}>
       
-      {/* Premium Apple-style Abstract Background Blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-[#004F30]/5 blur-[120px]"></div>
         <div className="absolute top-[20%] -right-[10%] w-[40%] h-[60%] rounded-full bg-[#A89411]/5 blur-[120px]"></div>
       </div>
 
       <div className={`w-full flex flex-col items-center justify-center relative ${isSection ? 'py-0' : 'py-24 pt-[150px] min-h-[80vh]'}`}>
-        
         <div className="max-w-[1400px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 relative z-10 flex flex-col lg:flex-row items-center gap-10 sm:gap-14 lg:gap-20">
           
           {/* Left Side: Typography */}
-          <div className="w-full lg:w-[45%] flex flex-col items-center lg:items-start text-center lg:text-left">
+          <div className={`w-full lg:w-[45%] flex flex-col items-center lg:items-start text-center lg:text-left transition-all duration-1000 transform ${
+            isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
+          }`}>
             <div className="px-4 py-2 bg-gray-50 border border-gray-100 rounded-full mb-6 sm:mb-8 inline-flex items-center gap-2 shadow-sm">
               <span className="w-2 h-2 rounded-full bg-[#004F30] animate-pulse"></span>
               <span className="text-[#004F30] text-[10px] font-black tracking-[0.2em] uppercase">Enterprise Infrastructure</span>
@@ -42,10 +45,12 @@ export default function About({ isSection = false }) {
             </div>
           </div>
 
-          {/* Right Side: Tech Stack Grid */}
+          {/* Right Side: Tech Stack Grid with Staggered Card Animation */}
           <div className="w-full lg:w-[55%] grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 relative">
             
-            <div className="bg-white/80 backdrop-blur-xl border border-gray-100 p-6 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,0,0,0.06)] hover:-translate-y-2 transition-all duration-500 group">
+            <div className={`bg-white/80 backdrop-blur-xl border border-gray-100 p-6 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,0,0,0.06)] hover:-translate-y-2 transition-all duration-500 group ${
+              isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'
+            }`}>
               <Database className="text-[#336791] mb-5 sm:mb-8 group-hover:scale-110 transition-transform" size={36} />
               <h3 className="text-[#1C2B22] font-black text-xl sm:text-2xl mb-2 sm:mb-3 tracking-wide">PostgreSQL</h3>
               <p className="text-gray-500 text-sm font-medium leading-relaxed">
@@ -53,7 +58,9 @@ export default function About({ isSection = false }) {
               </p>
             </div>
 
-            <div className="bg-white/80 backdrop-blur-xl border border-gray-100 p-6 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,0,0,0.06)] hover:-translate-y-2 transition-all duration-500 group md:translate-y-12">
+            <div className={`bg-white/80 backdrop-blur-xl border border-gray-100 p-6 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,0,0,0.06)] hover:-translate-y-2 transition-all duration-500 group md:translate-y-12 ${
+              isInView ? 'opacity-100 translate-y-0 md:translate-y-12' : 'opacity-0 translate-y-16'
+            } transition-all delay-150`}>
               <Network className="text-[#018bff] mb-5 sm:mb-8 group-hover:scale-110 transition-transform" size={36} />
               <h3 className="text-[#1C2B22] font-black text-xl sm:text-2xl mb-2 sm:mb-3 tracking-wide">Neo4j Graph</h3>
               <p className="text-gray-500 text-sm font-medium leading-relaxed">
@@ -61,7 +68,9 @@ export default function About({ isSection = false }) {
               </p>
             </div>
 
-            <div className="bg-white/80 backdrop-blur-xl border border-gray-100 p-6 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,0,0,0.06)] hover:-translate-y-2 transition-all duration-500 group">
+            <div className={`bg-white/80 backdrop-blur-xl border border-gray-100 p-6 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,0,0,0.06)] hover:-translate-y-2 transition-all duration-500 group ${
+              isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'
+            } transition-all delay-300`}>
               <Zap className="text-[#dc382d] mb-5 sm:mb-8 group-hover:scale-110 transition-transform" size={36} />
               <h3 className="text-[#1C2B22] font-black text-xl sm:text-2xl mb-2 sm:mb-3 tracking-wide">Redis Cache</h3>
               <p className="text-gray-500 text-sm font-medium leading-relaxed">
@@ -69,7 +78,9 @@ export default function About({ isSection = false }) {
               </p>
             </div>
 
-            <div className="bg-white/80 backdrop-blur-xl border border-gray-100 p-6 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,0,0,0.06)] hover:-translate-y-2 transition-all duration-500 group md:translate-y-12">
+            <div className={`bg-white/80 backdrop-blur-xl border border-gray-100 p-6 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,0,0,0.06)] hover:-translate-y-2 transition-all duration-500 group md:translate-y-12 ${
+              isInView ? 'opacity-100 translate-y-0 md:translate-y-12' : 'opacity-0 translate-y-16'
+            } transition-all delay-450`}>
               <Cuboid className="text-[#A89411] mb-5 sm:mb-8 group-hover:scale-110 transition-transform" size={36} />
               <h3 className="text-[#1C2B22] font-black text-xl sm:text-2xl mb-2 sm:mb-3 tracking-wide">Three.js</h3>
               <p className="text-gray-500 text-sm font-medium leading-relaxed">
@@ -78,9 +89,7 @@ export default function About({ isSection = false }) {
             </div>
 
           </div>
-
         </div>
-
       </div>
 
       {!isSection && <Footer />}

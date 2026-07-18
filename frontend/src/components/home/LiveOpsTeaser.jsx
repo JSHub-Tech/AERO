@@ -2,15 +2,16 @@ import { useEffect, useState } from 'react';
 import { Activity, ArrowRight, ShieldCheck, Plane } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getActiveFlights } from '../../services/api';
+import { useAnimateOnScroll } from '../animation';
 
 export default function LiveOpsTeaser() {
   const navigate = useNavigate();
   const [flights, setFlights] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [containerRef, isInView] = useAnimateOnScroll();
 
   useEffect(() => {
     let cancelled = false;
-
     const fetchFlights = async () => {
       try {
         const data = await getActiveFlights();
@@ -24,19 +25,13 @@ export default function LiveOpsTeaser() {
 
     fetchFlights();
     const interval = setInterval(fetchFlights, 20000);
-
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
+    return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
   const previewFlights = flights.slice(0, 4);
 
   return (
-    <div className="w-full min-h-screen md:h-screen bg-[#F8F9FA] relative flex items-center justify-center overflow-hidden py-16 md:py-0">
-      
-      {/* Background Graphic */}
+    <div ref={containerRef} className="w-full min-h-screen bg-[#F8F9FA] relative flex items-center justify-center overflow-hidden py-16 sm:py-20">
       <div className="absolute inset-0 z-0 opacity-40">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(0,79,48,0.15)_0%,_transparent_50%)]"></div>
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
@@ -44,14 +39,16 @@ export default function LiveOpsTeaser() {
 
       <div className="relative z-10 max-w-[1600px] w-full mx-auto px-6 md:px-16 lg:px-24 flex flex-col md:flex-row-reverse items-center justify-between gap-12 md:gap-0">
         
-        {/* Text Content */}
-        <div className="w-full md:w-[45%] flex flex-col items-center md:items-start text-center md:text-left md:pl-12">
+        {/* Text Content - Slides from Right */}
+        <div className={`w-full md:w-[45%] flex flex-col items-center md:items-start text-center md:text-left md:pl-12 transition-all duration-1000 transform ${
+          isInView ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-16'
+        }`}>
           <div className="flex items-center gap-3 mb-6">
             <Activity className="text-[#004F30]" size={24} />
             <span className="text-[#004F30] font-black tracking-[0.3em] text-xs sm:text-sm uppercase">Global Telemetry</span>
           </div>
           
-          <h2 className="text-4xl sm:text-5xl md:text-7xl font-black text-[#1C2B22] tracking-tighter leading-[1.1] mb-6">
+          <h2 className="text-[clamp(2rem,9vw,3.5rem)] md:text-[clamp(2rem,calc(7.5vw_-_16px),6.5rem)] font-black text-[#1C2B22] tracking-tighter leading-[1.1] mb-6 break-words">
             PRECISION IN <br/><span className="text-[#A89411]">THE SKIES.</span>
           </h2>
           
@@ -68,9 +65,10 @@ export default function LiveOpsTeaser() {
           </button>
         </div>
 
-        {/* Live Dashboard Panel (real data) */}
-        <div className="w-full md:w-[50%] mt-4 md:mt-0 relative h-[440px] sm:h-[480px] md:h-[500px] max-w-md md:max-w-none mx-auto">
-          {/* Main Dashboard Panel */}
+        {/* Dashboard Panel - Slides from Bottom Up */}
+        <div className={`w-full md:w-[50%] mt-4 md:mt-0 relative h-[440px] sm:h-[480px] md:h-[500px] max-w-md md:max-w-none mx-auto transition-all duration-1000 delay-200 transform ${
+          isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'
+        }`}>
           <div className="absolute inset-0 bg-white/70 backdrop-blur-3xl border border-white rounded-[32px] md:rounded-[40px] shadow-[0_20px_60px_rgba(0,79,48,0.08)] p-5 sm:p-8 flex flex-col">
             <div className="flex justify-between items-center mb-6 md:mb-8 border-b border-gray-100 pb-4">
               <h3 className="font-black text-[#1C2B22] tracking-widest text-xs sm:text-sm flex items-center gap-2">
@@ -82,7 +80,6 @@ export default function LiveOpsTeaser() {
             
             <div className="space-y-3 sm:space-y-4 flex-1 overflow-y-auto">
               {loading ? (
-                // Loading skeleton (only while the real request is in flight)
                 [1, 2, 3, 4].map((i) => (
                   <div key={i} className="h-14 sm:h-16 w-full bg-gray-50 rounded-2xl flex items-center px-4 sm:px-6 justify-between animate-pulse">
                     <div className="flex items-center gap-3 sm:gap-4">
@@ -96,13 +93,11 @@ export default function LiveOpsTeaser() {
                   </div>
                 ))
               ) : previewFlights.length === 0 ? (
-                // Real empty state, never a blank/dead-looking panel
                 <div className="h-full flex flex-col items-center justify-center text-center gap-3 py-6">
                   <div className="w-12 h-12 rounded-full bg-[#004F30]/10 flex items-center justify-center">
                     <Plane className="text-[#004F30] rotate-45" size={20} />
                   </div>
                   <p className="text-sm font-bold text-gray-500">No active flights right now</p>
-                  <p className="text-xs text-gray-400">Check back shortly, or view the full board.</p>
                 </div>
               ) : (
                 previewFlights.map((f, i) => (
@@ -127,7 +122,6 @@ export default function LiveOpsTeaser() {
             </div>
           </div>
           
-          {/* Floating Accent (real active-flight count) */}
           <div className="absolute right-2 -top-4 sm:-right-8 sm:top-12 bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-xl border border-gray-50 flex flex-col items-center gap-1 sm:gap-2 animate-bounce" style={{ animationDuration: '4s' }}>
              <span className="text-2xl sm:text-3xl font-black text-[#004F30]">{loading ? '—' : flights.length}</span>
              <span className="text-[9px] sm:text-[10px] font-bold text-gray-400 tracking-widest uppercase whitespace-nowrap">Active Flights</span>

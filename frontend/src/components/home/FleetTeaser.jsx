@@ -1,11 +1,13 @@
 import { ArrowRight, Wind } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAnimateOnScroll } from '../animation'; 
 
 export default function FleetTeaser() {
   const navigate = useNavigate();
+  const [containerRef, isInView] = useAnimateOnScroll();
 
   return (
-    <div className="w-full min-h-screen md:h-screen bg-[#111] relative flex items-center justify-center overflow-hidden py-20 md:py-0">
+    <div ref={containerRef} className="w-full min-h-screen bg-[#111] relative flex items-center justify-center overflow-hidden py-20 sm:py-24">
       
       {/* Background Image & Overlay */}
       <div className="absolute inset-0 z-0">
@@ -20,8 +22,10 @@ export default function FleetTeaser() {
 
       <div className="relative z-10 max-w-[1600px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 flex flex-col md:flex-row items-center justify-between">
         
-        {/* Text Content */}
-        <div className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left">
+        {/* Text Content - Slides from Left */}
+        <div className={`w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left transition-all duration-1000 transform ${
+          isInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-16'
+        }`}>
           <div className="flex items-center gap-3 mb-4 sm:mb-6">
             <Wind className="text-[#A89411]" size={22} />
             <span className="text-[#A89411] font-black tracking-[0.2em] sm:tracking-[0.3em] text-xs sm:text-sm uppercase">Next Generation</span>
@@ -44,8 +48,10 @@ export default function FleetTeaser() {
           </button>
         </div>
 
-        {/* Stats / Tech Specs Overlay */}
-        <div className="w-full md:w-[40%] mt-10 md:mt-0 flex flex-col gap-3 sm:gap-4">
+        {/* Stats Content - Slides from Right */}
+        <div className={`w-full md:w-[40%] mt-10 md:mt-0 flex flex-col gap-3 sm:gap-4 transition-all duration-1000 delay-200 transform ${
+          isInView ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-16'
+        }`}>
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 hover:bg-white/10 transition-colors">
             <h4 className="text-gray-500 font-bold tracking-widest text-[10px] uppercase mb-1">Fuel Efficiency</h4>
             <p className="text-xl sm:text-2xl font-black text-white">25% <span className="text-sm font-medium text-gray-400">Carbon Reduction</span></p>

@@ -1,10 +1,12 @@
 import { ArrowRight, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { useAnimateOnScroll } from '../animation';
 
 export default function NetworkTeaser() {
   const navigate = useNavigate();
   const [zoomedImage, setZoomedImage] = useState(null);
+  const [containerRef, isInView] = useAnimateOnScroll();
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -15,30 +17,19 @@ export default function NetworkTeaser() {
   }, []);
 
   return (
-    <div className="w-full min-h-screen md:h-screen bg-white relative flex flex-col items-center justify-center overflow-hidden py-16 sm:py-20 md:py-24">
+    <div ref={containerRef} className="w-full min-h-screen bg-white relative flex flex-col items-center justify-center overflow-hidden py-16 sm:py-20 md:py-24">
       
-      {/* ZOOMED IMAGE LIGHTBOX */}
       {zoomedImage && (
-        <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md cursor-pointer" 
-          onClick={() => setZoomedImage(null)}
-        >
-          <img 
-            src={zoomedImage} 
-            alt="Enlarged view" 
-            className="max-w-[80%] max-h-[80%] object-cover rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.5)] border-[6px] border-white/50 transform scale-100 transition-transform duration-300" 
-            onClick={(e) => e.stopPropagation()} 
-          />
-          <button 
-            onClick={() => setZoomedImage(null)}
-            className="absolute top-8 right-8 w-12 h-12 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-xl font-bold text-white transition-colors backdrop-blur-md"
-          >
-            ✕
-          </button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md cursor-pointer" onClick={() => setZoomedImage(null)}>
+          <img src={zoomedImage} alt="Enlarged view" className="max-w-[80%] max-h-[80%] object-cover rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.5)] border-[6px] border-white/50 transform scale-100 transition-transform duration-300" onClick={(e) => e.stopPropagation()} />
+          <button onClick={() => setZoomedImage(null)} className="absolute top-8 right-8 w-12 h-12 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-xl font-bold text-white transition-colors backdrop-blur-md">✕</button>
         </div>
       )}
 
-      <div className="max-w-[1600px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 z-10 flex flex-col items-center text-center mb-10 sm:mb-16">
+      {/* Header text fading into place */}
+      <div className={`max-w-[1600px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 z-10 flex flex-col items-center text-center mb-10 sm:mb-16 transition-all duration-1000 transform ${
+        isInView ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10'
+      }`}>
         <div className="flex items-center gap-3 mb-4 sm:mb-6">
           <MapPin className="text-[#A89411]" size={22} />
           <span className="text-[#A89411] font-black tracking-[0.2em] sm:tracking-[0.3em] text-xs sm:text-sm uppercase">Global Network</span>
@@ -61,11 +52,16 @@ export default function NetworkTeaser() {
         </button>
       </div>
 
-      {/* Stunning Photo Grid Mockup */}
+      {/* Dynamic Photo Grid Mockup */}
       <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 relative z-10">
         
-        {/* Card 1 */}
-        <div onClick={() => setZoomedImage('/airport_pics/LHR_1.jpg')} className="block h-56 sm:h-64 md:h-[350px] rounded-3xl md:rounded-[30px] overflow-hidden relative group cursor-pointer shadow-lg">
+        {/* Card 1 - Enters from Left */}
+        <div 
+          onClick={() => setZoomedImage('/airport_pics/LHR_1.jpg')} 
+          className={`block h-56 sm:h-64 md:h-[350px] rounded-3xl md:rounded-[30px] overflow-hidden relative group cursor-pointer shadow-lg transition-all duration-1000 transform ${
+            isInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-20'
+          }`}
+        >
           <img src="/airport_pics/LHR_1.jpg" alt="London Heathrow" className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
           <div className="absolute bottom-5 sm:bottom-8 left-5 sm:left-8">
@@ -74,8 +70,13 @@ export default function NetworkTeaser() {
           </div>
         </div>
 
-        {/* Card 2 */}
-        <div onClick={() => setZoomedImage('/airport_pics/DXB_1.jpg')} className="block h-56 sm:h-64 md:h-[350px] rounded-3xl md:rounded-[30px] overflow-hidden relative group cursor-pointer shadow-lg md:-translate-y-8">
+        {/* Card 2 - Pops up slightly delayed */}
+        <div 
+          onClick={() => setZoomedImage('/airport_pics/DXB_1.jpg')} 
+          className={`block h-56 sm:h-64 md:h-[350px] rounded-3xl md:rounded-[30px] overflow-hidden relative group cursor-pointer shadow-lg md:-translate-y-8 transition-all duration-1000 delay-200 transform ${
+            isInView ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
+          }`}
+        >
           <img src="/airport_pics/DXB_1.jpg" alt="Dubai" className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
           <div className="absolute bottom-5 sm:bottom-8 left-5 sm:left-8">
@@ -84,8 +85,13 @@ export default function NetworkTeaser() {
           </div>
         </div>
 
-        {/* Card 3 */}
-        <div onClick={() => setZoomedImage('/airport_pics/IST_1.jpg')} className="block h-56 sm:h-64 md:h-[350px] rounded-3xl md:rounded-[30px] overflow-hidden relative group cursor-pointer shadow-lg">
+        {/* Card 3 - Enters from Right */}
+        <div 
+          onClick={() => setZoomedImage('/airport_pics/IST_1.jpg')} 
+          className={`block h-56 sm:h-64 md:h-[350px] rounded-3xl md:rounded-[30px] overflow-hidden relative group cursor-pointer shadow-lg transition-all duration-1000 delay-400 transform ${
+            isInView ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'
+          }`}
+        >
           <img src="/airport_pics/IST_1.jpg" alt="Istanbul" className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
           <div className="absolute bottom-5 sm:bottom-8 left-5 sm:left-8">
