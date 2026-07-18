@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getAirports, getFleets, searchFlights, bookFlight, getFlightSeats } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import Footer from '../components/Footer';
-import { Plane, Calendar, Users, ArrowRight, CheckCircle2, ChevronRight, ShieldCheck, ArrowLeft, AlertTriangle, FileText, Download, X, QrCode } from 'lucide-react';
+import { Plane, Calendar, Users, ArrowRight, CheckCircle2, ChevronRight, ShieldCheck, ArrowLeft, AlertTriangle, FileText, Download, X, QrCode, Mail, Lock } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -19,6 +20,13 @@ L.Icon.Default.mergeOptions({
 });
 
 export default function Booking() {
+  const { user, login } = useAuth();
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [authMode, setAuthMode] = useState('login'); // login or register
+  const [authError, setAuthError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  
   const [step, setStep] = useState(1);
   const [airports, setAirports] = useState([]);
   const [fleets, setFleets] = useState([]);
@@ -293,6 +301,29 @@ export default function Booking() {
 </body>
 </html>`;
   };
+
+  if (!user) {
+    return (
+      <div className="min-h-[calc(100vh-80px)] mt-[80px] bg-[#F8F9FA] relative flex flex-col justify-center items-center py-12 px-6">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(0,79,48,0.05)_0%,_transparent_50%)] z-0 pointer-events-none"></div>
+        <div className="z-10 text-center bg-white p-12 rounded-[2rem] shadow-xl border border-gray-100 max-w-lg w-full">
+          <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Lock className="w-10 h-10 text-[#004F30]" />
+          </div>
+          <h1 className="text-3xl font-black text-[#1C2B22] tracking-tighter mb-4">ACCESS RESTRICTED</h1>
+          <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-8 leading-relaxed">
+            Please sign in to access the global reservation system.
+          </p>
+          <button 
+            onClick={() => window.location.href = '/login?redirect=/booking'}
+            className="w-full inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#004F30] hover:bg-[#1C2B22] text-white font-black tracking-widest uppercase rounded-2xl transition-all shadow-xl shadow-[#004F30]/20 text-xs"
+          >
+            Sign In First <ArrowRight size={16} />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleDownloadReceipt = () => {
     const blob = new Blob([buildReceiptHtml()], { type: 'text/html' });
