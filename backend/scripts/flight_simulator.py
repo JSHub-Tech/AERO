@@ -213,8 +213,9 @@ async def _handle_airborne(
 
 # ── Main loop ─────────────────────────────────────────────────────────────────
 
-async def run_simulator_loop() -> None:
-    await init_mongo()
+async def run_simulator_loop(skip_db_init: bool = False) -> None:
+    if not skip_db_init:
+        await init_mongo()
     print("✈️  AERO Flight Simulator started — polling Postgres every "
           f"{POLL_INTERVAL_SECONDS}s\n")
 
@@ -265,7 +266,8 @@ async def run_simulator_loop() -> None:
     except asyncio.CancelledError:
         print("\nSimulator cancelled — shutting down cleanly.")
     finally:
-        await close_mongo()
+        if not skip_db_init:
+            await close_mongo()
         print("Simulator stopped.")
 
 
