@@ -56,6 +56,14 @@ const ExpandedTableModal = ({ category, flights, airports, onClose }) => {
     return a ? `${code} (${a.City})` : code;
   };
 
+  const getActiveStatus = (targetTimeIso) => {
+    if (!targetTimeIso) return 'IN-TRANSIT';
+    const target = new Date(targetTimeIso).getTime();
+    const remSeconds = (target - Date.now()) / 1000;
+    if (remSeconds <= 600 && remSeconds > 0) return 'LANDING';
+    return 'IN-TRANSIT';
+  };
+
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-8 bg-[#1C2B22]/40 backdrop-blur-md transition-all" onClick={onClose}>
       <div className="bg-white/95 backdrop-blur-3xl rounded-3xl p-8 max-w-5xl w-full h-[80vh] flex flex-col shadow-[0_20px_60px_rgba(0,0,0,0.2)] border border-white relative" onClick={e => e.stopPropagation()}>
@@ -93,7 +101,11 @@ const ExpandedTableModal = ({ category, flights, airports, onClose }) => {
                      <td className="py-4 pl-4 font-black text-[#004F30]">{f.flightNum}</td>
                      <td className="py-4 font-bold text-[#1C2B22] text-xs">{getCity(f.source)}</td>
                      <td className="py-4 font-bold text-[#1C2B22] text-xs">{getCity(f.dest)}</td>
-                     <td className="py-4 font-black text-[#A89411] text-xs">{f.delayTime ? 'DELAYED' : (f.targetTime ? 'SCHEDULED' : 'ACTIVE')}</td>
+                     <td className="py-4 font-black text-[#A89411] text-xs">
+                       {category === 'Boarding' ? 'BOARDING' : 
+                        (category === 'Active' ? getActiveStatus(f.targetTime) : 
+                        (f.delayTime ? 'DELAYED' : (f.targetTime ? 'SCHEDULED' : 'ACTIVE')))}
+                     </td>
                      <td className="py-4 text-right pr-4 font-bold text-gray-500 text-xs">{f.delayTime || (f.targetTime ? new Date(f.targetTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A')}</td>
                    </tr>
                  ))
@@ -201,19 +213,19 @@ export default function LiveOperations() {
     ws.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);
-        if (payload.boarding) {
+        if (payload.data && payload.data.boarding) {
           // Map OperationsBoardingItem to our DashboardFlightsResponse format
-          const formattedBoarding = payload.boarding.map(b => ({
+          const formattedBoarding = payload.data.boarding.map(b => ({
             flightNum: b.flight,
             source: b.route.split('-')[0],
             dest: b.route.split('-')[1],
-            targetTime: new Date(b.time).toISOString()
+            targetTime: b.time
           }));
           setOnBoardingFlights(formattedBoarding);
         }
-        if (payload.delayed) {
+        if (payload.data && payload.data.delayed) {
           // Map OperationsDelayedItem to our DashboardDelayedResponse format
-          const formattedDelayed = payload.delayed.map(d => ({
+          const formattedDelayed = payload.data.delayed.map(d => ({
             flightNum: d.flight,
             source: d.route.split('-')[0],
             dest: d.route.split('-')[1],
@@ -238,7 +250,7 @@ export default function LiveOperations() {
         <tr>
           <th className="pb-3">Route</th>
           <th className="pb-3">Flight</th>
-          <th className="pb-3 text-right">Arrival</th>
+          <th className="pb-3 text-right">Arrival In</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-gray-100/50">
@@ -265,12 +277,13 @@ export default function LiveOperations() {
         <tr>
           <th className="pb-3">Route</th>
           <th className="pb-3">Flight</th>
-          <th className="pb-3 text-right">Departure</th>
+          <th className="pb-3">Status</th>
+          <th className="pb-3 text-right">Take-Off Time</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-gray-100/50">
         {onBoardingFlights.length === 0 && !loadingBoarding ? (
-           <tr><td colSpan="3" className="py-6 text-center text-xs font-bold text-gray-400">NO FLIGHTS BOARDING</td></tr>
+           <tr><td colSpan="4" className="py-6 text-center text-xs font-bold text-gray-400">NO FLIGHTS BOARDING</td></tr>
         ) : (
            onBoardingFlights.map((f, i) => (
              <tr key={i} className="group transition-colors">
@@ -278,7 +291,8 @@ export default function LiveOperations() {
                  {f.source} <span className="text-gray-400">→</span> {f.dest}
                </td>
                <td className="py-3 font-black text-[#1C2B22]">{f.flightNum}</td>
-               <td className="py-3 text-right font-bold text-[#004F30] text-xs">{formatTimeRem(f.targetTime, "DEPARTING")}</td>
+               <td className="py-3 font-bold text-[#004F30] text-xs">BOARDING</td>
+               <td className="py-3 text-right font-bold text-gray-500 text-xs">{f.targetTime ? new Date(f.targetTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</td>
              </tr>
            ))
         )}
@@ -343,30 +357,35 @@ export default function LiveOperations() {
         </div>
 
         {/* Dashboard Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow min-h-0">
+        <div className="flex flex-col gap-6 flex-grow min-h-0">
           
-          {/* Left Column (Tables) */}
-          <div className="lg:col-span-4 xl:col-span-3 flex flex-col gap-6 lg:max-h-[700px]">
-            <div className="h-[220px] lg:flex-1 lg:h-0">
+          {/* Top Row: Active In-Air & Map */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[500px]">
+            {/* Active In-Air */}
+            <div className="lg:col-span-4 xl:col-span-3 flex flex-col h-[500px]">
               <GlassCard title="Active In-Air" isLoading={loadingActive} onRefresh={fetchActiveData} onClick={() => setExpandedCategory('Active')}>
                 {renderActiveFlights()}
               </GlassCard>
             </div>
-            <div className="h-[220px] lg:flex-1 lg:h-0">
+
+            {/* Aviation Map */}
+            <div className="lg:col-span-8 xl:col-span-9 h-[500px]">
+              <AviationMap selectedFlightId={selectedFlightId} onSelectFlight={setSelectedFlightId} />
+            </div>
+          </div>
+
+          {/* Bottom Row: Boarding & Delayed */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[250px]">
+            <div className="h-full">
               <GlassCard title="Boarding" isLoading={loadingBoarding} onClick={() => setExpandedCategory('Boarding')}>
                 {renderOnBoarding()}
               </GlassCard>
             </div>
-            <div className="h-[220px] lg:flex-1 lg:h-0">
+            <div className="h-full">
               <GlassCard title="Delayed Warnings" isLoading={loadingDelayed} onClick={() => setExpandedCategory('Delayed')}>
                 {renderDelayedFlights()}
               </GlassCard>
             </div>
-          </div>
-
-          {/* Right Column (Aviation Map) */}
-          <div className="lg:col-span-8 xl:col-span-9 h-[60vh] lg:h-auto min-h-[600px]">
-             <AviationMap selectedFlightId={selectedFlightId} onSelectFlight={setSelectedFlightId} />
           </div>
           
         </div>
