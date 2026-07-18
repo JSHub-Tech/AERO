@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const ChatContext = createContext();
 
@@ -7,9 +7,16 @@ export const useChat = () => {
 };
 
 export const ChatProvider = ({ children }) => {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => {
+    const saved = sessionStorage.getItem('chat_history');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [isOpen, setIsOpen] = useState(false); // Controls the floating widget
   const [isTyping, setIsTyping] = useState(false); // AI typing state
+
+  useEffect(() => {
+    sessionStorage.setItem('chat_history', JSON.stringify(messages));
+  }, [messages]);
 
   const addMessage = (message) => {
     setMessages((prev) => [...prev, message]);
@@ -17,6 +24,7 @@ export const ChatProvider = ({ children }) => {
 
   const clearMessages = () => {
     setMessages([]);
+    sessionStorage.removeItem('chat_history');
   };
 
   const toggleChat = () => {
