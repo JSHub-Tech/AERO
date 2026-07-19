@@ -185,7 +185,7 @@ export default function About({ isSection = false }) {
                 </div>
                   {/* Absolutely positioned avatar for perfect centering and overflow */}
                 <div className="absolute left-1/2 -translate-x-1/2 -top-[100px] sm:-top-[130px] w-[300px] sm:w-[400px] transition-all duration-500 drop-shadow-[0_15px_15px_rgba(0,0,0,0.5)] z-20 pointer-events-none">
-                  <img src={image} alt="" className="w-full h-auto object-contain scale-[1.05]" onError={(e) => { e.target.style.display = 'none'; }} />
+                  <img src={image} alt="" loading="lazy" className="w-full h-auto object-contain scale-[1.05]" onError={(e) => { e.target.style.display = 'none'; }} />
                 </div>
                 {/* Spacer to push the card's text content down below the absolute avatar */}
                 <div className="h-[120px] sm:h-[150px] w-full"></div>
