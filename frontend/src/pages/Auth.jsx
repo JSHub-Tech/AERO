@@ -23,13 +23,13 @@ function EmailField({ value, onChange, placeholder = 'passenger@aero.com' }) {
     <div>
       <FieldLabel>Email Address</FieldLabel>
       <div className="relative">
-        <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-white/40" size={18} />
+        <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
         <input
           type="email"
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className="w-full bg-[#1C2B22]/50 border border-[#0A6B41]/50 rounded-2xl pl-14 pr-6 py-4 text-sm font-bold text-white outline-none focus:border-[#A89411] focus:ring-2 focus:ring-[#A89411]/20 transition-all placeholder:text-white/30"
+          className="w-full bg-white border border-transparent rounded-2xl pl-14 pr-6 py-4 text-sm font-bold text-[#1C2B22] outline-none focus:border-[#A89411] focus:ring-2 focus:ring-[#A89411]/20 transition-all placeholder:text-gray-400 shadow-inner"
           required
         />
       </div>
@@ -42,21 +42,21 @@ function PasswordField({ label, value, onChange, show, onToggleShow, autoComplet
     <div>
       <FieldLabel>{label}</FieldLabel>
       <div className="relative">
-        <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-white/40" size={18} />
+        <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
         <input
           type={show ? 'text' : 'password'}
           value={value}
           onChange={onChange}
           placeholder="••••••••"
           autoComplete={autoComplete}
-          className="w-full bg-[#1C2B22]/50 border border-[#0A6B41]/50 rounded-2xl pl-14 pr-14 py-4 text-sm font-bold text-white outline-none focus:border-[#A89411] focus:ring-2 focus:ring-[#A89411]/20 transition-all placeholder:text-white/30"
+          className="w-full bg-white border border-transparent rounded-2xl pl-14 pr-14 py-4 text-sm font-bold text-[#1C2B22] outline-none focus:border-[#A89411] focus:ring-2 focus:ring-[#A89411]/20 transition-all placeholder:text-gray-400 shadow-inner"
           required
         />
         <button
           type="button"
           onClick={onToggleShow}
           aria-label={show ? 'Hide password' : 'Show password'}
-          className="absolute right-5 top-1/2 -translate-y-1/2 text-white/40 hover:text-[#A89411] transition-colors"
+          className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#A89411] transition-colors"
         >
           {show ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>

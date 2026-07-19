@@ -220,13 +220,13 @@ export default function Home() {
 
       {!selectedAirportCode && (
         <div className="relative z-10 w-full flex flex-col">
-          <section className="w-full h-screen shrink-0 snap-start">
+          <section className="w-full min-h-screen shrink-0 snap-start">
             <FleetTeaser />
           </section>
-          <section className="w-full h-screen shrink-0 snap-start">
+          <section className="w-full min-h-screen shrink-0 snap-start">
             <LiveOpsTeaser />
           </section>
-          <section className="w-full h-screen shrink-0 snap-start">
+          <section className="w-full min-h-screen shrink-0 snap-start">
             <NetworkTeaser />
           </section>
           <About isSection={true} />

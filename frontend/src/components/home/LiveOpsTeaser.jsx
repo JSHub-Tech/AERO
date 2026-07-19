@@ -80,39 +80,39 @@ export default function LiveOpsTeaser() {
             <div className="space-y-3 sm:space-y-4 flex-1 overflow-y-auto">
               {loading ? (
                 [1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-14 sm:h-16 w-full bg-gray-50 rounded-2xl flex items-center px-4 sm:px-6 justify-between animate-pulse">
+                  <div key={i} className="h-14 sm:h-16 w-full bg-[#A89411]/40 rounded-2xl flex items-center px-4 sm:px-6 justify-between animate-pulse">
                     <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-100 shrink-0"></div>
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#A89411]/50 shrink-0"></div>
                       <div>
-                        <div className="h-2 w-20 sm:w-24 bg-gray-200 rounded-full mb-2"></div>
-                        <div className="h-2 w-14 sm:w-16 bg-gray-100 rounded-full"></div>
+                        <div className="h-2 w-20 sm:w-24 bg-[#A89411]/50 rounded-full mb-2"></div>
+                        <div className="h-2 w-14 sm:w-16 bg-[#A89411]/40 rounded-full"></div>
                       </div>
                     </div>
-                    <div className="h-4 w-10 sm:w-12 bg-gray-200 rounded-full"></div>
+                    <div className="h-4 w-10 sm:w-12 bg-[#A89411]/50 rounded-full"></div>
                   </div>
                 ))
               ) : previewFlights.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center gap-3 py-6">
-                  <div className="w-12 h-12 rounded-full bg-[#004F30]/10 flex items-center justify-center">
-                    <Plane className="text-[#004F30] rotate-45" size={20} />
+                  <div className="w-12 h-12 rounded-full bg-[#A89411]/20 flex items-center justify-center">
+                    <Plane className="text-[#A89411] rotate-45" size={20} />
                   </div>
-                  <p className="text-sm font-bold text-gray-500">No active flights right now</p>
+                  <p className="text-sm font-bold text-[#A89411]">No active flights right now</p>
                 </div>
               ) : (
                 previewFlights.map((f, i) => (
-                  <div key={f.flightNum || i} className="h-14 sm:h-16 w-full bg-white/10 rounded-2xl flex items-center px-4 sm:px-6 justify-between group hover:bg-white/20 transition-colors border border-white/5">
+                  <div key={f.flightNum || i} className="h-14 sm:h-16 w-full bg-[#A89411] rounded-2xl flex items-center px-4 sm:px-6 justify-between group hover:bg-[#D4C345] transition-colors shadow-md border border-[#D4C345]/50 hover:shadow-lg hover:-translate-y-0.5">
                     <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/20 shadow-sm flex items-center justify-center font-bold text-white text-[10px] sm:text-xs shrink-0">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#004F30] flex items-center justify-center font-black text-white text-[10px] sm:text-xs shrink-0 shadow-inner">
                         {(f.flightNum || 'PK').slice(0, 2).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <div className="text-xs sm:text-sm font-black text-white truncate">
-                          {f.source || '—'} <span className="text-[#A89411]">→</span> {f.dest || '—'}
+                        <div className="text-xs sm:text-sm font-black text-[#1C2B22] truncate">
+                          {f.source || '—'} <span className="text-[#1C2B22]/40 mx-1">→</span> {f.dest || '—'}
                         </div>
-                        <div className="text-[10px] sm:text-xs font-bold text-white/70 truncate">{f.flightNum || 'N/A'}</div>
+                        <div className="text-[10px] sm:text-xs font-bold text-[#1C2B22]/70 truncate">{f.flightNum || 'N/A'}</div>
                       </div>
                     </div>
-                    <div className="text-[10px] sm:text-xs font-black text-[#A89411] bg-white/10 px-2.5 py-1 rounded-full shadow-sm shrink-0 ml-2">
+                    <div className="text-[10px] sm:text-xs font-black text-white bg-[#004F30] px-2.5 py-1 rounded-full shrink-0 ml-2 shadow-inner">
                       LIVE
                     </div>
                   </div>
