@@ -60,7 +60,6 @@ export default function FlightFormModal({ flight, aircraftOptions, onClose, onDo
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#1C2B22]/40 backdrop-blur-sm overflow-y-auto">
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#1C2B22]/80 backdrop-blur-md overflow-y-auto">
       <div className="bg-[#1C2B22] border border-[#0A6B41] rounded-3xl p-8 max-w-lg w-full shadow-2xl relative my-8">
         <button onClick={onClose} className="absolute top-4 right-4 p-2 text-white/50 hover:text-white bg-[#1C2B22]/50 hover:bg-[#1C2B22] rounded-full transition-colors">
