@@ -31,13 +31,14 @@ export default function Footer() {
             <h4 className="text-[#1C2B22] font-black tracking-widest text-xs uppercase mb-1 sm:mb-2">Platforms</h4>
             <button onClick={() => navigate('/airports')} className="text-gray-500 hover:text-[#004F30] hover:translate-x-1 text-left font-medium transition-all duration-300 text-sm sm:text-base w-fit">Global Terminals</button>
             <button onClick={() => navigate('/fleet')} className="text-gray-500 hover:text-[#004F30] hover:translate-x-1 text-left font-medium transition-all duration-300 text-sm sm:text-base w-fit">3D Showroom</button>
+            <button onClick={() => navigate('/live-ops')} className="text-gray-500 hover:text-[#004F30] hover:translate-x-1 text-left font-medium transition-all duration-300 text-sm sm:text-base w-fit">Live Operations</button>
+            <button onClick={() => navigate('/booking')} className="text-gray-500 hover:text-[#004F30] hover:translate-x-1 text-left font-medium transition-all duration-300 text-sm sm:text-base w-fit">Book a Flight</button>
           </div>
 
           {/* Links Col 2 */}
           <div className="flex flex-col gap-3 sm:gap-4">
             <h4 className="text-[#1C2B22] font-black tracking-widest text-xs uppercase mb-1 sm:mb-2">Company</h4>
             <button onClick={() => navigate('/about')} className="text-gray-500 hover:text-[#004F30] hover:translate-x-1 text-left font-medium transition-all duration-300 text-sm sm:text-base w-fit">About Us</button>
-            <button onClick={() => navigate('/')} className="text-gray-500 hover:text-[#004F30] hover:translate-x-1 text-left font-medium transition-all duration-300 text-sm sm:text-base w-fit">Careers</button>
             <button onClick={() => navigate('/contact')} className="text-gray-500 hover:text-[#004F30] hover:translate-x-1 text-left font-medium transition-all duration-300 text-sm sm:text-base w-fit">Contact</button>
           </div>
 
