@@ -69,15 +69,15 @@ export default function UsersTab({ currentUserId }) {
         <div className="bg-green-50 text-green-700 p-4 rounded-xl font-bold text-sm border border-green-200">{successMsg}</div>
       )}
 
-      <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 flex flex-wrap gap-4 items-center justify-between bg-gray-50/50">
-          <h2 className="text-sm font-black tracking-widest uppercase text-gray-400">Users</h2>
+      <div className="bg-[#004F30] rounded-3xl shadow-[0_20px_60px_rgba(0,79,48,0.3)] border border-[#0A6B41] overflow-hidden">
+        <div className="p-6 border-b border-[#0A6B41] flex flex-wrap gap-4 items-center justify-between bg-[#1C2B22]/30">
+          <h2 className="text-sm font-black tracking-widest uppercase text-white/50">Users</h2>
           <SearchBox value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search by email..." />
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 text-[10px] uppercase font-black tracking-widest text-gray-400">
+            <thead className="bg-[#1C2B22]/50 text-[10px] uppercase font-black tracking-widest text-white/50">
               <tr>
                 <th className="p-4">Email</th>
                 <th className="p-4">Role</th>
@@ -86,27 +86,27 @@ export default function UsersTab({ currentUserId }) {
                 <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-[#0A6B41]">
               {loading ? (
-                <tr><td colSpan="5" className="p-8 text-center text-gray-400 font-bold">Loading...</td></tr>
+                <tr><td colSpan="5" className="p-8 text-center text-white/50 font-bold">Loading...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan="5" className="p-8 text-center text-gray-400 font-bold">No users found.</td></tr>
+                <tr><td colSpan="5" className="p-8 text-center text-white/50 font-bold">No users found.</td></tr>
               ) : (
                 paginated.map((u) => {
                   const isSelf = u.user_id === currentUserId;
                   return (
-                    <tr key={u.user_id} className="hover:bg-gray-50">
-                      <td className="p-4 font-black text-[#1C2B22]">{u.email}{isSelf && <span className="text-gray-400 font-bold"> (you)</span>}</td>
+                    <tr key={u.user_id} className="hover:bg-[#1C2B22]/30 transition-colors">
+                      <td className="p-4 font-black text-white">{u.email}{isSelf && <span className="text-[#A89411] font-bold"> (you)</span>}</td>
                       <td className="p-4"><StatusBadge status={u.role} /></td>
                       <td className="p-4"><StatusBadge status={u.is_active ? 'active' : 'retired'} /></td>
-                      <td className="p-4 font-bold text-gray-500">{new Date(u.created_at).toLocaleDateString()}</td>
+                      <td className="p-4 font-bold text-white/60">{new Date(u.created_at).toLocaleDateString()}</td>
                       <td className="p-4">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             disabled={isSelf}
                             onClick={() => handleToggleRole(u)}
                             title={u.role === 'admin' ? 'Demote to user' : 'Promote to admin'}
-                            className="p-2 bg-purple-50 text-purple-600 hover:bg-purple-500 hover:text-white rounded-lg disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                            className="p-2 bg-purple-500/20 text-purple-300 hover:bg-purple-500 hover:text-white rounded-lg disabled:opacity-30 disabled:pointer-events-none transition-colors"
                           >
                             <UserCog size={14} />
                           </button>
@@ -114,7 +114,7 @@ export default function UsersTab({ currentUserId }) {
                             disabled={isSelf}
                             onClick={() => setStatusTarget({ user: u, nextActive: !u.is_active })}
                             title={u.is_active ? 'Deactivate account' : 'Reactivate account'}
-                            className={`p-2 rounded-lg transition-colors disabled:opacity-30 disabled:pointer-events-none ${u.is_active ? 'bg-red-50 text-red-600 hover:bg-red-500 hover:text-white' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white'}`}
+                            className={`p-2 rounded-lg transition-colors disabled:opacity-30 disabled:pointer-events-none ${u.is_active ? 'bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white' : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white'}`}
                           >
                             {u.is_active ? <ShieldOff size={14} /> : <ShieldCheck size={14} />}
                           </button>

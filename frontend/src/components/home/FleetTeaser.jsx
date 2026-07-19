@@ -7,27 +7,7 @@ export default function FleetTeaser() {
   const [containerRef, isInView] = useAnimateOnScroll();
 
   return (
-    <div ref={containerRef} className="w-full min-h-screen bg-[#111] relative flex items-center justify-center overflow-hidden py-20 sm:py-24">
-      
-      {/* Background Image & Overlay */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src="https://images.unsplash.com/photo-1542296332-2e4473faf563?q=60&w=1600&auto=format&fit=crop"
-          srcSet="
-            https://images.unsplash.com/photo-1542296332-2e4473faf563?q=60&w=800&auto=format&fit=crop 800w,
-            https://images.unsplash.com/photo-1542296332-2e4473faf563?q=60&w=1200&auto=format&fit=crop 1200w,
-            https://images.unsplash.com/photo-1542296332-2e4473faf563?q=60&w=1600&auto=format&fit=crop 1600w,
-            https://images.unsplash.com/photo-1542296332-2e4473faf563?q=60&w=2070&auto=format&fit=crop 2070w
-          "
-          sizes="100vw"
-          alt="AERO Fleet"
-          loading="lazy"
-          decoding="async"
-          className="w-full h-full object-cover opacity-40 mix-blend-luminosity scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-transparent to-[#111]"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-[#111] via-[#111]/80 to-transparent"></div>
-      </div>
+    <div ref={containerRef} className="w-full min-h-screen bg-transparent relative flex items-center justify-center py-20 sm:py-24">
 
       <div className="relative z-10 max-w-[1600px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 flex flex-col md:flex-row items-center justify-between">
         
@@ -40,17 +20,17 @@ export default function FleetTeaser() {
             <span className="text-[#A89411] font-black tracking-[0.2em] sm:tracking-[0.3em] text-xs sm:text-sm uppercase">Next Generation</span>
           </div>
           
-          <h2 className="text-4xl sm:text-5xl md:text-7xl font-black text-white tracking-tighter leading-[1.1] mb-4 sm:mb-6 drop-shadow-2xl">
-            THE PINNACLE OF <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-200 to-gray-500">AEROSPACE.</span>
+          <h2 className="text-4xl sm:text-5xl md:text-7xl font-black text-[#1C2B22] tracking-tighter leading-[1.1] mb-4 sm:mb-6">
+            THE PINNACLE OF <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-[#004F30] to-[#A89411]">AEROSPACE.</span>
           </h2>
           
-          <p className="text-gray-400 text-base sm:text-lg md:text-xl font-medium max-w-lg leading-relaxed mb-7 sm:mb-10">
+          <p className="text-gray-500 text-base sm:text-lg md:text-xl font-medium max-w-lg leading-relaxed mb-7 sm:mb-10">
             Experience unparalleled comfort and state-of-the-art engineering. Our modern fleet is designed to make every journey extraordinary.
           </p>
 
           <button 
             onClick={() => navigate('/fleet')}
-            className="group flex items-center gap-3 sm:gap-4 bg-white text-[#111] px-6 sm:px-8 py-3.5 sm:py-4 rounded-full font-black tracking-widest text-xs sm:text-sm hover:bg-[#A89411] hover:text-white transition-all duration-300 shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_40px_rgba(168,148,17,0.3)] hover:scale-105"
+            className="group flex items-center gap-3 sm:gap-4 bg-[#004F30] text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-full font-black tracking-widest text-xs sm:text-sm hover:bg-[#1C2B22] transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1"
           >
             ENTER 3D SHOWROOM
             <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
@@ -61,17 +41,17 @@ export default function FleetTeaser() {
         <div className={`w-full md:w-[40%] mt-10 md:mt-0 flex flex-col gap-3 sm:gap-4 transition-all duration-1000 delay-200 transform ${
           isInView ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-16'
         }`}>
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 hover:bg-white/10 transition-colors">
-            <h4 className="text-gray-500 font-bold tracking-widest text-[10px] uppercase mb-1">Fuel Efficiency</h4>
-            <p className="text-xl sm:text-2xl font-black text-white">25% <span className="text-sm font-medium text-gray-400">Carbon Reduction</span></p>
+          <div className="bg-[#004F30] rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-[0_20px_60px_rgba(0,79,48,0.15)] hover:-translate-y-1 transition-transform border border-[#0A6B41]">
+            <h4 className="text-[#A89411] font-bold tracking-widest text-[10px] uppercase mb-1">Fuel Efficiency</h4>
+            <p className="text-xl sm:text-2xl font-black text-white">25% <span className="text-sm font-medium text-white/80">Carbon Reduction</span></p>
           </div>
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 hover:bg-white/10 transition-colors">
-            <h4 className="text-gray-500 font-bold tracking-widest text-[10px] uppercase mb-1">Fleet Size</h4>
-            <p className="text-xl sm:text-2xl font-black text-white">142 <span className="text-sm font-medium text-gray-400">Active Aircraft</span></p>
+          <div className="bg-[#004F30] rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-[0_20px_60px_rgba(0,79,48,0.15)] hover:-translate-y-1 transition-transform border border-[#0A6B41]">
+            <h4 className="text-[#A89411] font-bold tracking-widest text-[10px] uppercase mb-1">Fleet Size</h4>
+            <p className="text-xl sm:text-2xl font-black text-white">142 <span className="text-sm font-medium text-white/80">Active Aircraft</span></p>
           </div>
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 hover:bg-white/10 transition-colors">
-            <h4 className="text-gray-500 font-bold tracking-widest text-[10px] uppercase mb-1">Cruising Speed</h4>
-            <p className="text-xl sm:text-2xl font-black text-white">0.85 <span className="text-sm font-medium text-gray-400">Mach</span></p>
+          <div className="bg-[#004F30] rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-[0_20px_60px_rgba(0,79,48,0.15)] hover:-translate-y-1 transition-transform border border-[#0A6B41]">
+            <h4 className="text-[#A89411] font-bold tracking-widest text-[10px] uppercase mb-1">Cruising Speed</h4>
+            <p className="text-xl sm:text-2xl font-black text-white">0.85 <span className="text-sm font-medium text-white/80">Mach</span></p>
           </div>
         </div>
 

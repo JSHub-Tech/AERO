@@ -39,11 +39,13 @@ export default function OverviewTab() {
         <StatCard icon={Users} label="Total Users" value={summary.total_users} accent="text-indigo-600" bg="bg-indigo-50" />
       </div>
 
-      <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 p-6">
-        <h2 className="text-sm font-black tracking-widest uppercase text-gray-400 mb-4">All-Time</h2>
-        <p className="text-gray-600 font-bold text-sm">
-          <span className="text-[#1C2B22] font-black">{summary.total_bookings_all_time.toLocaleString()}</span> bookings recorded across the network so far,
-          with <span className="text-[#1C2B22] font-black">{summary.active_flights}</span> flights currently airborne.
+      <div className="bg-[#004F30] rounded-3xl shadow-[0_20px_60px_rgba(0,79,48,0.3)] border border-[#0A6B41] overflow-hidden">
+        <div className="p-6 border-b border-[#0A6B41] flex flex-wrap gap-4 items-center justify-between bg-[#1C2B22]/30">
+          <h2 className="text-sm font-black tracking-widest uppercase text-white/50">All Flights</h2>
+        </div>
+        <p className="text-white/80 font-bold text-sm p-6">
+          <span className="text-[#A89411] font-black">{summary.total_bookings_all_time.toLocaleString()}</span> bookings recorded across the network so far,
+          with <span className="text-[#A89411] font-black">{summary.active_flights}</span> flights currently airborne.
         </p>
       </div>
     </div>
