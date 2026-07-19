@@ -41,7 +41,10 @@ async def login(payload: UserLogin, db: AsyncSession = Depends(get_db)):
     
     if not user:
         raise HTTPException(status_code=401, detail="Invalid email or password")
-        
+
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="This account has been deactivated. Contact an administrator.")
+
     # In a real app, use passlib.verify(payload.password, user.password_hash)
     if user.password_hash != f"hashed_{payload.password}" and user.password_hash != f"dummy_hash_{user.role}":
         # Note: the `dummy_hash_{role}` check is to allow the seeded admin@aero.com 

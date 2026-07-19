@@ -15,12 +15,14 @@ from app.api.routes import (
     chat,
     dashboard,
     flights,
+    flights_admin,
     fleet,
     live_flights,
     network,
     operations,
     routing,
     telemetry,
+    users,
     auth,
 )
 from app.api.routes.operations import watch_operations
@@ -68,6 +70,10 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.include_router(airports.router, prefix="/api/v1/airports", tags=["airports"])
 app.include_router(network.router, prefix="/api/v1/routes", tags=["network-routes"])
 app.include_router(flights.router, prefix="/api/v1/flights", tags=["flights"])
+# Admin-only create/reschedule/cancel — mounted on the same prefix as flights.router
+# above so the two files present as one API surface (kept as separate files
+# so flights.py doesn't keep growing; see flights_admin.py for why).
+app.include_router(flights_admin.router, prefix="/api/v1/flights", tags=["flights-admin"])
 # Frontend calls GET /fleets (plural) — api.md documents /fleet (singular); matching the frontend.
 app.include_router(fleet.router, prefix="/api/v1/fleets", tags=["fleet"])
 # Frontend calls POST /flights/book, not api.md's POST /booking/checkout — matching the frontend.
@@ -75,6 +81,8 @@ app.include_router(bookings.router, prefix="/api/v1/flights", tags=["booking"])
 # Not in api.md — LiveOperations.jsx already polls these three routes; required by the UI design.
 app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["dashboard"])
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+# Admin-only account management — Command Center Users tab.
+app.include_router(users.router, prefix="/api/v1/users", tags=["users-admin"])
 
 # --- Supporting APIs not in api.md, kept for the natural-language chat feature ---
 app.include_router(routing.router, prefix="/api/v1/routing", tags=["routing"])
