@@ -53,6 +53,10 @@ export default function Booking() {
   const [pnr, setPnr] = useState('');
   const [confirmedAt, setConfirmedAt] = useState(null);
   const [showReceipt, setShowReceipt] = useState(false);
+  // A random, unique flight number generated for this specific passenger's
+  // ticket — distinct from the shared schedule flight number (e.g. "PK1234"),
+  // which many passengers on the same flight would share.
+  const [passengerFlightNumber, setPassengerFlightNumber] = useState('');
 
   // Load Data via API
   useEffect(() => {
@@ -115,11 +119,22 @@ export default function Booking() {
     }
   };
 
+  // Generates a random, unique flight number for this passenger's ticket.
+  // Unlike the flight's own schedule number (e.g. "PK1234", shared by every
+  // passenger on board), this code is one-of-a-kind per passenger and is
+  // what gets encoded into the boarding QR code.
+  const generatePassengerFlightNumber = () => {
+    const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
+    const timePart = Date.now().toString(36).slice(-4).toUpperCase();
+    return `FLT-${randomPart}${timePart}`;
+  };
+
   const handleCheckout = async () => {
     setIsBooking(true);
     try {
       const result = await bookFlight(selectedFlight.id, selectedSeats, passengers);
       setPnr(result.pnr || `AERO-${Math.random().toString(36).substr(2, 6).toUpperCase()}`);
+      setPassengerFlightNumber(generatePassengerFlightNumber());
       setConfirmedAt(new Date());
       setStep(5);
     } catch (error) {
@@ -240,7 +255,7 @@ export default function Booking() {
 
   const buildReceiptHtml = () => {
     const issued = (confirmedAt || new Date()).toLocaleString();
-    const qr = qrCodeUrl(selectedFlight?.flight_number || pnr);
+    const qr = qrCodeUrl(passengerFlightNumber || pnr);
     return `<!DOCTYPE html>
 <html>
 <head>
@@ -286,10 +301,11 @@ export default function Booking() {
       <div class="row"><span>Aircraft</span><span>${getAircraftModel(selectedFlight?.plane)}</span></div>
       <div class="row"><span>Passengers</span><span>${passengers}</span></div>
       <div class="row"><span>Seat(s)</span><span>${selectedSeats.join(', ')}</span></div>
+      <div class="row"><span>Passenger Flight No.</span><span>${passengerFlightNumber}</span></div>
       <div class="row"><span>Issued</span><span>${issued}</span></div>
       <div class="qr">
-        <img src="${qr}" width="150" height="150" alt="Flight number QR code" />
-        <p>Scan QR code to see your flight number</p>
+        <img src="${qr}" width="150" height="150" alt="Passenger flight number QR code" />
+        <p>Scan QR code for your unique passenger flight number</p>
       </div>
       <div class="total">
         <span>Total Paid</span>
@@ -344,11 +360,11 @@ export default function Booking() {
         {/* Progress Bar */}
         <div className="flex items-center justify-between mb-12 relative max-w-5xl mx-auto">
           <div className="absolute left-0 top-1/2 w-full h-1 bg-gray-200 -z-10 -translate-y-1/2 rounded-full"></div>
-          <div className="absolute left-0 top-1/2 h-1 bg-[#004F30] -z-10 -translate-y-1/2 rounded-full transition-all duration-500" style={{ width: `${((step - 1) / 4) * 100}%` }}></div>
+          <div className="absolute left-0 top-1/2 h-1 bg-gradient-to-r from-[#004F30] to-[#A89411] -z-10 -translate-y-1/2 rounded-full transition-all duration-500" style={{ width: `${((step - 1) / 4) * 100}%` }}></div>
           
           {['Search', 'Select', 'Seats', 'Review', 'Confirmed'].map((label, i) => (
             <div key={i} className="flex flex-col items-center">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${step > i ? 'bg-[#004F30] text-white' : 'bg-white text-gray-400 border-2 border-gray-200'}`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${step > i ? 'bg-gradient-to-br from-[#004F30] to-[#0A6B41] text-white shadow-md shadow-[#004F30]/20' : 'bg-white text-gray-400 border-2 border-gray-200'}`}>
                 {step > i + 1 ? <CheckCircle2 className="w-5 h-5" /> : i + 1}
               </div>
               <span className={`text-xs mt-2 font-bold uppercase tracking-wider ${step >= i + 1 ? 'text-[#1C2B22]' : 'text-gray-400'}`}>{label}</span>
@@ -419,7 +435,7 @@ export default function Booking() {
               )}
 
               <div className="md:col-span-5 mt-4 text-right">
-                <button type="submit" disabled={isSearching} className="px-10 py-4 bg-[#004F30] hover:bg-[#1C2B22] text-white font-bold tracking-widest rounded-xl transition-all shadow-lg inline-flex items-center gap-3 disabled:opacity-70">
+                <button type="submit" disabled={isSearching} className="px-10 py-4 bg-gradient-to-r from-[#004F30] to-[#0A6B41] hover:from-[#1C2B22] hover:to-[#1C2B22] text-white font-bold tracking-widest rounded-xl transition-all duration-300 shadow-lg inline-flex items-center gap-3 disabled:opacity-70 hover:-translate-y-0.5 hover:shadow-xl">
                   {isSearching ? 'SEARCHING...' : 'SEARCH FLIGHTS'} <ArrowRight className="w-5 h-5" />
                 </button>
               </div>
@@ -452,7 +468,7 @@ export default function Booking() {
                       onClick={() => handleSelectFlight(flight)}
                       onMouseEnter={() => setHoveredFlight(flight)}
                       onMouseLeave={() => setHoveredFlight(null)}
-                      className="bg-white border-2 border-gray-100 p-6 rounded-2xl hover:border-[#004F30] hover:shadow-lg transition-all cursor-pointer group flex items-center justify-between"
+                      className="bg-white border-2 border-gray-100 p-6 rounded-2xl hover:border-[#004F30] hover:shadow-lg transition-all duration-300 cursor-pointer group flex items-center justify-between hover:-translate-y-1"
                     >
                       <div className="flex items-center gap-6">
                         <div>
@@ -479,8 +495,8 @@ export default function Booking() {
                           <div className="text-xs text-gray-400 font-bold uppercase">From</div>
                           <div className="text-2xl font-bold text-[#1C2B22]">{flight.price}</div>
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-[#F8F9FA] group-hover:bg-[#004F30] flex items-center justify-center transition-colors">
-                          <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-white" />
+                        <div className="w-10 h-10 rounded-full bg-[#F8F9FA] group-hover:bg-gradient-to-br group-hover:from-[#004F30] group-hover:to-[#A89411] flex items-center justify-center transition-all duration-300">
+                          <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-white group-hover:translate-x-0.5 transition-transform" />
                         </div>
                       </div>
                     </div>
@@ -627,7 +643,7 @@ export default function Booking() {
                 onClick={handleCheckout}
                 disabled={!isFlightVerified || isBooking}
                 className={`w-full py-5 font-bold tracking-widest rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 ${
-                  isFlightVerified ? 'bg-[#004F30] hover:bg-[#1C2B22] text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  isFlightVerified ? 'bg-gradient-to-r from-[#004F30] to-[#0A6B41] hover:from-[#1C2B22] hover:to-[#1C2B22] text-white hover:-translate-y-0.5 hover:shadow-xl' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 } ${isBooking ? 'opacity-70' : ''}`}
               >
                 {isBooking ? 'CONFIRMING...' : 'CONFIRM BOOKING'} <CheckCircle2 className="w-5 h-5" />
@@ -640,8 +656,8 @@ export default function Booking() {
         {step === 5 && (
           <div className="animate-fade-in max-w-2xl mx-auto flex-grow flex flex-col items-center justify-center pt-10">
             <div className="bg-white p-16 rounded-3xl shadow-[0_10px_40px_rgba(0,79,48,0.06)] border border-gray-100 text-center w-full">
-              <div className="w-24 h-24 bg-[#004F30]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <ShieldCheck className="w-12 h-12 text-[#004F30]" />
+              <div className="w-24 h-24 bg-gradient-to-br from-[#004F30] to-[#A89411] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-[#004F30]/20 animate-pulse-glow">
+                <ShieldCheck className="w-12 h-12 text-white" />
               </div>
               <h2 className="text-4xl font-bold text-[#1C2B22] mb-4">Booking Confirmed!</h2>
               <p className="text-gray-500 text-lg font-medium mb-10 leading-relaxed">
@@ -652,6 +668,8 @@ export default function Booking() {
                 <div>
                   <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Booking Reference (PNR)</div>
                   <div className="text-2xl font-mono font-bold text-[#1C2B22]">{pnr}</div>
+                  <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-3 mb-1">Your Unique Flight No.</div>
+                  <div className="text-sm font-mono font-bold text-[#A89411]">{passengerFlightNumber}</div>
                 </div>
                 <Plane className="w-10 h-10 text-[#004F30] opacity-20 transform rotate-45" />
               </div>
@@ -660,7 +678,7 @@ export default function Booking() {
                 <button onClick={() => setShowReceipt(true)} className="flex-1 inline-flex items-center justify-center gap-2 px-10 py-4 bg-white border-2 border-[#004F30] text-[#004F30] hover:bg-[#004F30] hover:text-white font-bold tracking-widest rounded-xl transition-all">
                   <FileText className="w-5 h-5" /> VIEW RECEIPT
                 </button>
-                <button onClick={() => { setStep(1); setOrigin(''); setDestination(''); setDate(''); setSelectedFlight(null); setSelectedSeats([]); setPnr(''); setConfirmedAt(null); setShowReceipt(false); }} className="flex-1 px-10 py-4 bg-[#004F30] hover:bg-[#1C2B22] text-white font-bold tracking-widest rounded-xl transition-all shadow-lg">
+                <button onClick={() => { setStep(1); setOrigin(''); setDestination(''); setDate(''); setSelectedFlight(null); setSelectedSeats([]); setPnr(''); setPassengerFlightNumber(''); setConfirmedAt(null); setShowReceipt(false); }} className="flex-1 px-10 py-4 bg-[#004F30] hover:bg-[#1C2B22] text-white font-bold tracking-widest rounded-xl transition-all shadow-lg">
                   BOOK ANOTHER FLIGHT
                 </button>
               </div>
@@ -717,16 +735,20 @@ export default function Booking() {
                   <span className="text-gray-500 font-medium">Seat(s)</span>
                   <span className="font-bold text-[#004F30]">{selectedSeats.join(', ')}</span>
                 </div>
+                <div className="flex justify-between text-sm border-b border-dashed border-gray-200 pb-3">
+                  <span className="text-gray-500 font-medium">Passenger Flight No.</span>
+                  <span className="font-mono font-bold text-[#A89411]">{passengerFlightNumber}</span>
+                </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500 font-medium">Issued</span>
                   <span className="font-bold text-[#1C2B22]">{(confirmedAt || new Date()).toLocaleString()}</span>
                 </div>
               </div>
 
-              <div className="bg-[#F8F9FA] rounded-2xl p-6 border border-gray-200 flex flex-col items-center mb-6">
-                <img src={qrCodeUrl(selectedFlight?.flight_number || pnr)} alt="Flight number QR code" width={150} height={150} className="rounded-xl mb-3" />
+              <div className="bg-[#F8F9FA] rounded-2xl p-6 border border-gray-200 flex flex-col items-center mb-6 hover-lift">
+                <img src={qrCodeUrl(passengerFlightNumber || pnr)} alt="Passenger flight number QR code" width={150} height={150} className="rounded-xl mb-3" />
                 <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                  <QrCode className="w-4 h-4" /> Scan QR code to see your flight number
+                  <QrCode className="w-4 h-4" /> Scan QR code for your unique passenger flight number
                 </div>
               </div>
 

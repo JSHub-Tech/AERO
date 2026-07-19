@@ -11,9 +11,18 @@ export default function FleetTeaser() {
       
       {/* Background Image & Overlay */}
       <div className="absolute inset-0 z-0">
-        <img 
-          src="https://images.unsplash.com/photo-1542296332-2e4473faf563?q=80&w=2070&auto=format&fit=crop" 
-          alt="AERO Fleet" 
+        <img
+          src="https://images.unsplash.com/photo-1542296332-2e4473faf563?q=60&w=1600&auto=format&fit=crop"
+          srcSet="
+            https://images.unsplash.com/photo-1542296332-2e4473faf563?q=60&w=800&auto=format&fit=crop 800w,
+            https://images.unsplash.com/photo-1542296332-2e4473faf563?q=60&w=1200&auto=format&fit=crop 1200w,
+            https://images.unsplash.com/photo-1542296332-2e4473faf563?q=60&w=1600&auto=format&fit=crop 1600w,
+            https://images.unsplash.com/photo-1542296332-2e4473faf563?q=60&w=2070&auto=format&fit=crop 2070w
+          "
+          sizes="100vw"
+          alt="AERO Fleet"
+          loading="lazy"
+          decoding="async"
           className="w-full h-full object-cover opacity-40 mix-blend-luminosity scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-transparent to-[#111]"></div>

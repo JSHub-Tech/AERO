@@ -1,12 +1,27 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense, lazy } from 'react';
 import { getAirports, getRoutes, getFlightSchedule, getAirportDetails } from '../services/api';
-import GlobeViewer from '../components/GlobeViewer';
 import Footer from '../components/Footer';
 import FleetTeaser from '../components/home/FleetTeaser';
 import LiveOpsTeaser from '../components/home/LiveOpsTeaser';
 import NetworkTeaser from '../components/home/NetworkTeaser';
 import About from './About';
 import Contact from './Contact';
+
+// GlobeViewer pulls in three, @react-three/fiber, @react-three/drei, and
+// react-globe.gl — a heavy bundle that isn't needed for first paint.
+// Lazy-loading it keeps Home's text/hero content eager (fast first paint)
+// while the 3D globe streams in behind a lightweight placeholder below.
+const GlobeViewer = lazy(() => import('../components/GlobeViewer'));
+
+// Lightweight placeholder shown while the 3D globe bundle loads
+const GlobePlaceholder = () => (
+  <div className="w-full h-full bg-[#F8F9FA] flex items-center justify-center text-gray-400 font-bold tracking-widest text-sm">
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-10 h-10 border-4 border-gray-200 border-t-[#004F30] rounded-full animate-spin"></div>
+      <span>LOADING GLOBE...</span>
+    </div>
+  </div>
+);
 
 export default function Home() {
   const [selectedAirportCode, setSelectedAirportCode] = useState(null);
@@ -169,7 +184,9 @@ export default function Home() {
             
           ) : (
             
-            <div className="w-full h-full flex flex-col justify-center pointer-events-auto pl-4 md:pl-8">
+            <div className={`w-full h-full flex flex-col justify-center pointer-events-auto pl-4 md:pl-8 transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
+              heroInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-24'
+            }`}>
               <h1 className="text-[clamp(2rem,9vw,4rem)] md:text-[clamp(1.875rem,calc(6.5vw_-_12px),5.5rem)] font-black tracking-tighter text-white sm:text-[#1C2B22] leading-[1.05] mb-4 sm:mb-6 md:mb-8 break-words drop-shadow-[0_4px_20px_rgba(0,0,0,0.35)] sm:drop-shadow-none">
                 THE FUTURE OF <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#7FE0B0] to-[#F0D97A] sm:from-[#004F30] sm:to-[#A89411]">FLIGHT TELEMETRY.</span>
               </h1>
@@ -185,14 +202,16 @@ export default function Home() {
 
         <div className={`z-10 absolute inset-0 w-full h-full pointer-events-auto transition-all duration-1000 ${selectedAirportCode ? 'md:left-[45%] md:w-[55%]' : 'md:left-[40%] md:w-[60%]'}`}>
           {heroInView ? (
-            <GlobeViewer 
-              airports={airports}
-              routes={routes}
-              flights={flights}
-              selectedAirportCode={selectedAirportCode}
-              onAirportClick={setSelectedAirportCode}
-              disableInteractions={true}
-            />
+            <Suspense fallback={<GlobePlaceholder />}>
+              <GlobeViewer 
+                airports={airports}
+                routes={routes}
+                flights={flights}
+                selectedAirportCode={selectedAirportCode}
+                onAirportClick={setSelectedAirportCode}
+                disableInteractions={true}
+              />
+            </Suspense>
           ) : (
              <div className="w-full h-full bg-[#F8F9FA] flex items-center justify-center text-gray-400 font-bold tracking-widest text-sm">
                [ GLOBE SUSPENDED FOR MEMORY OPTIMIZATION ]

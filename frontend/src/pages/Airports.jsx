@@ -23,6 +23,11 @@ function AirportImage({ src, alt, onZoom }) {
       alt={alt}
       loading="lazy"
       decoding="async"
+      // Explicit intrinsic size reserves layout space before the file loads,
+      // preventing CLS while the (currently unaudited) source files in
+      // public/airport_pics load over the network.
+      width={640}
+      height={420}
       onClick={() => onZoom(src)}
       onError={() => setHasError(true)}
       className="w-full h-40 sm:h-48 md:h-56 object-cover rounded-3xl shadow-[0_15px_40px_rgba(0,0,0,0.15)] border-[4px] border-white/80 cursor-pointer hover:scale-[1.02] transition-transform duration-300"
@@ -361,10 +366,12 @@ export default function Airports() {
                ref={(el) => sectionRefs.current[slideIndex] = el}
                className="min-h-screen w-full shrink-0 snap-start flex flex-col justify-center px-4 sm:px-6 md:px-16 lg:px-24 pt-28 pb-10 md:py-0"
              >
-                <div className={`w-full h-full md:max-h-[85vh] flex flex-col md:flex-row justify-between items-center gap-10 md:gap-0 py-6 md:py-20 transition-all duration-1000 delay-300 ${isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-24'}`}>
+                <div className={`w-full h-full md:max-h-[85vh] flex flex-col md:flex-row justify-between items-center gap-10 md:gap-0 py-6 md:py-20 transition-opacity duration-1000 delay-300 ${isActive ? 'opacity-100' : 'opacity-0'}`}>
                   
-                  {/* LEFT WING: Identity & Mission */}
-                  <div className="flex flex-col w-full md:w-[40%] xl:w-[35%] items-center md:items-start text-center md:text-left shrink-0">
+                  {/* LEFT WING: Identity & Mission — flies in from the left, flies out to the left */}
+                  <div className={`flex flex-col w-full md:w-[40%] xl:w-[35%] items-center md:items-start text-center md:text-left shrink-0 transition-all duration-[1100ms] delay-300 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
+                    isActive ? 'translate-x-0 rotate-0' : '-translate-x-24 md:-translate-x-40 rotate-[-3deg]'
+                  }`}>
                      <h2 className="text-[clamp(3.5rem,20vw,6rem)] md:text-[7rem] font-black tracking-tighter text-[#1C2B22] leading-none drop-shadow-[0_10px_30px_rgba(255,255,255,1)]">
                        {field(details.Airport_Code)}
                      </h2>
@@ -434,8 +441,10 @@ export default function Airports() {
                   {/* CENTER GAP FOR THE GLOBE */}
                   <div className="hidden md:block flex-grow"></div>
 
-                  {/* RIGHT WING: Telemetry & Media */}
-                  <div className="flex flex-col w-full md:w-[35%] xl:w-[30%] max-w-sm mx-auto md:mx-0 items-center md:items-end text-center md:text-right shrink-0 gap-6 sm:gap-8 mt-2 md:mt-0 md:mr-8 lg:mr-16">
+                  {/* RIGHT WING: Telemetry & Media — flies in from the right, flies out to the right */}
+                  <div className={`flex flex-col w-full md:w-[35%] xl:w-[30%] max-w-sm mx-auto md:mx-0 items-center md:items-end text-center md:text-right shrink-0 gap-6 sm:gap-8 mt-2 md:mt-0 md:mr-8 lg:mr-16 transition-all duration-[1100ms] delay-300 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
+                    isActive ? 'translate-x-0 rotate-0' : 'translate-x-24 md:translate-x-40 rotate-[3deg]'
+                  }`}>
                      
                      {/* Media Stack (Clickable Lightbox) */}
                      <div className="grid grid-cols-2 sm:flex sm:flex-col gap-3 w-full">
