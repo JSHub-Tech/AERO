@@ -42,8 +42,8 @@ export default function Header() {
     const isActive = location.pathname === path;
     return `text-base font-bold tracking-widest transition-all px-5 py-4 rounded-2xl w-full text-center ${
       isActive
-      ? 'bg-[#004F30] text-white shadow-md'
-      : 'text-gray-600 hover:text-[#004F30] hover:bg-[#004F30]/10'
+      ? 'bg-[#A89411] text-[#1C2B22] shadow-md'
+      : 'text-white/70 hover:text-white hover:bg-white/10'
     }`;
   };
 
