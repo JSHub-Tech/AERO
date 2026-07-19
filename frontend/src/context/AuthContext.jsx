@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authLogin, authSignup } from '../services/api';
+import { authLogin, authSignup, authResetPassword } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -44,6 +44,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const resetPassword = async (email, newPassword) => {
+    try {
+      await authResetPassword(email, newPassword);
+      // Intentionally not logging in here — send them to the login form to
+      // confirm the new password actually works, rather than trusting it silently.
+      return { success: true };
+    } catch (error) {
+      console.error('Password reset failed:', error);
+      return { success: false, error: error.response?.data?.detail || 'Password reset failed' };
+    }
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('aero_user');
@@ -52,7 +64,7 @@ export const AuthProvider = ({ children }) => {
   if (loading) return null;
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, login, signup, resetPassword, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -16,6 +16,7 @@ const Fleet = lazy(() => import('./pages/Fleet'));
 const Booking = lazy(() => import('./pages/Booking'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const Auth = lazy(() => import('./pages/Auth'));
+const Account = lazy(() => import('./pages/Account'));
 
 // Sleek loading screen for Suspense fallback
 const PageLoader = () => (
@@ -39,6 +40,7 @@ function App() {
                 <Route path="/live-ops" element={<LiveOperations />} />
                 <Route path="/booking" element={<Booking />} />
                 <Route path="/login" element={<Auth />} />
+                <Route path="/account" element={<Account />} />
                 <Route path="/fleet" element={<Fleet />} />
                 <Route path="/command-center" element={<AdminDashboard />} />
                 <Route path="/about" element={<About />} />

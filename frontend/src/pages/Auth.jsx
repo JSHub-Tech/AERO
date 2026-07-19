@@ -2,29 +2,286 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Footer from '../components/Footer';
-import { Plane, Lock, Mail, ArrowRight, AlertTriangle, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { Plane, Lock, Mail, ArrowRight, AlertTriangle, CheckCircle2, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 
-export default function Auth() {
+// Shared little pieces so the three forms below stay visually identical
+// without sharing any state.
+function FieldLabel({ children }) {
+  return <label className="block text-[10px] font-black tracking-widest text-gray-400 uppercase mb-3">{children}</label>;
+}
+
+function ErrorBanner({ message }) {
+  if (!message) return null;
+  return (
+    <div className="mb-8 p-4 bg-red-50 text-red-600 border border-red-100 rounded-2xl text-xs font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+      <AlertTriangle size={18} className="shrink-0" />
+      {message}
+    </div>
+  );
+}
+
+function EmailField({ value, onChange, placeholder = 'passenger@aero.com' }) {
+  return (
+    <div>
+      <FieldLabel>Email Address</FieldLabel>
+      <div className="relative">
+        <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+        <input
+          type="email"
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          className="w-full bg-gray-50 border border-gray-200 rounded-2xl pl-14 pr-6 py-4 text-sm font-bold text-[#1C2B22] outline-none focus:border-[#004F30] focus:ring-2 focus:ring-[#004F30]/20 transition-all placeholder:text-gray-400"
+          required
+        />
+      </div>
+    </div>
+  );
+}
+
+function PasswordField({ label, value, onChange, show, onToggleShow, autoComplete }) {
+  return (
+    <div>
+      <FieldLabel>{label}</FieldLabel>
+      <div className="relative">
+        <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+        <input
+          type={show ? 'text' : 'password'}
+          value={value}
+          onChange={onChange}
+          placeholder="••••••••"
+          autoComplete={autoComplete}
+          className="w-full bg-gray-50 border border-gray-200 rounded-2xl pl-14 pr-14 py-4 text-sm font-bold text-[#1C2B22] outline-none focus:border-[#004F30] focus:ring-2 focus:ring-[#004F30]/20 transition-all placeholder:text-gray-400"
+          required
+        />
+        <button
+          type="button"
+          onClick={onToggleShow}
+          aria-label={show ? 'Hide password' : 'Show password'}
+          className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#004F30] transition-colors"
+        >
+          {show ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// --- Sign In: entirely its own state, never touched by the other two forms ---
+function LoginForm({ onForgotPassword }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, login, signup } = useAuth();
+  const { login } = useAuth();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError('');
+
+    const res = await login(email, password);
+
+    if (!res.success) {
+      setError(res.error || 'Authentication failed. Please check your credentials.');
+      setIsSubmitting(false);
+      return;
+    }
+    const redirectParams = new URLSearchParams(location.search);
+    navigate(redirectParams.get('redirect') || '/');
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <ErrorBanner message={error} />
+      <EmailField value={email} onChange={(e) => setEmail(e.target.value)} />
+      <PasswordField
+        label="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        show={showPassword}
+        onToggleShow={() => setShowPassword((v) => !v)}
+        autoComplete="current-password"
+      />
+
+      <button type="button" onClick={onForgotPassword} className="text-left -mt-2 text-[11px] font-black text-[#004F30] hover:text-[#1C2B22] uppercase tracking-widest transition-colors">
+        Forgot password?
+      </button>
+
+      <button disabled={isSubmitting} type="submit" className="mt-2 w-full bg-gradient-to-r from-[#004F30] to-[#0A6B41] hover:from-[#1C2B22] hover:to-[#1C2B22] disabled:from-gray-400 disabled:to-gray-400 text-white font-black py-4 rounded-2xl transition-all duration-300 shadow-xl shadow-[#004F30]/20 text-xs uppercase tracking-widest flex items-center justify-center gap-2 group hover:-translate-y-0.5 hover:shadow-2xl">
+        {isSubmitting ? 'Authenticating...' : 'Authenticate'}
+        {!isSubmitting && <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />}
+      </button>
+    </form>
+  );
+}
+
+// --- Create Account: entirely its own state ---
+function RegisterForm() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { signup } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [authMode, setAuthMode] = useState('login');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const switchMode = (mode) => {
-    setAuthMode(mode);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      setError('Passwords do not match. Please re-enter them.');
+      return;
+    }
+
+    setIsSubmitting(true);
     setError('');
-    setConfirmPassword('');
-    setShowPassword(false);
-    setShowConfirmPassword(false);
+
+    const res = await signup(email, password);
+
+    if (!res.success) {
+      setError(res.error || 'Account creation failed. Please try again.');
+      setIsSubmitting(false);
+      return;
+    }
+    const redirectParams = new URLSearchParams(location.search);
+    navigate(redirectParams.get('redirect') || '/');
   };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <ErrorBanner message={error} />
+      <EmailField value={email} onChange={(e) => setEmail(e.target.value)} />
+      <PasswordField
+        label="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        show={showPassword}
+        onToggleShow={() => setShowPassword((v) => !v)}
+        autoComplete="new-password"
+      />
+      <div className="animate-fade-in-up">
+        <PasswordField
+          label="Confirm Password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          show={showConfirmPassword}
+          onToggleShow={() => setShowConfirmPassword((v) => !v)}
+          autoComplete="new-password"
+        />
+      </div>
+
+      <button disabled={isSubmitting} type="submit" className="mt-6 w-full bg-gradient-to-r from-[#004F30] to-[#0A6B41] hover:from-[#1C2B22] hover:to-[#1C2B22] disabled:from-gray-400 disabled:to-gray-400 text-white font-black py-4 rounded-2xl transition-all duration-300 shadow-xl shadow-[#004F30]/20 text-xs uppercase tracking-widest flex items-center justify-center gap-2 group hover:-translate-y-0.5 hover:shadow-2xl">
+        {isSubmitting ? 'Creating Account...' : 'Register Account'}
+        {!isSubmitting && <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />}
+      </button>
+    </form>
+  );
+}
+
+// --- Reset Password: entirely its own state ---
+function ResetPasswordForm({ onBackToLogin }) {
+  const { resetPassword } = useAuth();
+
+  const [email, setEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match. Please re-enter them.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError('');
+
+    const res = await resetPassword(email, newPassword);
+
+    if (!res.success) {
+      setError(res.error || 'Password reset failed. Please try again.');
+      setIsSubmitting(false);
+      return;
+    }
+    setSuccess(true);
+    setIsSubmitting(false);
+  };
+
+  if (success) {
+    return (
+      <div className="flex flex-col items-center text-center gap-6 py-6">
+        <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+          <CheckCircle2 size={32} />
+        </div>
+        <div>
+          <h3 className="text-lg font-black text-[#1C2B22] tracking-tight mb-2">Password Updated</h3>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+            Sign in with your new password to continue.
+          </p>
+        </div>
+        <button
+          onClick={onBackToLogin}
+          className="w-full bg-[#004F30] hover:bg-[#1C2B22] text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-[#004F30]/20 text-xs uppercase tracking-widest"
+        >
+          Back to Sign In
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <ErrorBanner message={error} />
+      <p className="text-xs font-bold text-gray-400 -mt-2 leading-relaxed">
+        Enter the email on your account and choose a new password.
+      </p>
+      <EmailField value={email} onChange={(e) => setEmail(e.target.value)} />
+      <PasswordField
+        label="New Password"
+        value={newPassword}
+        onChange={(e) => setNewPassword(e.target.value)}
+        show={showPassword}
+        onToggleShow={() => setShowPassword((v) => !v)}
+        autoComplete="new-password"
+      />
+      <PasswordField
+        label="Confirm New Password"
+        value={confirmPassword}
+        onChange={(e) => setConfirmPassword(e.target.value)}
+        show={showConfirmPassword}
+        onToggleShow={() => setShowConfirmPassword((v) => !v)}
+        autoComplete="new-password"
+      />
+
+      <button disabled={isSubmitting} type="submit" className="mt-2 w-full bg-gradient-to-r from-[#004F30] to-[#0A6B41] hover:from-[#1C2B22] hover:to-[#1C2B22] disabled:from-gray-400 disabled:to-gray-400 text-white font-black py-4 rounded-2xl transition-all duration-300 shadow-xl shadow-[#004F30]/20 text-xs uppercase tracking-widest flex items-center justify-center gap-2 group hover:-translate-y-0.5 hover:shadow-2xl">
+        {isSubmitting ? 'Updating Password...' : 'Reset Password'}
+        {!isSubmitting && <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />}
+      </button>
+
+      <button type="button" onClick={onBackToLogin} className="text-center text-[11px] font-black text-gray-400 hover:text-[#004F30] uppercase tracking-widest transition-colors">
+        Back to Sign In
+      </button>
+    </form>
+  );
+}
+
+export default function Auth() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register' | 'reset'
 
   // If already logged in, show a nice profile summary instead of the login form
   if (user) {
@@ -56,6 +313,12 @@ export default function Auth() {
                   Enter Command Center
                 </button>
               )}
+              <button
+                onClick={() => navigate('/account')}
+                className="w-full bg-gray-50 hover:bg-gray-100 text-gray-500 font-black py-4 rounded-xl transition-all text-xs uppercase tracking-widest border border-gray-100"
+              >
+                Account Settings
+              </button>
             </div>
           </div>
         </div>
@@ -63,33 +326,6 @@ export default function Auth() {
       </div>
     );
   }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!email || !password) return;
-
-    if (authMode === 'register' && password !== confirmPassword) {
-      setError('Passwords do not match. Please re-enter them.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError('');
-
-    const res = authMode === 'login'
-      ? await login(email, password)
-      : await signup(email, password);
-
-    if (!res.success) {
-      setError(res.error || 'Authentication failed. Please check your credentials.');
-    } else {
-      // Redirect to where they came from (e.g. /booking) or home
-      const redirectParams = new URLSearchParams(location.search);
-      const redirectPath = redirectParams.get('redirect') || '/';
-      navigate(redirectPath);
-    }
-    setIsSubmitting(false);
-  };
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] relative flex flex-col pt-[100px] overflow-hidden">
@@ -127,105 +363,38 @@ export default function Auth() {
               <span className="text-2xl font-black text-[#1C2B22] tracking-tighter">AERO</span>
             </div>
 
-            <div className="flex border-b border-gray-100 mb-10">
-              <button 
-                onClick={() => switchMode('login')}
-                className={`flex-1 pb-4 text-xs font-black tracking-widest uppercase transition-all duration-300 ${authMode === 'login' ? 'text-[#004F30] border-b-2 border-[#004F30]' : 'text-gray-400 hover:text-gray-600'}`}
-              >
-                Sign In
-              </button>
-              <button 
-                onClick={() => switchMode('register')}
-                className={`flex-1 pb-4 text-xs font-black tracking-widest uppercase transition-all duration-300 ${authMode === 'register' ? 'text-[#004F30] border-b-2 border-[#004F30]' : 'text-gray-400 hover:text-gray-600'}`}
-              >
-                Create Account
-              </button>
-            </div>
-            
-            {error && (
-              <div className="mb-8 p-4 bg-red-50 text-red-600 border border-red-100 rounded-2xl text-xs font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
-                <AlertTriangle size={18} className="shrink-0" />
-                {error}
+            {authMode === 'reset' ? (
+              <div className="mb-10">
+                <h2 className="text-xl font-black text-[#1C2B22] tracking-tight">Reset Password</h2>
+              </div>
+            ) : (
+              <div className="flex border-b border-gray-100 mb-10">
+                <button 
+                  onClick={() => setAuthMode('login')}
+                  className={`flex-1 pb-4 text-xs font-black tracking-widest uppercase transition-all duration-300 ${authMode === 'login' ? 'text-[#004F30] border-b-2 border-[#004F30]' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  Sign In
+                </button>
+                <button 
+                  onClick={() => setAuthMode('register')}
+                  className={`flex-1 pb-4 text-xs font-black tracking-widest uppercase transition-all duration-300 ${authMode === 'register' ? 'text-[#004F30] border-b-2 border-[#004F30]' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  Create Account
+                </button>
               </div>
             )}
-            
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-              <div>
-                <label className="block text-[10px] font-black tracking-widest text-gray-400 uppercase mb-3">Email Address</label>
-                <div className="relative">
-                  <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <input 
-                    type="email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="passenger@aero.com"
-                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl pl-14 pr-6 py-4 text-sm font-bold text-[#1C2B22] outline-none focus:border-[#004F30] focus:ring-2 focus:ring-[#004F30]/20 transition-all placeholder:text-gray-400"
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-[10px] font-black tracking-widest text-gray-400 uppercase mb-3">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <input 
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl pl-14 pr-14 py-4 text-sm font-bold text-[#1C2B22] outline-none focus:border-[#004F30] focus:ring-2 focus:ring-[#004F30]/20 transition-all placeholder:text-gray-400"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#004F30] transition-colors"
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
 
-              {authMode === 'register' && (
-                <div className="animate-fade-in-up">
-                  <label className="block text-[10px] font-black tracking-widest text-gray-400 uppercase mb-3">Confirm Password</label>
-                  <div className="relative">
-                    <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input 
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="••••••••"
-                      autoComplete="new-password"
-                      className="w-full bg-gray-50 border border-gray-200 rounded-2xl pl-14 pr-14 py-4 text-sm font-bold text-[#1C2B22] outline-none focus:border-[#004F30] focus:ring-2 focus:ring-[#004F30]/20 transition-all placeholder:text-gray-400"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword((v) => !v)}
-                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                      className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#004F30] transition-colors"
-                    >
-                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              <button disabled={isSubmitting} type="submit" className="mt-6 w-full bg-gradient-to-r from-[#004F30] to-[#0A6B41] hover:from-[#1C2B22] hover:to-[#1C2B22] disabled:from-gray-400 disabled:to-gray-400 text-white font-black py-4 rounded-2xl transition-all duration-300 shadow-xl shadow-[#004F30]/20 text-xs uppercase tracking-widest flex items-center justify-center gap-2 group hover:-translate-y-0.5 hover:shadow-2xl">
-                {isSubmitting ? (authMode === 'login' ? 'Authenticating...' : 'Creating Account...') : (authMode === 'login' ? 'Authenticate' : 'Register Account')}
-                {!isSubmitting && <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />}
-              </button>
+            {/* Each mode is a fully separate component with its own state —
+                switching tabs can never carry a value from one form into the other. */}
+            {authMode === 'login' && <LoginForm onForgotPassword={() => setAuthMode('reset')} />}
+            {authMode === 'register' && <RegisterForm />}
+            {authMode === 'reset' && <ResetPasswordForm onBackToLogin={() => setAuthMode('login')} />}
 
-              <div className="text-center mt-4">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Secure Identity Protocol v2.0
-                </p>
-              </div>
-            </form>
+            <div className="text-center mt-8">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                Secure Identity Protocol v2.0
+              </p>
+            </div>
           </div>
 
         </div>

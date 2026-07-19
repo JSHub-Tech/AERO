@@ -229,6 +229,26 @@ export const authSignup = async (email, password) => {
   return response.data;
 };
 
+export const authResetPassword = async (email, newPassword) => {
+  if (USE_MOCK_DATA) {
+    return new Promise((resolve) => {
+      setTimeout(() => resolve({ email }), 800);
+    });
+  }
+  const response = await API.post('/auth/reset-password', { email, new_password: newPassword });
+  return response.data;
+};
+
+export const authUpdateEmail = async (newEmail, currentPassword) => {
+  if (USE_MOCK_DATA) {
+    return new Promise((resolve) => {
+      setTimeout(() => resolve({ user_id: 'mock-uuid-1234', email: newEmail, role: 'user' }), 800);
+    });
+  }
+  const response = await API.patch('/auth/me/email', { new_email: newEmail, current_password: currentPassword });
+  return response.data;
+};
+
 // --- Admin Endpoints ---
 export const delayFlight = async (flightId, delayMinutes, delayReason, adminUserId) => {
   if (USE_MOCK_DATA) {

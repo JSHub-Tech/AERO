@@ -80,7 +80,7 @@ export default function Header() {
             {/* Auth Icon */}
             {user ? (
               <div className="flex items-center gap-1 ml-1 group">
-                <Link to="/login" title="My Profile" className="p-2 rounded-full bg-gray-50 text-[#004F30] hover:bg-[#004F30] hover:text-white transition-all border border-gray-100 flex items-center justify-center">
+                <Link to="/account" title="My Profile" className="p-2 rounded-full bg-gray-50 text-[#004F30] hover:bg-[#004F30] hover:text-white transition-all border border-gray-100 flex items-center justify-center">
                   <Unlock size={16} />
                 </Link>
                 <button onClick={logout} title="Sign Out" className="p-2 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all border border-red-100 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 pointer-events-none group-hover:pointer-events-auto">
@@ -140,7 +140,10 @@ export default function Header() {
           
           {user ? (
             <>
-              <button onClick={() => { logout(); setIsMenuOpen(false); }} className="mt-4 w-full text-center text-sm font-bold text-gray-400 hover:text-red-500 uppercase tracking-widest py-4">
+              <Link to="/account" className="mt-4 w-full flex items-center justify-center gap-2 text-sm font-bold text-[#1C2B22] uppercase tracking-widest py-4 border border-gray-200 rounded-2xl hover:bg-gray-50">
+                <Unlock size={16} /> Account Settings
+              </Link>
+              <button onClick={() => { logout(); setIsMenuOpen(false); }} className="mt-2 w-full text-center text-sm font-bold text-gray-400 hover:text-red-500 uppercase tracking-widest py-4">
                 Sign Out
               </button>
             </>
