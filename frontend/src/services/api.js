@@ -17,6 +17,31 @@ const API = axios.create({
   }
 });
 
+// The backend's `get_current_user` dependency (see app/api/dependencies.py)
+// authenticates requests off an `X-User-Id` header rather than a bearer
+// token. Attach it here, once, for every request — instead of requiring
+// every single call site to remember to pass it manually. Booking checkout
+// was silently 401ing against the real backend because bookFlight() never
+// sent this header; this interceptor fixes that and prevents the same bug
+// from recurring on any future authenticated endpoint.
+// `!config.headers['X-User-Id']` keeps this from clobbering a header a
+// caller has explicitly set on purpose (e.g. delayFlight's adminUserId).
+API.interceptors.request.use((config) => {
+  if (!config.headers['X-User-Id']) {
+    try {
+      const storedUser = localStorage.getItem('aero_user');
+      const user = storedUser ? JSON.parse(storedUser) : null;
+      if (user?.user_id) {
+        config.headers['X-User-Id'] = user.user_id;
+      }
+    } catch {
+      // Corrupt/missing localStorage — just proceed unauthenticated and
+      // let the backend return its normal 401.
+    }
+  }
+  return config;
+});
+
 // Helper to fetch and parse local CSVs to mimic backend responses
 const fetchMockCsv = async (url) => {
   const res = await fetch(url);
@@ -184,6 +209,23 @@ export const authLogin = async (email, password) => {
     });
   }
   const response = await API.post('/auth/login', { email, password });
+  return response.data;
+};
+
+export const authSignup = async (email, password) => {
+  if (USE_MOCK_DATA) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          user_id: 'mock-uuid-' + Math.random().toString(36).slice(2, 8),
+          email,
+          role: 'user',
+          created_at: new Date().toISOString()
+        });
+      }, 800);
+    });
+  }
+  const response = await API.post('/auth/signup', { email, password });
   return response.data;
 };
 

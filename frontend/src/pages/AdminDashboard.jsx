@@ -10,6 +10,8 @@ export default function AdminDashboard() {
   const [flights, setFlights] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 25;
   
   const [selectedFlight, setSelectedFlight] = useState(null);
   const [delayMins, setDelayMins] = useState(30);
@@ -88,6 +90,15 @@ export default function AdminDashboard() {
     f.dest.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Paginate client-side. This keeps the table from rendering an unbounded
+  // number of rows as real flight volume grows; if the dataset gets large
+  // enough that fetching it all up front becomes slow, this should move to
+  // server-side pagination (limit/offset params on getActiveFlights /
+  // getOnboardingFlights) instead.
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
   return (
     <div className="min-h-screen bg-[#F8F9FA] relative flex flex-col pt-[100px]">
       <div className="max-w-[1200px] mx-auto w-full px-6 flex-grow pb-12 relative z-10">
@@ -117,7 +128,7 @@ export default function AdminDashboard() {
                 type="text" 
                 placeholder="Search flight..."
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
                 className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold outline-none focus:border-[#004F30]"
               />
             </div>
@@ -140,7 +151,7 @@ export default function AdminDashboard() {
                 ) : filtered.length === 0 ? (
                   <tr><td colSpan="5" className="p-8 text-center text-gray-400 font-bold">No active flights found.</td></tr>
                 ) : (
-                  filtered.map((f, i) => (
+                  paginated.map((f, i) => (
                     <tr key={i} className="hover:bg-gray-50">
                       <td className="p-4 font-black text-[#1C2B22]">{f.flightNum}</td>
                       <td className="p-4 font-bold text-gray-600">{f.source} ➔ {f.dest}</td>
@@ -166,6 +177,31 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
+
+          {!loading && filtered.length > 0 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+              <span className="text-xs font-bold text-gray-400 tracking-widest uppercase">
+                Showing {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={safePage <= 1}
+                  className="px-3 py-1.5 rounded-lg text-xs font-black tracking-widest uppercase bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Prev
+                </button>
+                <span className="text-xs font-bold text-gray-500 px-2">{safePage} / {totalPages}</span>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={safePage >= totalPages}
+                  className="px-3 py-1.5 rounded-lg text-xs font-black tracking-widest uppercase bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       

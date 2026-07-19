@@ -29,20 +29,21 @@ export default function Footer() {
           {/* Links Col 1 */}
           <div className="flex flex-col gap-3 sm:gap-4">
             <h4 className="text-[#1C2B22] font-black tracking-widest text-xs uppercase mb-1 sm:mb-2">Platforms</h4>
-            <button onClick={() => navigate('/live-ops')} className="text-gray-500 hover:text-[#004F30] text-left font-medium transition-colors text-sm sm:text-base">Command Center</button>
-            <button onClick={() => navigate('/airports')} className="text-gray-500 hover:text-[#004F30] text-left font-medium transition-colors text-sm sm:text-base">Global Terminals</button>
-            <button onClick={() => navigate('/fleet')} className="text-gray-500 hover:text-[#004F30] text-left font-medium transition-colors text-sm sm:text-base">3D Showroom</button>
+            <button onClick={() => navigate('/airports')} className="text-gray-500 hover:text-[#004F30] hover:translate-x-1 text-left font-medium transition-all duration-300 text-sm sm:text-base w-fit">Global Terminals</button>
+            <button onClick={() => navigate('/fleet')} className="text-gray-500 hover:text-[#004F30] hover:translate-x-1 text-left font-medium transition-all duration-300 text-sm sm:text-base w-fit">3D Showroom</button>
           </div>
 
           {/* Links Col 2 */}
           <div className="flex flex-col gap-3 sm:gap-4">
             <h4 className="text-[#1C2B22] font-black tracking-widest text-xs uppercase mb-1 sm:mb-2">Company</h4>
-            <button onClick={() => navigate('/about')} className="text-gray-500 hover:text-[#004F30] text-left font-medium transition-colors text-sm sm:text-base">About Us</button>
-            <button onClick={() => navigate('/')} className="text-gray-500 hover:text-[#004F30] text-left font-medium transition-colors text-sm sm:text-base">Careers</button>
-            <button onClick={() => navigate('/contact')} className="text-gray-500 hover:text-[#004F30] text-left font-medium transition-colors text-sm sm:text-base">Contact</button>
+            <button onClick={() => navigate('/about')} className="text-gray-500 hover:text-[#004F30] hover:translate-x-1 text-left font-medium transition-all duration-300 text-sm sm:text-base w-fit">About Us</button>
+            <button onClick={() => navigate('/')} className="text-gray-500 hover:text-[#004F30] hover:translate-x-1 text-left font-medium transition-all duration-300 text-sm sm:text-base w-fit">Careers</button>
+            <button onClick={() => navigate('/contact')} className="text-gray-500 hover:text-[#004F30] hover:translate-x-1 text-left font-medium transition-all duration-300 text-sm sm:text-base w-fit">Contact</button>
           </div>
 
         </div>
+
+        <div className="h-[3px] w-24 mx-auto sm:mx-0 rounded-full bg-gradient-to-r from-[#004F30] to-[#A89411] mt-6 mb-2"></div>
 
         <div className="pt-4 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
           <p className="text-gray-500 font-medium text-xs sm:text-sm">
