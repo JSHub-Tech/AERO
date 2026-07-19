@@ -106,24 +106,24 @@ export default function Fleet() {
         <div className="w-full max-w-sm pointer-events-auto mt-20">
           
           {/* Glassmorphic Info Card */}
-          <div key={activePlane.id} className="bg-white/80 backdrop-blur-xl border border-white p-8 rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] mb-6 animate-in slide-in-from-left-4 fade-in duration-500">
-            <h2 className="text-4xl font-extrabold text-[#1C2B22] mb-3 leading-tight">
+          <div key={activePlane.id} className="bg-[#004F30]/90 backdrop-blur-xl border border-[#0A6B41] p-8 rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] mb-6 animate-in slide-in-from-left-4 fade-in duration-500">
+            <h2 className="text-4xl font-extrabold text-white mb-3 leading-tight">
               {activePlane.name}
             </h2>
-            <p className="text-gray-500 font-medium mb-6 text-sm leading-relaxed">
+            <p className="text-white/80 font-medium mb-6 text-sm leading-relaxed">
               {activePlane.subtitle}
             </p>
             
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gray-50 rounded-2xl p-4 shadow-inner border border-gray-100">
-                <Users className="w-5 h-5 text-[#004F30] opacity-60 mb-2" />
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Capacity</div>
-                <div className="text-xl font-bold text-[#1C2B22]">{activePlane.seats}</div>
+              <div className="bg-white/10 rounded-2xl p-4 shadow-inner border border-white/10">
+                <Users className="w-5 h-5 text-[#A89411] opacity-80 mb-2" />
+                <div className="text-[10px] font-bold text-white/60 uppercase tracking-wider mb-1">Capacity</div>
+                <div className="text-xl font-bold text-white">{activePlane.seats}</div>
               </div>
-              <div className="bg-gray-50 rounded-2xl p-4 shadow-inner border border-gray-100">
-                <Gauge className="w-5 h-5 text-[#004F30] opacity-60 mb-2" />
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Speed</div>
-                <div className="text-xl font-bold text-[#1C2B22]">{activePlane.speed} <span className="text-sm">km/h</span></div>
+              <div className="bg-white/10 rounded-2xl p-4 shadow-inner border border-white/10">
+                <Gauge className="w-5 h-5 text-[#A89411] opacity-80 mb-2" />
+                <div className="text-[10px] font-bold text-white/60 uppercase tracking-wider mb-1">Speed</div>
+                <div className="text-xl font-bold text-white">{activePlane.speed} <span className="text-sm opacity-80">km/h</span></div>
               </div>
             </div>
           </div>

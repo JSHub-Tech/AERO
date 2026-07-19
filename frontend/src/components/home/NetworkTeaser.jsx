@@ -17,7 +17,7 @@ export default function NetworkTeaser() {
   }, []);
 
   return (
-    <div ref={containerRef} className="w-full min-h-screen bg-white relative flex flex-col items-center justify-center overflow-hidden py-16 sm:py-20 md:py-24">
+    <div ref={containerRef} className="w-full min-h-screen bg-transparent relative flex flex-col items-center justify-center py-10 sm:py-12 md:py-16">
       
       {zoomedImage && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md cursor-pointer" onClick={() => setZoomedImage(null)}>
@@ -27,8 +27,8 @@ export default function NetworkTeaser() {
       )}
 
       {/* Header text fading into place */}
-      <div className={`max-w-[1600px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 z-10 flex flex-col items-center text-center mb-10 sm:mb-16 transition-all duration-1000 transform ${
-        isInView ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10'
+      <div className={`max-w-[1600px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 z-10 flex flex-col items-center text-center mb-8 sm:mb-12 transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
+        isInView ? 'opacity-100 translate-x-0 translate-y-0' : 'opacity-0 -translate-x-20 -translate-y-6'
       }`}>
         <div className="flex items-center gap-3 mb-4 sm:mb-6">
           <MapPin className="text-[#A89411]" size={22} />
@@ -36,10 +36,10 @@ export default function NetworkTeaser() {
         </div>
         
         <h2 className="text-4xl sm:text-5xl md:text-7xl font-black text-[#1C2B22] tracking-tighter leading-[1.1] mb-4 sm:mb-6">
-          CONNECTING THE <br/><span className="text-gray-300">WORLD.</span>
+          CONNECTING THE <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-[#004F30] to-[#A89411]">WORLD.</span>
         </h2>
         
-        <p className="text-gray-500 text-base sm:text-lg md:text-xl font-medium max-w-2xl leading-relaxed mb-7 sm:mb-10">
+        <p className="text-gray-500 text-base sm:text-lg md:text-xl font-medium max-w-2xl leading-relaxed mb-6 sm:mb-8">
           From the bustling hubs of the Middle East to the historic terminals of Europe, explore our vast network of interconnected global destinations.
         </p>
 
@@ -58,7 +58,7 @@ export default function NetworkTeaser() {
         {/* Card 1 - Enters from Left */}
         <div 
           onClick={() => setZoomedImage('/airport_pics/LHR_1.jpg')} 
-          className={`block h-56 sm:h-64 md:h-[350px] rounded-3xl md:rounded-[30px] overflow-hidden relative group cursor-pointer shadow-lg transition-all duration-1000 transform ${
+          className={`block h-48 sm:h-56 md:h-[260px] lg:h-[300px] rounded-3xl md:rounded-[30px] overflow-hidden relative group cursor-pointer shadow-lg transition-all duration-1000 transform ${
             isInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-20'
           }`}
         >
@@ -73,7 +73,7 @@ export default function NetworkTeaser() {
         {/* Card 2 - Pops up slightly delayed */}
         <div 
           onClick={() => setZoomedImage('/airport_pics/DXB_1.jpg')} 
-          className={`block h-56 sm:h-64 md:h-[350px] rounded-3xl md:rounded-[30px] overflow-hidden relative group cursor-pointer shadow-lg md:-translate-y-8 transition-all duration-1000 delay-200 transform ${
+          className={`block h-48 sm:h-56 md:h-[260px] lg:h-[300px] rounded-3xl md:rounded-[30px] overflow-hidden relative group cursor-pointer shadow-lg md:-translate-y-4 transition-all duration-1000 delay-200 transform ${
             isInView ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
           }`}
         >
@@ -88,7 +88,7 @@ export default function NetworkTeaser() {
         {/* Card 3 - Enters from Right */}
         <div 
           onClick={() => setZoomedImage('/airport_pics/IST_1.jpg')} 
-          className={`block h-56 sm:h-64 md:h-[350px] rounded-3xl md:rounded-[30px] overflow-hidden relative group cursor-pointer shadow-lg transition-all duration-1000 delay-400 transform ${
+          className={`block h-48 sm:h-56 md:h-[260px] lg:h-[300px] rounded-3xl md:rounded-[30px] overflow-hidden relative group cursor-pointer shadow-lg transition-all duration-1000 delay-400 transform ${
             isInView ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'
           }`}
         >

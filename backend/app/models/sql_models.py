@@ -12,6 +12,22 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.postgres import Base
 
 
+from app.db.postgres import Base
+
+
+class User(Base):
+    __tablename__ = "user"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email: Mapped[str] = mapped_column(String(150), unique=True, nullable=False, index=True)
+    password_hash: Mapped[str] = mapped_column(String(200), nullable=False)
+    role: Mapped[str] = mapped_column(String(20), default="user")  # 'user' or 'admin'
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)  # deactivated users are blocked at login
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    bookings: Mapped[list["Booking"]] = relationship(back_populates="user")
+
+
 class Airport(Base):
     __tablename__ = "airport"
 
@@ -89,6 +105,7 @@ class Booking(Base):
 
     booking_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     booking_reference: Mapped[str] = mapped_column(String(20), nullable=False, index=True)  # e.g. "AERO-X9F2A", shared across all seats in one checkout
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.user_id"), nullable=False)
     flight_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("flight.flight_id"), nullable=False)
     seat_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("seat.seat_id"), unique=True, nullable=False)
     # Nullable: the frontend's current POST /api/v1/flights/book payload
@@ -100,5 +117,6 @@ class Booking(Base):
     status: Mapped[str] = mapped_column(String(20), default="confirmed")  # confirmed|cancelled
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
+    user: Mapped["User"] = relationship(back_populates="bookings")
     flight: Mapped["Flight"] = relationship(back_populates="bookings")
     seat: Mapped["Seat"] = relationship(back_populates="booking")

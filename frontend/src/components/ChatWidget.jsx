@@ -23,15 +23,18 @@ export default function ChatWidget() {
     if (!input.trim()) return;
     
     const userText = input;
+    const userMessage = { text: userText, sender: 'user' };
+    const newMessages = [...messages, userMessage];
+    
     setInput('');
     
     // Add User message
-    addMessage({ text: userText, sender: 'user' });
+    addMessage(userMessage);
     
     try {
       setIsTyping(true);
       // Call the live Gemini RAG API
-      const response = await sendChatMessage(userText);
+      const response = await sendChatMessage(newMessages);
       addMessage({ text: response.answer, sender: 'ai' });
     } catch (error) {
       addMessage({ 
@@ -53,7 +56,7 @@ export default function ChatWidget() {
       
       {/* Expanded Chat Window */}
       {isOpen && (
-        <div className="mb-4 w-[calc(100vw-2rem)] max-w-[350px] md:w-[400px] h-[70vh] max-h-[500px] bg-white/95 backdrop-blur-3xl border border-gray-200 rounded-[2rem] shadow-[0_20px_60px_rgba(0,79,48,0.15)] flex flex-col overflow-hidden animate-in slide-in-from-bottom-10 fade-in duration-300">
+        <div className="mb-4 w-[calc(100vw-2rem)] max-w-[350px] md:w-[400px] h-[70vh] max-h-[500px] bg-[#004F30]/95 backdrop-blur-3xl border border-[#0A6B41] rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden animate-in slide-in-from-bottom-10 fade-in duration-300">
           
           {/* Header */}
           <div className="flex items-center justify-between p-4 bg-[#004F30] text-white">
@@ -77,19 +80,19 @@ export default function ChatWidget() {
           </div>
           
           {/* Chat History */}
-          <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4 bg-[#F8F9FA]/50 hide-scrollbar">
+          <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4 bg-transparent hide-scrollbar">
             {messages.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center opacity-60">
-                <Bot size={48} className="text-[#004F30] mb-4 opacity-50" />
-                <p className="text-[#1C2B22] font-bold tracking-widest text-sm uppercase">How can I assist your operations?</p>
+              <div className="flex-1 flex flex-col items-center justify-center text-center opacity-80">
+                <Bot size={48} className="text-[#A89411] mb-4 opacity-50" />
+                <p className="text-white/60 font-bold tracking-widest text-sm uppercase">How can I assist your operations?</p>
               </div>
             ) : (
               messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] p-3 rounded-2xl text-sm font-medium leading-relaxed ${
+                  <div className={`max-w-[85%] p-3 rounded-2xl text-sm font-medium leading-relaxed shadow-sm ${
                     msg.sender === 'user' 
-                    ? 'bg-[#004F30] text-white rounded-tr-sm' 
-                    : 'bg-white border border-gray-200 text-[#1C2B22] shadow-sm rounded-tl-sm prose prose-sm max-w-none prose-p:my-1 prose-p:leading-relaxed prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-strong:text-[#1C2B22] prose-pre:bg-gray-100 prose-pre:text-gray-800'
+                    ? 'bg-[#A89411] text-[#1C2B22] rounded-tr-sm' 
+                    : 'bg-white/10 border border-white/20 text-white rounded-tl-sm prose prose-sm max-w-none prose-p:my-1 prose-p:leading-relaxed prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-strong:text-[#A89411] prose-pre:bg-[#1C2B22] prose-pre:text-white/80'
                   }`}>
                     {msg.sender === 'user' ? (
                       msg.text
@@ -102,10 +105,10 @@ export default function ChatWidget() {
             )}
             {isTyping && (
               <div className="flex justify-start animate-fade-in">
-                <div className="max-w-[85%] p-3 rounded-2xl bg-white border border-gray-200 text-[#1C2B22] shadow-sm rounded-tl-sm flex items-center gap-2 h-11">
-                  <div className="w-1.5 h-1.5 bg-[#004F30] rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                  <div className="w-1.5 h-1.5 bg-[#004F30] rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                  <div className="w-1.5 h-1.5 bg-[#004F30] rounded-full animate-bounce"></div>
+                <div className="max-w-[85%] p-3 rounded-2xl bg-white/10 border border-white/20 text-white shadow-sm rounded-tl-sm flex items-center gap-2 h-11">
+                  <div className="w-1.5 h-1.5 bg-[#A89411] rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                  <div className="w-1.5 h-1.5 bg-[#A89411] rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                  <div className="w-1.5 h-1.5 bg-[#A89411] rounded-full animate-bounce"></div>
                 </div>
               </div>
             )}
@@ -113,21 +116,21 @@ export default function ChatWidget() {
           </div>
           
           {/* Input Area */}
-          <form onSubmit={handleSend} className="p-3 bg-white border-t border-gray-100 flex gap-2">
+          <form onSubmit={handleSend} className="p-3 bg-[#004F30] border-t border-[#0A6B41] flex gap-2">
             <input 
               type="text" 
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={isTyping}
               placeholder={isTyping ? "AERO AI is typing..." : "Ask AERO AI..."}
-              className="flex-1 bg-[#F8F9FA] border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-[#004F30] transition-colors disabled:opacity-50"
+              className="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-[#A89411] transition-colors disabled:opacity-50 text-white placeholder-white/40"
             />
             <button 
               type="submit"
               disabled={!input.trim() || isTyping}
-              className="bg-[#1C2B22] text-white p-3 rounded-xl hover:bg-[#004F30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="bg-[#A89411] border border-[#A89411] text-[#1C2B22] p-3 rounded-xl hover:bg-[#D4C345] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-md"
             >
-              <Send size={18} />
+              <Send size={18} className="ml-0.5" />
             </button>
           </form>
 
@@ -138,7 +141,7 @@ export default function ChatWidget() {
       {!isOpen && (
         <button 
           onClick={toggleChat}
-          className="w-16 h-16 bg-[#E8EFEA] text-[#004F30] rounded-full shadow-[0_10px_30px_rgba(0,79,48,0.15)] hover:scale-105 hover:bg-gradient-to-r hover:from-[#004F30] hover:to-[#A89411] hover:text-white transition-all duration-300 flex items-center justify-center group"
+          className="w-16 h-16 bg-[#E8EFEA] text-[#004F30] rounded-full shadow-[0_10px_30px_rgba(0,79,48,0.15)] hover:scale-105 hover:bg-[#004F30] hover:text-white transition-all duration-300 flex items-center justify-center group"
         >
           <Bot size={30} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" />
           <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 rounded-full border-2 border-[#E8EFEA] group-hover:border-transparent transition-colors"></span>

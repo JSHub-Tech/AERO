@@ -1,98 +1,242 @@
-import { Database, Network, Zap, Cuboid } from 'lucide-react';
+import { Database, Network, Zap, Cuboid, Globe2, ShieldCheck, HeartHandshake, Route, Cpu, MonitorSmartphone, MessageCircle, Sparkles, Clock, Compass } from 'lucide-react';
 import Footer from '../components/Footer';
 import { useAnimateOnScroll } from '../components/animation';
+import { useEffect } from 'react';
+
+const AI_FEATURES = [
+  { icon: Sparkles, title: 'Ask, Don\u2019t Search', desc: 'Just tell it what you need \u2014 "cheapest flight to Karachi next weekend" \u2014 and get a straight answer, no endless filters.', dir: 'left' },
+  { icon: Clock, title: 'Always On', desc: 'Day or night, it\u2019s ready to help with bookings, gate info, or a quick question about your trip.', dir: 'up' },
+  { icon: Compass, title: 'Knows AERO Inside Out', desc: 'From routes to real-time status, it understands our network so you get answers, not guesswork.', dir: 'right' },
+];
+
+const TEAM = [
+  {
+    name: 'Muhammad Jamal Matloob',
+    rank: 'Fleet Admiral',
+    icon: Route,
+    description: '...',
+  },
+  {
+    name: 'Muhammad Umer',
+    rank: 'Commander',
+    icon: Cpu,
+    description: '...',
+  },
+  {
+    name: 'Muhammad Saad Asif',
+    rank: 'Captain',
+    icon: MonitorSmartphone,
+    description: '...',
+  },
+];
+
+const MISSION = [
+  { icon: Globe2, title: 'Wider Reach', desc: 'We keep growing our route network so more cities, and the people in them, are within easy reach of each other.', dir: 'left' },
+  { icon: ShieldCheck, title: 'Safety First', desc: 'Every flight, on-time update, and gate change you see comes from the same rigorous operational standards we hold ourselves to.', dir: 'up' },
+  { icon: HeartHandshake, title: 'Care, Not Just Service', desc: 'Behind every booking is a team that treats your trip like it matters \u2014 because to us, it does.', dir: 'right' },
+];
+
+const STACK = [
+  { icon: Database, color: 'text-[#336791]', title: 'PostgreSQL', desc: 'Primary source of truth for flight logs and passenger manifests with strict ACID compliance.' },
+  { icon: Network, color: 'text-[#018bff]', title: 'Neo4j Graph', desc: 'Powers the routing engine, mapping connections between global hubs instantly.' },
+  { icon: Zap, color: 'text-[#dc382d]', title: 'Redis Cache', desc: 'Distributed in-memory caching keeps live aircraft telemetry updates under 50ms.' },
+  { icon: Cuboid, color: 'text-[#A89411]', title: 'Three.js', desc: 'Hardware-accelerated WebGL renders the 3D globe and interactive fleet showroom.' },
+];
+
+const flyClass = (inView, dir = 'up', delayClass = '') => {
+  const hidden = {
+    up: '-translate-y-16 rotate-1',
+    down: 'translate-y-16 -rotate-1',
+    left: '-translate-x-24 -rotate-3',
+    right: 'translate-x-24 rotate-3',
+  }[dir];
+
+  return `transition-all duration-700 ease-out transform ${delayClass} ${
+    inView ? 'opacity-100 translate-x-0 translate-y-0 rotate-0 scale-100' : `opacity-0 scale-90 ${hidden}`
+  }`;
+};
+
+
+
 
 export default function About({ isSection = false }) {
-  const [containerRef, isInView] = useAnimateOnScroll();
+  const [heroRef, heroInView] = useAnimateOnScroll();
+  const [missionRef, missionInView] = useAnimateOnScroll();
+  const [aiRef, aiInView] = useAnimateOnScroll();
+  const [teamRef, teamInView] = useAnimateOnScroll();
+  const [techRef, techInView] = useAnimateOnScroll();
 
   return (
-    <div id="about" ref={containerRef} className={`w-full flex flex-col bg-white relative overflow-hidden ${isSection ? 'min-h-screen justify-center py-16 sm:py-20 lg:py-24' : 'min-h-screen'}`}>
-      
+    <div id="about" className={`w-full flex flex-col bg-transparent relative overflow-x-hidden ${isSection ? 'snap-start' : 'min-h-screen'}`}>
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-[#004F30]/5 blur-[120px]"></div>
         <div className="absolute top-[20%] -right-[10%] w-[40%] h-[60%] rounded-full bg-[#A89411]/5 blur-[120px]"></div>
       </div>
 
-      <div className={`w-full flex flex-col items-center justify-center relative ${isSection ? 'py-0' : 'py-24 pt-[150px] min-h-[80vh]'}`}>
-        <div className="max-w-[1400px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 relative z-10 flex flex-col lg:flex-row items-center gap-10 sm:gap-14 lg:gap-20">
-          
-          {/* Left Side: Typography */}
-          <div className={`w-full lg:w-[45%] flex flex-col items-center lg:items-start text-center lg:text-left transition-all duration-1000 transform ${
-            isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
-          }`}>
-            <div className="px-4 py-2 bg-gray-50 border border-gray-100 rounded-full mb-6 sm:mb-8 inline-flex items-center gap-2 shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-[#004F30] animate-pulse"></span>
-              <span className="text-[#004F30] text-[10px] font-black tracking-[0.2em] uppercase">Enterprise Infrastructure</span>
-            </div>
+      {/* ===== PART 1: THE VISION ===== */}
+      <div className={`w-full ${isSection ? '' : 'pt-[60px]'} flex flex-col justify-center snap-start`}>
+        <div ref={heroRef} className={`w-full relative flex flex-col items-center py-20 overflow-hidden bg-transparent`}>
+          <div className="max-w-[1000px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 relative z-10 text-center">
+            <div className={flyClass(heroInView, 'up')}>
+              <div className="px-4 py-2 bg-gray-50 border border-gray-100 rounded-full mb-6 sm:mb-8 inline-flex items-center gap-2 shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-[#004F30] animate-pulse"></span>
+                <span className="text-[#004F30] text-[10px] font-black tracking-[0.2em] uppercase">Our Story</span>
+              </div>
 
-            <h2 className="text-5xl sm:text-6xl md:text-8xl font-black text-[#1C2B22] tracking-tighter leading-[0.95] mb-6 sm:mb-8">
-              BUILT <br/><span className="text-transparent bg-clip-text bg-gradient-to-br from-[#004F30] to-[#A89411]">FOR SCALE.</span>
-            </h2>
-            
-            <p className="text-gray-500 text-base sm:text-lg md:text-xl font-medium leading-relaxed mb-8 sm:mb-12 max-w-lg">
-              AERO is a full-stack, distributed operations platform engineered for modern aviation. Our multi-database microservice architecture guarantees frictionless, real-time tracking of the entire global fleet.
-            </p>
-            
-            <div className="flex flex-wrap gap-4 sm:gap-5 justify-center lg:justify-start">
-              <div className="flex flex-col items-center lg:items-start px-6 sm:px-8 py-5 sm:py-6 rounded-3xl border border-gray-200 bg-white/60 backdrop-blur-xl shadow-sm hover:shadow-md hover:border-[#004F30]/30 transition-all">
-                <span className="text-4xl sm:text-5xl font-black text-[#1C2B22] tracking-normal mb-1.5">99.9%</span>
-                <span className="text-xs text-gray-400 font-bold tracking-[0.15em] uppercase">Global Uptime</span>
+              <h1 className="text-5xl sm:text-6xl md:text-7xl font-black text-[#1C2B22] tracking-tighter leading-[0.95] mb-6 sm:mb-8">
+                GETTING YOU HOME, <br/><span className="text-transparent bg-clip-text bg-gradient-to-br from-[#004F30] to-[#A89411]">EVERY TIME.</span>
+              </h1>
+
+              <p className="text-gray-500 text-base sm:text-lg md:text-xl font-medium leading-relaxed max-w-2xl mx-auto">
+                AERO connects travelers to the places that matter most. We built our airline around a simple idea: flying should feel dependable, transparent, and human — from the moment you book to the moment you land.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ===== MISSION / VALUES ===== */}
+        <div ref={missionRef} className="w-full relative z-10">
+          <div className="max-w-[1400px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 pb-20 sm:pb-32">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            {MISSION.map(({ icon: Icon, title, desc, dir }, i) => (
+              <div
+                key={title}
+                className={`${flyClass(missionInView, dir, i === 1 ? 'delay-150' : i === 2 ? 'delay-300' : '')} bg-[#004F30] border border-[#0A6B41] p-6 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,79,48,0.15)] hover:-translate-y-2 transition-all duration-300 group`}
+              >
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-white/10 flex items-center justify-center mb-6 sm:mb-8 group-hover:scale-110 group-hover:bg-[#A89411]/20 transition-all duration-500">
+                  <Icon className="text-[#A89411]" size={28} />
+                </div>
+                <h3 className="text-white font-black text-lg sm:text-xl mb-2 sm:mb-3 tracking-wide">{title}</h3>
+                <p className="text-white/80 text-sm font-medium leading-relaxed">{desc}</p>
               </div>
-              <div className="flex flex-col items-center lg:items-start px-6 sm:px-8 py-5 sm:py-6 rounded-3xl border border-gray-200 bg-white/60 backdrop-blur-xl shadow-sm hover:shadow-md hover:border-[#004F30]/30 transition-all">
-                <span className="text-4xl sm:text-5xl font-black text-[#1C2B22] tracking-normal mb-1.5">&lt;50<span className="text-xl sm:text-2xl text-gray-400 ml-0.5">ms</span></span>
-                <span className="text-xs text-gray-400 font-bold tracking-[0.15em] uppercase">Data Latency</span>
+            ))}
+          </div>
+        </div>
+      </div>
+      </div>
+
+      {/* AI ASSISTANT merged into Vision */}
+      <div ref={aiRef} className="w-full relative z-10 bg-transparent flex flex-col justify-center pt-10 sm:pt-16 snap-start">
+        <div className="max-w-[1400px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 pb-20 sm:pb-28 relative z-10">
+          <div className={`${flyClass(aiInView, 'up')} bg-[#004F30] border border-[#0A6B41] rounded-[2.5rem] p-8 sm:p-12 md:p-16 mb-12 sm:mb-16 relative overflow-hidden group`}>
+            
+            {/* Ambient Background Glows */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3"></div>
+            <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#A89411]/10 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/4"></div>
+
+            <div className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto">
+              <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/10 backdrop-blur-md rounded-full mb-8 border border-white/20 group-hover:scale-105 transition-transform duration-500 shadow-xl">
+                <MessageCircle className="text-[#A89411]" size={20} />
+                <span className="text-[#A89411] text-xs sm:text-sm font-black tracking-[0.2em] uppercase">Introducing AERO AI</span>
               </div>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight mb-4 sm:mb-6">
+                Your Trip, One Conversation Away.
+              </h2>
+              <p className="text-white/80 text-sm sm:text-base md:text-lg font-medium leading-relaxed">
+                Every AERO booking now comes with a built-in assistant. Ask it anything about your flight, your route, or your booking, and it'll help you sort it out — instantly, and in plain language.
+              </p>
             </div>
           </div>
 
-          {/* Right Side: Tech Stack Grid with Staggered Card Animation */}
-          <div className="w-full lg:w-[55%] grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 relative">
-            
-            <div className={`bg-white/80 backdrop-blur-xl border border-gray-100 p-6 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,0,0,0.06)] hover:-translate-y-2 transition-all duration-500 group ${
-              isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'
-            }`}>
-              <Database className="text-[#336791] mb-5 sm:mb-8 group-hover:scale-110 transition-transform" size={36} />
-              <h3 className="text-[#1C2B22] font-black text-xl sm:text-2xl mb-2 sm:mb-3 tracking-wide">PostgreSQL</h3>
-              <p className="text-gray-500 text-sm font-medium leading-relaxed">
-                Primary source of truth for millions of robust transactional flight logs and passenger manifests with strict ACID compliance.
-              </p>
-            </div>
-
-            <div className={`bg-white/80 backdrop-blur-xl border border-gray-100 p-6 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,0,0,0.06)] hover:-translate-y-2 transition-all duration-500 group md:translate-y-12 ${
-              isInView ? 'opacity-100 translate-y-0 md:translate-y-12' : 'opacity-0 translate-y-16'
-            } transition-all delay-150`}>
-              <Network className="text-[#018bff] mb-5 sm:mb-8 group-hover:scale-110 transition-transform" size={36} />
-              <h3 className="text-[#1C2B22] font-black text-xl sm:text-2xl mb-2 sm:mb-3 tracking-wide">Neo4j Graph</h3>
-              <p className="text-gray-500 text-sm font-medium leading-relaxed">
-                Powering the routing engine. Complex multi-node connections between global hubs are mapped instantly.
-              </p>
-            </div>
-
-            <div className={`bg-white/80 backdrop-blur-xl border border-gray-100 p-6 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,0,0,0.06)] hover:-translate-y-2 transition-all duration-500 group ${
-              isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'
-            } transition-all delay-300`}>
-              <Zap className="text-[#dc382d] mb-5 sm:mb-8 group-hover:scale-110 transition-transform" size={36} />
-              <h3 className="text-[#1C2B22] font-black text-xl sm:text-2xl mb-2 sm:mb-3 tracking-wide">Redis Cache</h3>
-              <p className="text-gray-500 text-sm font-medium leading-relaxed">
-                Distributed in-memory caching ensures that live aircraft telemetry reaches the frontend in under 50 milliseconds.
-              </p>
-            </div>
-
-            <div className={`bg-white/80 backdrop-blur-xl border border-gray-100 p-6 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,0,0,0.06)] hover:-translate-y-2 transition-all duration-500 group md:translate-y-12 ${
-              isInView ? 'opacity-100 translate-y-0 md:translate-y-12' : 'opacity-0 translate-y-16'
-            } transition-all delay-450`}>
-              <Cuboid className="text-[#A89411] mb-5 sm:mb-8 group-hover:scale-110 transition-transform" size={36} />
-              <h3 className="text-[#1C2B22] font-black text-xl sm:text-2xl mb-2 sm:mb-3 tracking-wide">Three.js</h3>
-              <p className="text-gray-500 text-sm font-medium leading-relaxed">
-                Hardware-accelerated WebGL renders the massive cinematic 3D globe and interactive fleet showroom directly in the browser.
-              </p>
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            {AI_FEATURES.map(({ icon: Icon, title, desc, dir }, i) => (
+              <div
+                key={title}
+                className={`${flyClass(aiInView, dir, i === 1 ? 'delay-150' : i === 2 ? 'delay-300' : '')} bg-[#004F30] border border-[#0A6B41] p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] hover:-translate-y-2 hover:shadow-[0_20px_60px_rgba(0,79,48,0.15)] transition-all duration-300 group`}
+              >
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-[#A89411]/20 transition-colors">
+                    <Icon className="text-[#A89411]" size={24} />
+                  </div>
+                </div>
+                <h3 className="text-white font-black text-base sm:text-lg mb-2 tracking-wide">{title}</h3>
+                <p className="text-white/80 text-xs sm:text-sm font-medium leading-relaxed">{desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {!isSection && <Footer />}
+      {/* ===== PART 2: THE ENGINE ===== */}
+      <div ref={teamRef} className="w-full relative z-10 bg-transparent overflow-hidden flex flex-col justify-center pt-10 snap-start">
+        
+        <div className="max-w-[1400px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 pb-16 sm:pb-24 relative z-10">
+          <div className={`${flyClass(teamInView, 'up')} text-center max-w-2xl mx-auto mb-14 sm:mb-20`}>
+            <div className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-full mb-5 sm:mb-6 inline-flex items-center gap-2 shadow-sm">
+              <span className="text-[#004F30] text-[10px] font-black tracking-[0.2em] uppercase">The Creators</span>
+            </div>
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-[#1C2B22] tracking-tight mb-4 sm:mb-6">The Brains Behind AERO</h2>
+            <p className="text-gray-500 text-base sm:text-lg font-medium leading-relaxed">
+              Built and engineered by a dedicated trio obsessed with precision — from the initial runway concept to the final backend runtime.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10 max-w-5xl mx-auto">
+            {TEAM.map(({ name, rank, description, icon: Icon }, i) => (
+              <div
+                key={name}
+                className={`${flyClass(teamInView, i % 2 === 0 ? 'left' : 'right', i === 1 ? 'delay-150' : i === 2 ? 'delay-300' : '')} bg-[#004F30] border border-[#0A6B41] p-8 sm:p-10 rounded-[2rem] sm:rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_60px_rgba(0,79,48,0.2)] hover:-translate-y-2 transition-all duration-500 group text-center relative mt-16`}
+              >
+                <div className="absolute inset-0 overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] pointer-events-none">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[40px] -translate-y-1/2 translate-x-1/2 transition-opacity group-hover:opacity-100 opacity-50"></div>
+                </div>
+                
+                {/* Real Captain Hat sitting on the card itself */}
+                <div className="absolute -top-20 sm:-top-24 left-1/2 -translate-x-1/2 w-48 sm:w-56 z-30 drop-shadow-[0_20px_20px_rgba(0,0,0,0.6)] transition-transform duration-500 group-hover:-rotate-6 group-hover:scale-110 pointer-events-none">
+                  <img src="/cap.png" alt="AERO Captain Hat" className="w-full h-auto" />
+                </div>
+
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-[1.5rem] bg-white/10 mx-auto flex items-center justify-center mb-6 sm:mb-8 group-hover:scale-110 group-hover:-rotate-3 transition-all duration-500 border border-white/20 shadow-xl overflow-hidden relative z-10">
+                  <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${name}&backgroundColor=004F30&textColor=A89411`} alt={name} className="w-full h-full object-cover" />
+                </div>
+                <h3 className="text-white font-black text-lg sm:text-xl tracking-tight mb-4 uppercase">{name}</h3>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 border border-white/20 rounded-full group-hover:border-[#A89411]/50 transition-colors">
+                  <Icon className="text-[#A89411]" size={14} />
+                  <span className="text-white text-[10px] font-black tracking-[0.2em] uppercase">{rank}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Tech stack merged into Engine */}
+      <div ref={techRef} className="w-full relative z-10 flex flex-col justify-center snap-start">
+        <div className="max-w-[1400px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 pb-20 sm:pb-32">
+
+          <div className={`${flyClass(techInView, 'up')} text-center max-w-2xl mx-auto mb-10 sm:mb-14`}>
+            <div className="px-4 py-2 bg-gray-50 border border-gray-100 rounded-full mb-5 sm:mb-6 inline-flex items-center gap-2 shadow-sm">
+              <span className="text-[#004F30] text-[10px] font-black tracking-[0.2em] uppercase">Under the Hood</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#1C2B22] tracking-tight mb-4">Built for Scale</h2>
+            <p className="text-gray-500 text-sm sm:text-base font-medium leading-relaxed">
+              For the curious: AERO runs on a distributed, multi-database architecture engineered for real-time global fleet tracking.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {STACK.map(({ icon: Icon, color, title, desc }, i) => {
+              const delayClass = ['', 'delay-150', 'delay-300', 'delay-450'][i] || '';
+              return (
+                <div
+                  key={title}
+                  className={`${flyClass(techInView, i % 2 === 0 ? 'down' : 'up', delayClass)} bg-[#004F30] border border-[#0A6B41] p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,79,48,0.15)] hover:-translate-y-2 transition-all duration-300 group`}
+                >
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-[#A89411]/20 transition-colors">
+                      <Icon className="text-[#A89411]" size={24} />
+                    </div>
+                  </div>
+                  <h3 className="text-white font-black text-base sm:text-lg mb-2 tracking-wide">{title}</h3>
+                  <p className="text-white/80 text-xs sm:text-sm font-medium leading-relaxed">{desc}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {!isSection && <div className="mt-10"><Footer /></div>}
     </div>
   );
 }

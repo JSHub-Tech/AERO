@@ -1,12 +1,27 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense, lazy } from 'react';
 import { getAirports, getRoutes, getFlightSchedule, getAirportDetails } from '../services/api';
-import GlobeViewer from '../components/GlobeViewer';
 import Footer from '../components/Footer';
 import FleetTeaser from '../components/home/FleetTeaser';
 import LiveOpsTeaser from '../components/home/LiveOpsTeaser';
 import NetworkTeaser from '../components/home/NetworkTeaser';
 import About from './About';
 import Contact from './Contact';
+
+// GlobeViewer pulls in three, @react-three/fiber, @react-three/drei, and
+// react-globe.gl — a heavy bundle that isn't needed for first paint.
+// Lazy-loading it keeps Home's text/hero content eager (fast first paint)
+// while the 3D globe streams in behind a lightweight placeholder below.
+const GlobeViewer = lazy(() => import('../components/GlobeViewer'));
+
+// Lightweight placeholder shown while the 3D globe bundle loads
+const GlobePlaceholder = () => (
+  <div className="w-full h-full bg-transparent flex items-center justify-center text-gray-400 font-bold tracking-widest text-sm">
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-10 h-10 border-4 border-gray-200 border-t-[#004F30] rounded-full animate-spin"></div>
+      <span>LOADING GLOBE...</span>
+    </div>
+  </div>
+);
 
 export default function Home() {
   const [selectedAirportCode, setSelectedAirportCode] = useState(null);
@@ -27,7 +42,15 @@ export default function Home() {
 
     if (heroRef.current) observer.observe(heroRef.current);
 
-    return () => observer.disconnect();
+    // Prevent Layout.jsx from scrolling, allow ONLY this container to scroll
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+    };
   }, []);
 
   useEffect(() => {
@@ -75,29 +98,15 @@ export default function Home() {
     fetchData();
   }, []);
 
-  // Lock global scroll when in Single Airport View OR to enforce snap scrolling container
-  useEffect(() => {
-    // ALWAYS lock the global body scroll so our custom snap-scroll container can take over
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.documentElement.style.overflow = '';
-      document.body.style.overflow = '';
-    }
-  }, []);
 
   const airportFlights = selectedAirportCode ? flights.filter(f => f.departure_airport === selectedAirportCode || f.arrival_airport === selectedAirportCode) : [];
   const selectedDetails = selectedAirportCode ? airportDetailsMap[selectedAirportCode] : null;
 
   return (
-    <div className="w-full h-screen overflow-y-scroll snap-y snap-mandatory scroll-smooth relative hide-scrollbar">
-      
-      {/* 1. HERO SECTION (The 3D Globe & UI Panels) */}
-      <section id="hero" ref={heroRef} className="snap-start shrink-0 flex flex-col md:flex-row h-screen pt-[80px] w-full items-center justify-center relative overflow-hidden bg-[#F8F9FA]">
-        
-        {/* Soft light gradient background */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white via-[#F8F9FA] to-[#F0F4F2] -z-10"></div>
+    <div className="w-full flex flex-col overflow-x-hidden h-screen overflow-y-scroll snap-y snap-mandatory scroll-smooth relative bg-transparent">
+
+      {/* 1. HERO SECTION (The UI Panels) */}
+      <section id="hero" ref={heroRef} className="flex flex-col md:flex-row h-screen pt-[80px] w-full items-center justify-center relative overflow-hidden z-10 shrink-0 snap-start">
         
         <div className={`text-left z-20 w-full md:w-[45%] h-full flex flex-col pt-10 md:pt-24 px-4 md:px-12 absolute left-0 pointer-events-none transition-all duration-700 ${selectedAirportCode ? 'md:bg-white/80 backdrop-blur-xl border-r border-gray-200 shadow-2xl justify-center pt-0' : ''}`}>
           
@@ -169,7 +178,12 @@ export default function Home() {
             
           ) : (
             
-            <div className="w-full h-full flex flex-col justify-center pointer-events-auto pl-4 md:pl-8">
+            <div className={`w-full h-full flex flex-col justify-center pointer-events-auto pl-4 md:pl-8 transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
+              heroInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-24'
+            }`}>
+              <div className="mb-4 sm:mb-8 drop-shadow-[0_4px_20px_rgba(0,0,0,0.35)] sm:drop-shadow-none">
+                <img src="/logo.png" alt="AERO" className="h-10 sm:h-14 md:h-20 w-auto" />
+              </div>
               <h1 className="text-[clamp(2rem,9vw,4rem)] md:text-[clamp(1.875rem,calc(6.5vw_-_12px),5.5rem)] font-black tracking-tighter text-white sm:text-[#1C2B22] leading-[1.05] mb-4 sm:mb-6 md:mb-8 break-words drop-shadow-[0_4px_20px_rgba(0,0,0,0.35)] sm:drop-shadow-none">
                 THE FUTURE OF <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#7FE0B0] to-[#F0D97A] sm:from-[#004F30] sm:to-[#A89411]">FLIGHT TELEMETRY.</span>
               </h1>
@@ -183,18 +197,21 @@ export default function Home() {
           
         </div>
 
-        <div className={`z-10 absolute inset-0 w-full h-full pointer-events-auto transition-all duration-1000 ${selectedAirportCode ? 'md:left-[45%] md:w-[55%]' : 'md:left-[40%] md:w-[60%]'}`}>
-          {heroInView ? (
-            <GlobeViewer 
-              airports={airports}
-              routes={routes}
-              flights={flights}
-              selectedAirportCode={selectedAirportCode}
-              onAirportClick={setSelectedAirportCode}
-              disableInteractions={true}
-            />
+        {/* The Globe is back inside the Hero so it scrolls up normally */}
+        <div className={`z-0 absolute inset-0 w-full h-full pointer-events-auto transition-all duration-1000 ${selectedAirportCode ? 'md:left-[45%] md:w-[55%]' : 'md:left-[40%] md:w-[60%]'}`}>
+          {heroInView || !selectedAirportCode ? (
+            <Suspense fallback={<GlobePlaceholder />}>
+              <GlobeViewer 
+                airports={airports}
+                routes={routes}
+                flights={flights}
+                selectedAirportCode={selectedAirportCode}
+                onAirportClick={setSelectedAirportCode}
+                disableInteractions={true}
+              />
+            </Suspense>
           ) : (
-             <div className="w-full h-full bg-[#F8F9FA] flex items-center justify-center text-gray-400 font-bold tracking-widest text-sm">
+             <div className="w-full h-full bg-transparent flex items-center justify-center text-[#004F30] font-bold tracking-widest text-sm">
                [ GLOBE SUSPENDED FOR MEMORY OPTIMIZATION ]
              </div>
           )}
@@ -202,26 +219,22 @@ export default function Home() {
       </section>
 
       {!selectedAirportCode && (
-        <>
-          <section className="snap-start shrink-0 w-full min-h-screen">
+        <div className="relative z-10 w-full flex flex-col">
+          <section className="w-full h-screen shrink-0 snap-start">
             <FleetTeaser />
           </section>
-          <section className="snap-start shrink-0 w-full min-h-screen">
+          <section className="w-full h-screen shrink-0 snap-start">
             <LiveOpsTeaser />
           </section>
-          <section className="snap-start shrink-0 w-full min-h-screen">
+          <section className="w-full h-screen shrink-0 snap-start">
             <NetworkTeaser />
           </section>
-          <section className="snap-start shrink-0 w-full min-h-screen">
-            <About isSection={true} />
-          </section>
-          <section className="snap-start shrink-0 w-full min-h-screen">
-            <Contact isSection={true} />
-          </section>
-          <section className="snap-start shrink-0 w-full">
+          <About isSection={true} />
+          <Contact isSection={true} />
+          <section className="w-full shrink-0 snap-start">
             <Footer />
           </section>
-        </>
+        </div>
       )}
 
     </div>

@@ -191,11 +191,11 @@ const getPlaneIcon = (heading) => {
 };
 
   return (
-    <div className="w-full h-full relative z-0 rounded-3xl overflow-hidden border border-white shadow-[0_20px_50px_rgba(0,79,48,0.05)]">
+    <div className="w-full h-full relative z-0 bg-[#EAEFF3]">
       <style>{popupOverrides}</style>
       
       {/* Network Routes Toggle Button */}
-      <div className="absolute top-4 right-4 z-[1000]">
+      <div className="absolute top-[120px] right-8 z-[1000]">
         <button
           onClick={() => setShowRoutes(!showRoutes)}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-bold shadow-lg transition-all border text-sm tracking-widest cursor-pointer ${
@@ -271,7 +271,7 @@ const getPlaneIcon = (heading) => {
               <Marker 
                 position={currentPos}
                 icon={getPlaneIcon(flight.heading)}
-                eventHandlers={{ click: () => onSelectFlight && onSelectFlight(flight.id) }}
+                eventHandlers={{ click: () => onSelectFlight && onSelectFlight(flight) }}
               >
               <Popup className="custom-light-popup">
                 <div className="flex flex-col w-full h-full overflow-hidden rounded-[14px]">
