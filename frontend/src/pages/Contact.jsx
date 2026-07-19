@@ -6,7 +6,7 @@ export default function Contact({ isSection = false }) {
   const navigate = useNavigate();
 
   return (
-    <div id="contact" className={`w-full flex flex-col bg-[#F8F9FA] relative overflow-hidden ${isSection ? 'min-h-screen justify-center py-16 sm:py-20 lg:py-24' : 'min-h-screen pt-[80px]'}`}>
+    <div id="contact" className={`w-full flex flex-col relative overflow-hidden ${isSection ? 'snap-start min-h-screen justify-center py-16 sm:py-20 lg:py-24 bg-transparent' : 'bg-transparent min-h-screen pt-[80px]'}`}>
       
       {/* Abstract Grid Background */}
       <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">
@@ -58,24 +58,24 @@ export default function Contact({ isSection = false }) {
 
           {/* Right: Premium Contact Form */}
           <div className="w-full lg:w-[55%]">
-            <form className="bg-white/70 backdrop-blur-3xl p-6 sm:p-10 md:p-14 rounded-[24px] sm:rounded-[40px] shadow-[0_20px_60px_rgba(0,79,48,0.06)] border border-white space-y-5 sm:space-y-6">
+            <form className="bg-[#004F30] border border-[#0A6B41] p-6 sm:p-10 md:p-14 rounded-[24px] sm:rounded-[40px] shadow-[0_20px_60px_rgba(0,79,48,0.15)] space-y-5 sm:space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black tracking-widest text-gray-400 uppercase ml-2">Full Name</label>
-                  <input type="text" className="w-full bg-[#F8F9FA] border border-gray-100 rounded-2xl p-4 sm:p-5 text-[#1C2B22] font-medium focus:outline-none focus:border-[#004F30] focus:ring-2 focus:ring-[#004F30]/20 transition-all placeholder-gray-300" placeholder="John Doe" />
+                  <label className="text-[10px] font-black tracking-widest text-white/70 uppercase ml-2">Full Name</label>
+                  <input type="text" className="w-full bg-white/10 border border-white/20 rounded-2xl p-4 sm:p-5 text-white font-medium focus:outline-none focus:border-white focus:ring-2 focus:ring-white/20 transition-all placeholder-white/40" placeholder="John Doe" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black tracking-widest text-gray-400 uppercase ml-2">Email Address</label>
-                  <input type="email" className="w-full bg-[#F8F9FA] border border-gray-100 rounded-2xl p-4 sm:p-5 text-[#1C2B22] font-medium focus:outline-none focus:border-[#004F30] focus:ring-2 focus:ring-[#004F30]/20 transition-all placeholder-gray-300" placeholder="john@example.com" />
+                  <label className="text-[10px] font-black tracking-widest text-white/70 uppercase ml-2">Email Address</label>
+                  <input type="email" className="w-full bg-white/10 border border-white/20 rounded-2xl p-4 sm:p-5 text-white font-medium focus:outline-none focus:border-white focus:ring-2 focus:ring-white/20 transition-all placeholder-white/40" placeholder="john@example.com" />
                 </div>
               </div>
               
               <div className="space-y-2">
-                <label className="text-[10px] font-black tracking-widest text-gray-400 uppercase ml-2">Message</label>
-                <textarea rows="3" className="w-full bg-[#F8F9FA] border border-gray-100 rounded-2xl p-4 sm:p-5 text-[#1C2B22] font-medium focus:outline-none focus:border-[#004F30] focus:ring-2 focus:ring-[#004F30]/20 transition-all resize-none placeholder-gray-300" placeholder="How can we assist you today?"></textarea>
+                <label className="text-[10px] font-black tracking-widest text-white/70 uppercase ml-2">Message</label>
+                <textarea rows="3" className="w-full bg-white/10 border border-white/20 rounded-2xl p-4 sm:p-5 text-white font-medium focus:outline-none focus:border-white focus:ring-2 focus:ring-white/20 transition-all resize-none placeholder-white/40" placeholder="How can we assist you today?"></textarea>
               </div>
               
-              <button type="button" className="group flex items-center justify-center w-full gap-3 sm:gap-4 bg-[#004F30] text-white px-6 sm:px-8 py-4 sm:py-5 rounded-2xl font-black tracking-widest text-xs sm:text-sm hover:bg-[#1C2B22] transition-all duration-300 shadow-lg hover:shadow-xl mt-2 sm:mt-4">
+              <button type="button" className="group flex items-center justify-center w-full gap-3 sm:gap-4 bg-white text-[#1C2B22] px-6 sm:px-8 py-4 sm:py-5 rounded-2xl font-black tracking-widest text-xs sm:text-sm hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl mt-2 sm:mt-4">
                 SEND TRANSMISSION
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </button>

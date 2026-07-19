@@ -70,16 +70,16 @@ export default function FlightsTab({ adminUserId }) {
         <div className="bg-green-50 text-green-700 p-4 rounded-xl font-bold text-sm border border-green-200">{successMsg}</div>
       )}
 
-      <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 flex flex-wrap gap-4 items-center justify-between bg-gray-50/50">
-          <h2 className="text-sm font-black tracking-widest uppercase text-gray-400">All Flights</h2>
+      <div className="bg-[#004F30] rounded-3xl shadow-[0_20px_60px_rgba(0,79,48,0.3)] border border-[#0A6B41] overflow-hidden">
+        <div className="p-6 border-b border-[#0A6B41] flex flex-wrap gap-4 items-center justify-between bg-[#1C2B22]/30">
+          <h2 className="text-sm font-black tracking-widest uppercase text-white/50">All Flights</h2>
           <div className="flex items-center gap-3">
             <SearchBox value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search flight or airport..." />
             <button
               onClick={() => setFormTarget('new')}
               disabled={aircraft.length === 0}
               title={aircraft.length === 0 ? 'Add an active aircraft first' : ''}
-              className="flex items-center gap-2 px-4 py-2 bg-[#004F30] hover:bg-[#003d25] disabled:bg-gray-300 text-white rounded-lg font-black text-[10px] uppercase tracking-widest transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-[#A89411] hover:bg-[#D4C345] disabled:bg-[#A89411]/50 disabled:text-[#1C2B22]/50 text-[#1C2B22] rounded-lg font-black text-[10px] uppercase tracking-widest transition-colors shadow-md"
             >
               <Plus size={14} /> New Flight
             </button>
@@ -88,7 +88,7 @@ export default function FlightsTab({ adminUserId }) {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 text-[10px] uppercase font-black tracking-widest text-gray-400">
+            <thead className="bg-[#1C2B22]/50 text-[10px] uppercase font-black tracking-widest text-white/50">
               <tr>
                 <th className="p-4">Flight</th>
                 <th className="p-4">Route</th>
@@ -98,28 +98,28 @@ export default function FlightsTab({ adminUserId }) {
                 <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-[#0A6B41]">
               {loading ? (
-                <tr><td colSpan="6" className="p-8 text-center text-gray-400 font-bold">Loading...</td></tr>
+                <tr><td colSpan="6" className="p-8 text-center text-white/50 font-bold">Loading...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan="6" className="p-8 text-center text-gray-400 font-bold">No flights found.</td></tr>
+                <tr><td colSpan="6" className="p-8 text-center text-white/50 font-bold">No flights found.</td></tr>
               ) : (
                 paginated.map((f) => {
                   const done = f.status === 'completed' || f.status === 'cancelled';
                   return (
-                    <tr key={f.flight_id} className="hover:bg-gray-50">
-                      <td className="p-4 font-black text-[#1C2B22]">{f.flight_number}</td>
-                      <td className="p-4 font-bold text-gray-600">{f.departure_airport} ➔ {f.arrival_airport}</td>
+                    <tr key={f.flight_id} className="hover:bg-[#1C2B22]/30 transition-colors">
+                      <td className="p-4 font-black text-white">{f.flight_number}</td>
+                      <td className="p-4 font-bold text-white/80">{f.departure_airport} ➔ {f.arrival_airport}</td>
                       <td className="p-4"><StatusBadge status={f.status} /></td>
-                      <td className="p-4 font-bold text-gray-500">{new Date(f.scheduled_departure).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
-                      <td className="p-4 font-bold text-gray-500">${f.base_price}</td>
+                      <td className="p-4 font-bold text-white/60">{new Date(f.scheduled_departure).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                      <td className="p-4 font-black text-[#A89411]">${f.base_price}</td>
                       <td className="p-4">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             disabled={done}
                             onClick={() => setDelayTarget({ id: f.flight_id, flightNum: f.flight_number })}
                             title="Inject delay"
-                            className="p-2 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white rounded-lg disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                            className="p-2 bg-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white rounded-lg disabled:opacity-30 disabled:pointer-events-none transition-colors"
                           >
                             <AlertTriangle size={14} />
                           </button>
@@ -127,7 +127,7 @@ export default function FlightsTab({ adminUserId }) {
                             disabled={done}
                             onClick={() => setFormTarget(f)}
                             title="Edit / reschedule"
-                            className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white rounded-lg disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                            className="p-2 bg-[#A89411]/20 text-[#A89411] hover:bg-[#A89411] hover:text-[#1C2B22] rounded-lg disabled:opacity-30 disabled:pointer-events-none transition-colors"
                           >
                             <Pencil size={14} />
                           </button>
@@ -135,7 +135,7 @@ export default function FlightsTab({ adminUserId }) {
                             disabled={done}
                             onClick={() => setCancelTarget(f)}
                             title="Cancel flight"
-                            className="p-2 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white rounded-lg disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                            className="p-2 bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white rounded-lg disabled:opacity-30 disabled:pointer-events-none transition-colors"
                           >
                             <Ban size={14} />
                           </button>

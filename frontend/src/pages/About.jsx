@@ -1,9 +1,10 @@
 import { Database, Network, Zap, Cuboid, Globe2, ShieldCheck, HeartHandshake, Route, Cpu, MonitorSmartphone, MessageCircle, Sparkles, Clock, Compass } from 'lucide-react';
 import Footer from '../components/Footer';
 import { useAnimateOnScroll } from '../components/animation';
+import { useEffect } from 'react';
 
 const AI_FEATURES = [
-  { icon: Sparkles, title: 'Ask, Don\u2019t Search', desc: 'Just tell it what you need — "cheapest flight to Karachi next weekend" — and get a straight answer, no endless filters.', dir: 'left' },
+  { icon: Sparkles, title: 'Ask, Don\u2019t Search', desc: 'Just tell it what you need \u2014 "cheapest flight to Karachi next weekend" \u2014 and get a straight answer, no endless filters.', dir: 'left' },
   { icon: Clock, title: 'Always On', desc: 'Day or night, it\u2019s ready to help with bookings, gate info, or a quick question about your trip.', dir: 'up' },
   { icon: Compass, title: 'Knows AERO Inside Out', desc: 'From routes to real-time status, it understands our network so you get answers, not guesswork.', dir: 'right' },
 ];
@@ -11,28 +12,28 @@ const AI_FEATURES = [
 const TEAM = [
   {
     name: 'Muhammad Jamal Matloob',
-    role: 'Data & Routing',
+    rank: 'Fleet Admiral',
     icon: Route,
-    description: 'Designs how flight and airport data is structured and connected across our entire network.',
+    description: '...',
   },
   {
     name: 'Muhammad Umer',
-    role: 'Backend & AI',
+    rank: 'Commander',
     icon: Cpu,
-    description: 'Builds the systems and intelligent tools that power AERO behind the scenes.',
+    description: '...',
   },
   {
-    name: 'Saad Asif',
-    role: 'Frontend & Experience',
+    name: 'Muhammad Saad Asif',
+    rank: 'Captain',
     icon: MonitorSmartphone,
-    description: 'Crafts the real-time interfaces you interact with, from booking to live tracking.',
+    description: '...',
   },
 ];
 
 const MISSION = [
   { icon: Globe2, title: 'Wider Reach', desc: 'We keep growing our route network so more cities, and the people in them, are within easy reach of each other.', dir: 'left' },
   { icon: ShieldCheck, title: 'Safety First', desc: 'Every flight, on-time update, and gate change you see comes from the same rigorous operational standards we hold ourselves to.', dir: 'up' },
-  { icon: HeartHandshake, title: 'Care, Not Just Service', desc: 'Behind every booking is a team that treats your trip like it matters — because to us, it does.', dir: 'right' },
+  { icon: HeartHandshake, title: 'Care, Not Just Service', desc: 'Behind every booking is a team that treats your trip like it matters \u2014 because to us, it does.', dir: 'right' },
 ];
 
 const STACK = [
@@ -42,9 +43,6 @@ const STACK = [
   { icon: Cuboid, color: 'text-[#A89411]', title: 'Three.js', desc: 'Hardware-accelerated WebGL renders the 3D globe and interactive fleet showroom.' },
 ];
 
-// Directional "fly" transform: off-screen + rotated + scaled when out of view,
-// settled flat when in view. Toggling on enter/leave (see useAnimateOnScroll)
-// makes elements fly in on the way down and fly back out on the way past.
 const flyClass = (inView, dir = 'up', delayClass = '') => {
   const hidden = {
     up: '-translate-y-16 rotate-1',
@@ -58,6 +56,9 @@ const flyClass = (inView, dir = 'up', delayClass = '') => {
   }`;
 };
 
+
+
+
 export default function About({ isSection = false }) {
   const [heroRef, heroInView] = useAnimateOnScroll();
   const [missionRef, missionInView] = useAnimateOnScroll();
@@ -66,121 +67,142 @@ export default function About({ isSection = false }) {
   const [techRef, techInView] = useAnimateOnScroll();
 
   return (
-    <div id="about" className={`w-full flex flex-col bg-white relative overflow-hidden ${isSection ? 'min-h-screen justify-center py-16 sm:py-20 lg:py-24' : 'min-h-screen'}`}>
-
+    <div id="about" className={`w-full flex flex-col bg-transparent relative overflow-x-hidden ${isSection ? 'snap-start' : 'min-h-screen'}`}>
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-[#004F30]/5 blur-[120px]"></div>
         <div className="absolute top-[20%] -right-[10%] w-[40%] h-[60%] rounded-full bg-[#A89411]/5 blur-[120px]"></div>
       </div>
 
-      {/* ===== HERO: Who we are ===== */}
-      <div ref={heroRef} className={`w-full flex flex-col items-center relative ${isSection ? 'py-0' : 'pt-[150px] pb-20 sm:pb-24'}`}>
-        <div className="max-w-[1000px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 relative z-10 text-center">
-          <div className={flyClass(heroInView, 'up')}>
-            <div className="px-4 py-2 bg-gray-50 border border-gray-100 rounded-full mb-6 sm:mb-8 inline-flex items-center gap-2 shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-[#004F30] animate-pulse"></span>
-              <span className="text-[#004F30] text-[10px] font-black tracking-[0.2em] uppercase">Our Story</span>
+      {/* ===== PART 1: THE VISION ===== */}
+      <div className={`w-full ${isSection ? '' : 'pt-[60px]'} flex flex-col justify-center snap-start`}>
+        <div ref={heroRef} className={`w-full relative flex flex-col items-center py-20 overflow-hidden bg-transparent`}>
+          <div className="max-w-[1000px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 relative z-10 text-center">
+            <div className={flyClass(heroInView, 'up')}>
+              <div className="px-4 py-2 bg-gray-50 border border-gray-100 rounded-full mb-6 sm:mb-8 inline-flex items-center gap-2 shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-[#004F30] animate-pulse"></span>
+                <span className="text-[#004F30] text-[10px] font-black tracking-[0.2em] uppercase">Our Story</span>
+              </div>
+
+              <h1 className="text-5xl sm:text-6xl md:text-7xl font-black text-[#1C2B22] tracking-tighter leading-[0.95] mb-6 sm:mb-8">
+                GETTING YOU HOME, <br/><span className="text-transparent bg-clip-text bg-gradient-to-br from-[#004F30] to-[#A89411]">EVERY TIME.</span>
+              </h1>
+
+              <p className="text-gray-500 text-base sm:text-lg md:text-xl font-medium leading-relaxed max-w-2xl mx-auto">
+                AERO connects travelers to the places that matter most. We built our airline around a simple idea: flying should feel dependable, transparent, and human — from the moment you book to the moment you land.
+              </p>
             </div>
-
-            <h1 className="text-5xl sm:text-6xl md:text-7xl font-black text-[#1C2B22] tracking-tighter leading-[0.95] mb-6 sm:mb-8">
-              GETTING YOU HOME, <br/><span className="text-transparent bg-clip-text bg-gradient-to-br from-[#004F30] to-[#A89411]">EVERY TIME.</span>
-            </h1>
-
-            <p className="text-gray-500 text-base sm:text-lg md:text-xl font-medium leading-relaxed max-w-2xl mx-auto">
-              AERO connects travelers to the places that matter most. We built our airline around a simple idea: flying should feel dependable, transparent, and human — from the moment you book to the moment you land.
-            </p>
           </div>
         </div>
-      </div>
 
-      {/* ===== MISSION / VALUES ===== */}
-      <div ref={missionRef} className="w-full relative z-10">
-        <div className="max-w-[1400px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 pb-20 sm:pb-24">
+        {/* ===== MISSION / VALUES ===== */}
+        <div ref={missionRef} className="w-full relative z-10">
+          <div className="max-w-[1400px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 pb-20 sm:pb-32">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {MISSION.map(({ icon: Icon, title, desc, dir }, i) => (
               <div
                 key={title}
-                className={`${flyClass(missionInView, dir, i === 1 ? 'delay-150' : i === 2 ? 'delay-300' : '')} bg-white/80 backdrop-blur-xl border border-gray-100 p-6 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,0,0,0.06)] hover:-translate-y-2 group`}
+                className={`${flyClass(missionInView, dir, i === 1 ? 'delay-150' : i === 2 ? 'delay-300' : '')} bg-[#004F30] border border-[#0A6B41] p-6 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,79,48,0.15)] hover:-translate-y-2 transition-all duration-300 group`}
               >
-                <Icon className="text-[#004F30] mb-5 sm:mb-6 group-hover:scale-110 transition-transform" size={32} />
-                <h3 className="text-[#1C2B22] font-black text-lg sm:text-xl mb-2 sm:mb-3 tracking-wide">{title}</h3>
-                <p className="text-gray-500 text-sm font-medium leading-relaxed">{desc}</p>
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-white/10 flex items-center justify-center mb-6 sm:mb-8 group-hover:scale-110 group-hover:bg-[#A89411]/20 transition-all duration-500">
+                  <Icon className="text-[#A89411]" size={28} />
+                </div>
+                <h3 className="text-white font-black text-lg sm:text-xl mb-2 sm:mb-3 tracking-wide">{title}</h3>
+                <p className="text-white/80 text-sm font-medium leading-relaxed">{desc}</p>
               </div>
             ))}
           </div>
         </div>
       </div>
+      </div>
 
-      {/* ===== AI ASSISTANT ===== */}
-      <div ref={aiRef} className="w-full relative z-10 bg-[#1C2B22] overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 right-0 w-[60%] h-full bg-[radial-gradient(circle,_rgba(168,148,17,0.12)_0%,_transparent_60%)]"></div>
-          <div className="absolute bottom-0 left-0 w-[50%] h-full bg-[radial-gradient(circle,_rgba(0,79,48,0.25)_0%,_transparent_60%)]"></div>
-        </div>
+      {/* AI ASSISTANT merged into Vision */}
+      <div ref={aiRef} className="w-full relative z-10 bg-transparent flex flex-col justify-center pt-10 sm:pt-16 snap-start">
+        <div className="max-w-[1400px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 pb-20 sm:pb-28 relative z-10">
+          <div className={`${flyClass(aiInView, 'up')} bg-[#004F30] border border-[#0A6B41] rounded-[2.5rem] p-8 sm:p-12 md:p-16 mb-12 sm:mb-16 relative overflow-hidden group`}>
+            
+            {/* Ambient Background Glows */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3"></div>
+            <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#A89411]/10 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/4"></div>
 
-        <div className="max-w-[1400px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 py-20 sm:py-28 relative z-10">
-          <div className={`${flyClass(aiInView, 'up')} text-center max-w-2xl mx-auto mb-12 sm:mb-16`}>
-            <div className="px-4 py-2 bg-white/10 border border-white/10 rounded-full mb-5 sm:mb-6 inline-flex items-center gap-2">
-              <MessageCircle className="text-[#A89411]" size={14} />
-              <span className="text-white text-[10px] font-black tracking-[0.2em] uppercase">Introducing AERO AI</span>
+            <div className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto">
+              <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/10 backdrop-blur-md rounded-full mb-8 border border-white/20 group-hover:scale-105 transition-transform duration-500 shadow-xl">
+                <MessageCircle className="text-[#A89411]" size={20} />
+                <span className="text-[#A89411] text-xs sm:text-sm font-black tracking-[0.2em] uppercase">Introducing AERO AI</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight mb-4 sm:mb-6">
+                Your Trip, One Conversation Away.
+              </h2>
+              <p className="text-white/80 text-sm sm:text-base md:text-lg font-medium leading-relaxed">
+                Every AERO booking now comes with a built-in assistant. Ask it anything about your flight, your route, or your booking, and it'll help you sort it out — instantly, and in plain language.
+              </p>
             </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight mb-4 sm:mb-6">
-              Your Trip, One Conversation Away.
-            </h2>
-            <p className="text-white/60 text-sm sm:text-base md:text-lg font-medium leading-relaxed">
-              Every AERO booking now comes with a built-in assistant. Ask it anything about your flight, your route, or your booking, and it'll help you sort it out — instantly, and in plain language.
-            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {AI_FEATURES.map(({ icon: Icon, title, desc, dir }, i) => (
               <div
                 key={title}
-                className={`${flyClass(aiInView, dir, i === 1 ? 'delay-150' : i === 2 ? 'delay-300' : '')} bg-white/5 backdrop-blur-xl border border-white/10 p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] hover:bg-white/10 hover:-translate-y-2 transition-all duration-500 group`}
+                className={`${flyClass(aiInView, dir, i === 1 ? 'delay-150' : i === 2 ? 'delay-300' : '')} bg-[#004F30] border border-[#0A6B41] p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] hover:-translate-y-2 hover:shadow-[0_20px_60px_rgba(0,79,48,0.15)] transition-all duration-300 group`}
               >
-                <Icon className="text-[#A89411] mb-5 sm:mb-6 group-hover:scale-110 transition-transform" size={30} />
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-[#A89411]/20 transition-colors">
+                    <Icon className="text-[#A89411]" size={24} />
+                  </div>
+                </div>
                 <h3 className="text-white font-black text-base sm:text-lg mb-2 tracking-wide">{title}</h3>
-                <p className="text-white/50 text-xs sm:text-sm font-medium leading-relaxed">{desc}</p>
+                <p className="text-white/80 text-xs sm:text-sm font-medium leading-relaxed">{desc}</p>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* ===== TEAM ===== */}
-      <div ref={teamRef} className="w-full relative z-10 bg-[#F8F9FA]/60 border-y border-gray-100">
-        <div className="max-w-[1400px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 py-16 sm:py-20">
-          <div className={`${flyClass(teamInView, 'up')} text-center max-w-2xl mx-auto mb-10 sm:mb-14`}>
-            <h2 className="text-3xl sm:text-4xl font-black text-[#1C2B22] tracking-tight mb-4 sm:mb-6">The Team Behind AERO</h2>
+      {/* ===== PART 2: THE ENGINE ===== */}
+      <div ref={teamRef} className="w-full relative z-10 bg-transparent overflow-hidden flex flex-col justify-center pt-10 snap-start">
+        
+        <div className="max-w-[1400px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 pb-16 sm:pb-24 relative z-10">
+          <div className={`${flyClass(teamInView, 'up')} text-center max-w-2xl mx-auto mb-14 sm:mb-20`}>
+            <div className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-full mb-5 sm:mb-6 inline-flex items-center gap-2 shadow-sm">
+              <span className="text-[#004F30] text-[10px] font-black tracking-[0.2em] uppercase">The Creators</span>
+            </div>
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-[#1C2B22] tracking-tight mb-4 sm:mb-6">The Brains Behind AERO</h2>
             <p className="text-gray-500 text-base sm:text-lg font-medium leading-relaxed">
-              AERO is built and run by a small, hands-on team who care about getting the details right — from the runway to the runtime.
+              Built and engineered by a dedicated trio obsessed with precision — from the initial runway concept to the final backend runtime.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-            {TEAM.map(({ name, role, description, icon: Icon }, i) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10 max-w-5xl mx-auto">
+            {TEAM.map(({ name, rank, description, icon: Icon }, i) => (
               <div
                 key={name}
-                className={`${flyClass(teamInView, i % 2 === 0 ? 'left' : 'right', i === 1 ? 'delay-150' : i === 2 ? 'delay-300' : '')} bg-white border border-gray-200 p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] shadow-sm hover:shadow-[0_20px_60px_rgba(0,0,0,0.08)] hover:-translate-y-2 transition-shadow duration-500 group text-center`}
+                className={`${flyClass(teamInView, i % 2 === 0 ? 'left' : 'right', i === 1 ? 'delay-150' : i === 2 ? 'delay-300' : '')} bg-[#004F30] border border-[#0A6B41] p-8 sm:p-10 rounded-[2rem] sm:rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_60px_rgba(0,79,48,0.2)] hover:-translate-y-2 transition-all duration-500 group text-center relative mt-16`}
               >
-                <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-gradient-to-br from-[#004F30] to-[#A89411] flex items-center justify-center text-white font-black text-2xl mb-5 sm:mb-6 group-hover:scale-105 transition-transform">
-                  {name.split(' ').map(w => w[0]).slice(0, 2).join('')}
+                <div className="absolute inset-0 overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] pointer-events-none">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[40px] -translate-y-1/2 translate-x-1/2 transition-opacity group-hover:opacity-100 opacity-50"></div>
                 </div>
-                <h3 className="text-[#1C2B22] font-black text-base sm:text-lg mb-2 tracking-wide">{name}</h3>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-50 border border-gray-100 rounded-full mb-3 sm:mb-4">
-                  <Icon className="text-[#004F30]" size={12} />
-                  <span className="text-[#004F30] text-[10px] font-black tracking-[0.15em] uppercase">{role}</span>
+                
+                {/* Real Captain Hat sitting on the card itself */}
+                <div className="absolute -top-20 sm:-top-24 left-1/2 -translate-x-1/2 w-48 sm:w-56 z-30 drop-shadow-[0_20px_20px_rgba(0,0,0,0.6)] transition-transform duration-500 group-hover:-rotate-6 group-hover:scale-110 pointer-events-none">
+                  <img src="/cap.png" alt="AERO Captain Hat" className="w-full h-auto" />
                 </div>
-                <p className="text-gray-500 text-xs sm:text-sm font-medium leading-relaxed">{description}</p>
+
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-[1.5rem] bg-white/10 mx-auto flex items-center justify-center mb-6 sm:mb-8 group-hover:scale-110 group-hover:-rotate-3 transition-all duration-500 border border-white/20 shadow-xl overflow-hidden relative z-10">
+                  <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${name}&backgroundColor=004F30&textColor=A89411`} alt={name} className="w-full h-full object-cover" />
+                </div>
+                <h3 className="text-white font-black text-lg sm:text-xl tracking-tight mb-4 uppercase">{name}</h3>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 border border-white/20 rounded-full group-hover:border-[#A89411]/50 transition-colors">
+                  <Icon className="text-[#A89411]" size={14} />
+                  <span className="text-white text-[10px] font-black tracking-[0.2em] uppercase">{rank}</span>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* ===== UNDER THE HOOD: Tech stack (secondary) ===== */}
-      <div ref={techRef} className="w-full relative z-10">
-        <div className="max-w-[1400px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 py-20 sm:py-24">
+      {/* Tech stack merged into Engine */}
+      <div ref={techRef} className="w-full relative z-10 flex flex-col justify-center snap-start">
+        <div className="max-w-[1400px] w-full mx-auto px-6 sm:px-8 md:px-16 lg:px-24 pb-20 sm:pb-32">
 
           <div className={`${flyClass(techInView, 'up')} text-center max-w-2xl mx-auto mb-10 sm:mb-14`}>
             <div className="px-4 py-2 bg-gray-50 border border-gray-100 rounded-full mb-5 sm:mb-6 inline-flex items-center gap-2 shadow-sm">
@@ -198,11 +220,15 @@ export default function About({ isSection = false }) {
               return (
                 <div
                   key={title}
-                  className={`${flyClass(techInView, i % 2 === 0 ? 'down' : 'up', delayClass)} bg-white/80 backdrop-blur-xl border border-gray-100 p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,0,0,0.06)] hover:-translate-y-2 group`}
+                  className={`${flyClass(techInView, i % 2 === 0 ? 'down' : 'up', delayClass)} bg-[#004F30] border border-[#0A6B41] p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,79,48,0.15)] hover:-translate-y-2 transition-all duration-300 group`}
                 >
-                  <Icon className={`${color} mb-4 sm:mb-6 group-hover:scale-110 transition-transform`} size={30} />
-                  <h3 className="text-[#1C2B22] font-black text-base sm:text-lg mb-2 tracking-wide">{title}</h3>
-                  <p className="text-gray-500 text-xs sm:text-sm font-medium leading-relaxed">{desc}</p>
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-[#A89411]/20 transition-colors">
+                      <Icon className="text-[#A89411]" size={24} />
+                    </div>
+                  </div>
+                  <h3 className="text-white font-black text-base sm:text-lg mb-2 tracking-wide">{title}</h3>
+                  <p className="text-white/80 text-xs sm:text-sm font-medium leading-relaxed">{desc}</p>
                 </div>
               );
             })}
@@ -210,7 +236,7 @@ export default function About({ isSection = false }) {
         </div>
       </div>
 
-      {!isSection && <Footer />}
+      {!isSection && <div className="mt-10"><Footer /></div>}
     </div>
   );
 }

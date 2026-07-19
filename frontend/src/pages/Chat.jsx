@@ -42,7 +42,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="w-full min-h-screen pt-[84px] sm:pt-[90px] md:pt-[100px] flex flex-col bg-[#F8F9FA] relative">
+    <div className="w-full min-h-screen pt-[84px] sm:pt-[90px] md:pt-[100px] flex flex-col bg-transparent relative">
       
       {/* Background Graphic */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-50">
@@ -53,21 +53,21 @@ export default function Chat() {
       <div className="w-full max-w-6xl mx-auto px-4 md:px-8 pb-8 md:pb-12 flex flex-col relative z-10" style={{ height: 'calc(100vh - 64px)' }}>
         
         {/* Chat Interface Container */}
-        <div className="flex-1 bg-white/80 backdrop-blur-3xl border border-white rounded-[2.5rem] shadow-[0_30px_80px_rgba(0,79,48,0.08)] flex flex-col overflow-hidden relative">
+        <div className="flex-1 bg-[#004F30] border border-[#0A6B41] rounded-[2.5rem] shadow-[0_30px_80px_rgba(0,0,0,0.2)] flex flex-col overflow-hidden relative">
            
            {/* Internal Header Bar */}
-           <div className="p-4 sm:p-6 md:px-10 md:py-6 border-b border-gray-100 flex items-center justify-between bg-white/50 backdrop-blur-md z-20 gap-3">
+           <div className="p-4 sm:p-6 md:px-10 md:py-6 border-b border-[#0A6B41] flex items-center justify-between bg-[#1C2B22]/50 z-20 gap-3">
               <div>
-                <h1 className="text-xl sm:text-3xl font-black text-[#1C2B22] tracking-tighter">
-                  AERO <span className="text-[#004F30]">AI</span>
+                <h1 className="text-xl sm:text-3xl font-black text-white tracking-tighter">
+                  AERO AI
                 </h1>
-                <p className="text-gray-500 font-bold tracking-widest text-[9px] sm:text-[10px] uppercase">Intelligent Operations Assistant</p>
+                <p className="text-[#A89411] font-bold tracking-widest text-[9px] sm:text-[10px] uppercase">Intelligent Operations Assistant</p>
               </div>
               
               {messages.length > 0 && (
                 <button 
                   onClick={clearMessages}
-                  className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-white border border-gray-200 text-red-500 hover:bg-red-50 rounded-xl text-[10px] sm:text-xs font-bold tracking-widest transition-colors shadow-sm shrink-0"
+                  className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-[#1C2B22]/50 border border-[#0A6B41] text-red-400 hover:bg-red-500/10 hover:border-red-500/30 rounded-xl text-[10px] sm:text-xs font-bold tracking-widest transition-colors shadow-sm shrink-0"
                 >
                   <Trash2 size={14} /> <span className="hidden xs:inline">CLEAR MEMORY</span><span className="xs:hidden">CLEAR</span>
                 </button>
@@ -75,14 +75,14 @@ export default function Chat() {
            </div>
 
            {/* Scrollable Messages Area */}
-           <div className="flex-1 overflow-y-auto p-6 md:p-10 flex flex-col gap-8 hide-scrollbar relative z-10">
+           <div className="flex-1 overflow-y-auto p-6 md:p-10 flex flex-col gap-8 hide-scrollbar relative z-10 bg-transparent">
               {messages.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-center">
-                  <div className="w-24 h-24 rounded-full bg-[#004F30]/10 flex items-center justify-center mb-6">
-                    <Bot size={48} className="text-[#004F30]" />
+                  <div className="w-24 h-24 rounded-full bg-white/10 flex items-center justify-center mb-6 border border-white/20 shadow-sm">
+                    <Bot size={48} className="text-[#A89411]" />
                   </div>
-                  <h3 className="text-2xl font-black text-[#1C2B22] tracking-tighter mb-2">SYSTEM ONLINE</h3>
-                  <p className="text-gray-500 font-medium max-w-md mx-auto">
+                  <h3 className="text-2xl font-black text-white tracking-tighter mb-2">SYSTEM ONLINE</h3>
+                  <p className="text-white/60 font-medium max-w-md mx-auto">
                     AERO AI is ready. You can ask about flight statuses, network delays, terminal information, or booking assistance.
                   </p>
                 </div>
@@ -91,15 +91,15 @@ export default function Chat() {
                   <div key={i} className={`flex gap-4 max-w-[85%] md:max-w-[75%] ${msg.sender === 'user' ? 'self-end flex-row-reverse' : 'self-start'}`}>
                     
                     {/* Avatar */}
-                    <div className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center shadow-sm ${msg.sender === 'user' ? 'bg-[#1C2B22] text-white' : 'bg-[#004F30] text-white'}`}>
+                    <div className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center shadow-sm ${msg.sender === 'user' ? 'bg-[#A89411] text-[#1C2B22]' : 'bg-white/10 text-white border border-white/20'}`}>
                       {msg.sender === 'user' ? <User size={20} /> : <Bot size={20} />}
                     </div>
 
                     {/* Bubble */}
                     <div className={`p-5 rounded-3xl text-sm md:text-base font-medium leading-relaxed shadow-sm ${
                       msg.sender === 'user'
-                      ? 'bg-[#1C2B22] text-white rounded-tr-sm'
-                      : 'bg-white border border-gray-100 text-[#1C2B22] rounded-tl-sm prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-100 prose-pre:text-gray-800'
+                      ? 'bg-[#A89411] text-[#1C2B22] rounded-tr-sm'
+                      : 'bg-white/10 border border-white/20 text-white rounded-tl-sm prose prose-sm max-w-none prose-p:leading-relaxed prose-strong:text-[#A89411] prose-pre:bg-[#1C2B22] prose-pre:border prose-pre:border-white/20 prose-pre:text-white/80'
                     }`}>
                       {msg.sender === 'user' ? (
                         msg.text
@@ -113,13 +113,13 @@ export default function Chat() {
               )}
               {isTyping && (
                 <div className="flex gap-4 max-w-[85%] md:max-w-[75%] self-start animate-fade-in">
-                  <div className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center shadow-sm bg-[#004F30] text-white">
+                  <div className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center shadow-sm bg-white/10 text-white border border-white/20">
                     <Bot size={20} />
                   </div>
-                  <div className="p-5 rounded-3xl bg-white border border-gray-100 text-[#1C2B22] rounded-tl-sm flex items-center gap-2 h-[60px]">
-                    <div className="w-2 h-2 bg-[#004F30] rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                    <div className="w-2 h-2 bg-[#004F30] rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                    <div className="w-2 h-2 bg-[#004F30] rounded-full animate-bounce"></div>
+                  <div className="p-5 rounded-3xl bg-white/10 border border-white/20 text-white rounded-tl-sm flex items-center gap-2 h-[60px] shadow-sm">
+                    <div className="w-2 h-2 bg-[#A89411] rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                    <div className="w-2 h-2 bg-[#A89411] rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                    <div className="w-2 h-2 bg-[#A89411] rounded-full animate-bounce"></div>
                   </div>
                 </div>
               )}
@@ -127,7 +127,7 @@ export default function Chat() {
            </div>
 
            {/* Input Box */}
-           <div className="p-6 md:p-8 bg-white border-t border-gray-100/50 z-20">
+           <div className="p-6 md:p-8 bg-[#004F30] border-t border-[#0A6B41] z-20 rounded-b-[2.5rem]">
              <form onSubmit={handleSend} className="relative flex items-center">
                <input 
                  type="text" 
@@ -135,12 +135,12 @@ export default function Chat() {
                  onChange={(e) => setInput(e.target.value)}
                  disabled={isTyping}
                  placeholder={isTyping ? "AERO AI is transmitting..." : "Type your transmission here..."}
-                 className="w-full bg-[#F8F9FA] border border-gray-200 rounded-2xl pl-6 pr-16 py-5 text-[#1C2B22] font-medium focus:outline-none focus:border-[#004F30] focus:ring-2 focus:ring-[#004F30]/10 transition-all text-base placeholder-gray-400 shadow-inner disabled:opacity-50"
+                 className="w-full bg-white/10 border border-white/20 rounded-2xl pl-6 pr-16 py-5 text-white placeholder-white/40 font-medium focus:outline-none focus:border-[#A89411] transition-colors text-base disabled:opacity-50"
                />
                <button 
                  type="submit"
                  disabled={!input.trim() || isTyping}
-                 className="absolute right-3 w-12 h-12 bg-[#004F30] text-white rounded-xl hover:bg-[#1C2B22] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-md"
+                 className="absolute right-3 w-12 h-12 bg-[#A89411] border border-[#A89411] text-[#1C2B22] rounded-xl hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-sm hover:bg-[#D4C345]"
                >
                  <Send size={20} className="ml-1" />
                </button>

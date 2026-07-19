@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authLogin, authSignup, authResetPassword } from '../services/api';
+import { authLogin, authSignup, authResetPassword, authUpdateEmail } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -61,10 +61,22 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('aero_user');
   };
 
+  const updateEmail = async (newEmail, currentPassword) => {
+    try {
+      const userData = await authUpdateEmail(newEmail, currentPassword);
+      setUser(userData);
+      localStorage.setItem('aero_user', JSON.stringify(userData));
+      return { success: true };
+    } catch (error) {
+      console.error('Email update failed:', error);
+      return { success: false, error: error.response?.data?.detail || 'Email update failed' };
+    }
+  };
+
   if (loading) return null;
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, resetPassword, logout }}>
+    <AuthContext.Provider value={{ user, login, signup, resetPassword, updateEmail, logout }}>
       {children}
     </AuthContext.Provider>
   );

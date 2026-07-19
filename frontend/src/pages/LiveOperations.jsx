@@ -4,11 +4,11 @@ import { AviationMap } from '../components/AviationMap';
 import { getAirports, getRoutes, getActiveFlights, getOnboardingFlights, getDelayedFlights } from '../services/api';
 
 const GlassCard = ({ title, children, isLoading, onRefresh, onClick }) => (
-  <div className="bg-white/80 backdrop-blur-3xl rounded-3xl border border-white/50 shadow-[0_20px_50px_rgba(0,0,0,0.1)] p-5 flex flex-col w-[350px] h-full overflow-hidden relative transition-all hover:bg-white/90">
+  <div className="bg-[#004F30]/90 backdrop-blur-3xl rounded-3xl border border-[#0A6B41] shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-5 flex flex-col w-[350px] h-full overflow-hidden relative transition-all">
     <div className="flex justify-between items-center mb-4">
-      <h2 className="text-[13px] font-black text-[#004F30] tracking-widest uppercase flex items-center gap-2">
+      <h2 className="text-[13px] font-black text-white tracking-widest uppercase flex items-center gap-2">
         {title}
-        {isLoading && !onRefresh && <RefreshCw size={14} className="animate-spin text-[#A89411]" />}
+        {isLoading && !onRefresh && <RefreshCw size={14} className="animate-spin text-white/70" />}
       </h2>
       <div className="flex items-center gap-2">
         {onRefresh && (
@@ -203,14 +203,14 @@ export default function LiveOperations() {
     <table className="w-full text-left text-sm">
       <tbody className="divide-y divide-gray-100">
         {activeFlights.length === 0 && !loadingActive ? (
-           <tr><td colSpan="3" className="py-6 text-center text-xs font-bold text-gray-400">NO ACTIVE FLIGHTS</td></tr>
+           <tr><td colSpan="3" className="py-6 text-center text-xs font-bold text-white/50">NO ACTIVE FLIGHTS</td></tr>
         ) : (
            activeFlights.map((f, i) => (
-             <tr key={i} className="group transition-colors cursor-pointer hover:bg-gray-50">
-               <td className="py-3 font-bold text-[#1C2B22] text-xs">
-                 {f.source} <span className="text-[#004F30] font-black mx-1">→</span> {f.dest}
+             <tr key={i} className="group transition-colors cursor-pointer hover:bg-white/10">
+               <td className="py-3 font-bold text-white text-xs">
+                 {f.source} <span className="text-[#A89411] font-black mx-1">→</span> {f.dest}
                </td>
-               <td className="py-3 font-black text-[#004F30]">{f.flightNum}</td>
+               <td className="py-3 font-black text-white/90">{f.flightNum}</td>
                <td className="py-3 text-right font-bold text-[#A89411] text-xs">{formatTimeRem(f.targetTime, "LANDING")}</td>
              </tr>
            ))
@@ -223,16 +223,16 @@ export default function LiveOperations() {
     <table className="w-full text-left text-sm">
       <tbody className="divide-y divide-gray-100">
         {onBoardingFlights.length === 0 && !loadingBoarding ? (
-           <tr><td colSpan="4" className="py-6 text-center text-xs font-bold text-gray-400">NO FLIGHTS BOARDING</td></tr>
+           <tr><td colSpan="4" className="py-6 text-center text-xs font-bold text-white/50">NO FLIGHTS BOARDING</td></tr>
         ) : (
            onBoardingFlights.map((f, i) => (
-             <tr key={i} className="group transition-colors">
-               <td className="py-3 font-bold text-[#1C2B22] text-xs">
-                 {f.source} <span className="text-gray-400 font-black mx-1">→</span> {f.dest}
+             <tr key={i} className="group transition-colors hover:bg-white/10">
+               <td className="py-3 font-bold text-white text-xs">
+                 {f.source} <span className="text-white/50 font-black mx-1">→</span> {f.dest}
                </td>
-               <td className="py-3 font-black text-[#1C2B22]">{f.flightNum}</td>
-               <td className="py-3 font-bold text-[#004F30] text-xs pr-2">BOARDING</td>
-               <td className="py-3 text-right font-bold text-gray-500 text-[10px]">{f.targetTime ? new Date(f.targetTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</td>
+               <td className="py-3 font-black text-white/90">{f.flightNum}</td>
+               <td className="py-3 font-bold text-[#A89411] text-xs pr-2">BOARDING</td>
+               <td className="py-3 text-right font-bold text-white/50 text-[10px]">{f.targetTime ? new Date(f.targetTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</td>
              </tr>
            ))
         )}
@@ -244,15 +244,15 @@ export default function LiveOperations() {
     <table className="w-full text-left text-sm">
       <tbody className="divide-y divide-gray-100">
         {delayedFlights.length === 0 && !loadingDelayed ? (
-           <tr><td colSpan="3" className="py-6 text-center text-xs font-bold text-gray-400">ALL OPERATIONS NOMINAL</td></tr>
+           <tr><td colSpan="3" className="py-6 text-center text-xs font-bold text-white/50">ALL OPERATIONS NOMINAL</td></tr>
         ) : (
            delayedFlights.map((f, i) => (
-             <tr key={i} className="group transition-colors">
-               <td className="py-3 font-bold text-[#1C2B22] text-xs">
+             <tr key={i} className="group transition-colors hover:bg-white/10">
+               <td className="py-3 font-bold text-white text-xs">
                  {f.source} <span className="text-red-400 font-black mx-1">→</span> {f.dest}
                </td>
-               <td className="py-3 font-black text-red-600">{f.flightNum}</td>
-               <td className="py-3 text-right font-black text-red-500 text-xs">{f.delayTime}</td>
+               <td className="py-3 font-black text-red-400">{f.flightNum}</td>
+               <td className="py-3 text-right font-black text-red-400 text-xs">{f.delayTime}</td>
              </tr>
            ))
         )}
@@ -273,12 +273,12 @@ export default function LiveOperations() {
 
       {/* Top Left Header Overlay */}
       <div className="absolute top-[100px] left-8 z-10 pointer-events-none">
-        <div className="bg-white/80 backdrop-blur-xl px-6 py-4 rounded-3xl border border-white shadow-xl inline-block">
-          <h1 className="text-3xl font-black text-[#1C2B22] tracking-tighter flex items-center gap-3">
-            <Plane className="rotate-45 text-[#004F30]" size={28} />
+        <div className="bg-[#004F30]/90 backdrop-blur-xl px-6 py-4 rounded-3xl border border-[#0A6B41] shadow-xl inline-block">
+          <h1 className="text-3xl font-black text-white tracking-tighter flex items-center gap-3">
+            <Plane className="rotate-45 text-[#A89411]" size={28} />
             LIVE OPERATIONS
           </h1>
-          <p className="text-[#004F30] font-black text-[10px] tracking-widest mt-1 uppercase flex items-center gap-2">
+          <p className="text-white/80 font-black text-[10px] tracking-widest mt-1 uppercase flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#A89411] animate-pulse"></span>
             Global Telemetry Active
           </p>
@@ -292,7 +292,7 @@ export default function LiveOperations() {
           className={`flex items-center justify-center w-14 h-14 rounded-full transition-all shadow-2xl border hover:scale-110 ${
             showPanels 
               ? 'bg-[#1C2B22] text-white border-transparent' 
-              : 'bg-white/90 backdrop-blur-xl text-[#004F30] hover:bg-white border-white'
+              : 'bg-[#004F30] text-white hover:bg-[#0A6B41] border-transparent'
           }`}
           title={showPanels ? 'Hide Control Panels' : 'Show Control Panels'}
         >

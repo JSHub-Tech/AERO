@@ -8,6 +8,7 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import Chat from './pages/Chat';
 import NotFound from './pages/NotFound';
+import CursorPlane from './components/CursorPlane';
 
 // Lazy loaded heavy 3D pages
 const Airports = lazy(() => import('./pages/Airports'));
@@ -32,6 +33,8 @@ function App() {
     <AuthProvider>
       <ChatProvider>
         <Router>
+          {/* Global Background Wingman */}
+          <CursorPlane />
           <Layout>
             <Suspense fallback={<PageLoader />}>
               <Routes>

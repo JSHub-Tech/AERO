@@ -31,10 +31,9 @@ export default function LiveOpsTeaser() {
   const previewFlights = flights.slice(0, 4);
 
   return (
-    <div ref={containerRef} className="w-full min-h-screen bg-[#F8F9FA] relative flex items-center justify-center overflow-hidden py-16 sm:py-20">
-      <div className="absolute inset-0 z-0 opacity-40">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(0,79,48,0.15)_0%,_transparent_50%)]"></div>
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
+    <div ref={containerRef} className="w-full min-h-screen bg-transparent relative flex items-center justify-center py-16 sm:py-20">
+      <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(0,79,48,0.05)_0%,_transparent_50%)]"></div>
       </div>
 
       <div className="relative z-10 max-w-[1600px] w-full mx-auto px-6 md:px-16 lg:px-24 flex flex-col md:flex-row-reverse items-center justify-between gap-12 md:gap-0">
@@ -69,13 +68,13 @@ export default function LiveOpsTeaser() {
         <div className={`w-full md:w-[50%] mt-4 md:mt-0 relative h-[440px] sm:h-[480px] md:h-[500px] max-w-md md:max-w-none mx-auto transition-all duration-1000 delay-200 transform ${
           isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'
         }`}>
-          <div className="absolute inset-0 bg-white/70 backdrop-blur-3xl border border-white rounded-[32px] md:rounded-[40px] shadow-[0_20px_60px_rgba(0,79,48,0.08)] p-5 sm:p-8 flex flex-col">
-            <div className="flex justify-between items-center mb-6 md:mb-8 border-b border-gray-100 pb-4">
-              <h3 className="font-black text-[#1C2B22] tracking-widest text-xs sm:text-sm flex items-center gap-2">
-                <ShieldCheck className="text-[#004F30]" size={18} />
+          <div className="absolute inset-0 bg-[#004F30] border border-[#0A6B41] rounded-[32px] md:rounded-[40px] shadow-[0_20px_60px_rgba(0,79,48,0.15)] p-5 sm:p-8 flex flex-col">
+            <div className="flex justify-between items-center mb-6 md:mb-8 border-b border-white/20 pb-4">
+              <h3 className="font-black text-white tracking-widest text-xs sm:text-sm flex items-center gap-2">
+                <ShieldCheck className="text-[#A89411]" size={18} />
                 SYSTEM NOMINAL
               </h3>
-              <span className="w-3 h-3 rounded-full bg-[#004F30] animate-pulse shrink-0"></span>
+              <span className="w-3 h-3 rounded-full bg-[#A89411] animate-pulse shrink-0"></span>
             </div>
             
             <div className="space-y-3 sm:space-y-4 flex-1 overflow-y-auto">
@@ -101,19 +100,19 @@ export default function LiveOpsTeaser() {
                 </div>
               ) : (
                 previewFlights.map((f, i) => (
-                  <div key={f.flightNum || i} className="h-14 sm:h-16 w-full bg-gray-50 rounded-2xl flex items-center px-4 sm:px-6 justify-between group hover:bg-[#004F30]/5 transition-colors">
+                  <div key={f.flightNum || i} className="h-14 sm:h-16 w-full bg-white/10 rounded-2xl flex items-center px-4 sm:px-6 justify-between group hover:bg-white/20 transition-colors border border-white/5">
                     <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white shadow-sm flex items-center justify-center font-bold text-[#004F30] text-[10px] sm:text-xs shrink-0">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/20 shadow-sm flex items-center justify-center font-bold text-white text-[10px] sm:text-xs shrink-0">
                         {(f.flightNum || 'PK').slice(0, 2).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <div className="text-xs sm:text-sm font-black text-[#1C2B22] truncate">
-                          {f.source || '—'} <span className="text-[#004F30]">→</span> {f.dest || '—'}
+                        <div className="text-xs sm:text-sm font-black text-white truncate">
+                          {f.source || '—'} <span className="text-[#A89411]">→</span> {f.dest || '—'}
                         </div>
-                        <div className="text-[10px] sm:text-xs font-bold text-[#A89411] truncate">{f.flightNum || 'N/A'}</div>
+                        <div className="text-[10px] sm:text-xs font-bold text-white/70 truncate">{f.flightNum || 'N/A'}</div>
                       </div>
                     </div>
-                    <div className="text-[10px] sm:text-xs font-black text-[#004F30] bg-white px-2.5 py-1 rounded-full shadow-sm shrink-0 ml-2">
+                    <div className="text-[10px] sm:text-xs font-black text-[#A89411] bg-white/10 px-2.5 py-1 rounded-full shadow-sm shrink-0 ml-2">
                       LIVE
                     </div>
                   </div>

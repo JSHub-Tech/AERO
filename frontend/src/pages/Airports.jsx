@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import GlobeViewer from '../components/GlobeViewer';
 import Footer from '../components/Footer';
 import { getAirports, getRoutes, getAirportDetails } from '../services/api';
+import { Search } from 'lucide-react';
 
 // Shows the airport photo if it loads; otherwise shows a clean placeholder
 // instead of leaving a blank gap in the layout.
@@ -304,10 +305,10 @@ export default function Airports() {
 
       {/* SEARCH BAR (Expandable Icon) */}
       <div className="absolute top-24 sm:top-24 md:top-28 right-3 sm:right-6 md:right-8 left-3 sm:left-auto z-40 flex justify-end">
-         <div className={`bg-white/80 backdrop-blur-2xl border border-white shadow-[0_10px_30px_rgba(0,79,48,0.12)] rounded-full flex items-center transition-all duration-500 overflow-hidden ${isSearchOpen ? 'w-full sm:w-80 px-4' : 'w-11 h-11 sm:w-14 sm:h-14 cursor-pointer hover:shadow-[0_15px_40px_rgba(0,79,48,0.2)] hover:scale-105'}`} onClick={!isSearchOpen ? toggleSearch : undefined}>
+         <div className={`bg-[#004F30] border border-[#0A6B41] shadow-[0_10px_30px_rgba(0,79,48,0.3)] rounded-full flex items-center transition-all duration-500 overflow-hidden ${isSearchOpen ? 'w-full sm:w-80 px-4' : 'w-11 h-11 sm:w-14 sm:h-14 cursor-pointer hover:shadow-[0_15px_40px_rgba(0,79,48,0.5)] hover:scale-105'}`} onClick={!isSearchOpen ? toggleSearch : undefined}>
             
             <div className="h-11 w-11 sm:h-14 sm:w-14 flex items-center justify-center shrink-0 cursor-pointer" onClick={isSearchOpen ? toggleSearch : undefined}>
-              <span className="text-lg sm:text-xl opacity-70">🔍</span>
+              <Search className="text-white w-5 h-5 sm:w-6 sm:h-6 opacity-80" />
             </div>
             
             <input 
@@ -317,7 +318,7 @@ export default function Airports() {
               value={searchQuery}
               onChange={handleSearch}
               onBlur={() => setIsSearchOpen(false)}
-              className={`w-full bg-transparent border-none outline-none text-[#1C2B22] font-bold tracking-widest placeholder-gray-400 py-3 text-sm sm:text-base transition-opacity duration-300 ${isSearchOpen ? 'opacity-100 block' : 'opacity-0 hidden'}`}
+              className={`w-full bg-transparent border-none outline-none text-white font-bold tracking-widest placeholder-white/50 py-3 text-sm sm:text-base transition-opacity duration-300 ${isSearchOpen ? 'opacity-100 block' : 'opacity-0 hidden'}`}
             />
          </div>
       </div>
@@ -368,9 +369,9 @@ export default function Airports() {
              >
                 <div className={`w-full h-full md:max-h-[85vh] flex flex-col md:flex-row justify-between items-center gap-10 md:gap-0 py-6 md:py-20 transition-opacity duration-1000 delay-300 ${isActive ? 'opacity-100' : 'opacity-0'}`}>
                   
-                  {/* LEFT WING: Identity & Mission — flies in from the left, flies out to the left */}
+                  {/* LEFT WING: Identity & Mission */}
                   <div className={`flex flex-col w-full md:w-[40%] xl:w-[35%] items-center md:items-start text-center md:text-left shrink-0 transition-all duration-[1100ms] delay-300 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
-                    isActive ? 'translate-x-0 rotate-0' : '-translate-x-24 md:-translate-x-40 rotate-[-3deg]'
+                    isActive ? 'translate-y-0 rotate-0' : `${slideIndex < activeIndex ? '-translate-y-24 md:-translate-y-40' : 'translate-y-24 md:translate-y-40'} rotate-[-3deg]`
                   }`}>
                      <h2 className="text-[clamp(3.5rem,20vw,6rem)] md:text-[7rem] font-black tracking-tighter text-[#1C2B22] leading-none drop-shadow-[0_10px_30px_rgba(255,255,255,1)]">
                        {field(details.Airport_Code)}
@@ -401,17 +402,17 @@ export default function Airports() {
                         )}
                      </div>
 
-                     <p className="mt-8 text-base sm:text-lg font-semibold text-gray-700 leading-relaxed bg-white/60 backdrop-blur-3xl p-6 rounded-3xl border border-white shadow-[0_15px_40px_rgba(0,0,0,0.05)] w-full">
+                     <p className="mt-8 text-base sm:text-lg font-semibold text-white/90 leading-relaxed bg-[#004F30] p-6 rounded-3xl border border-[#0A6B41] shadow-[0_15px_40px_rgba(0,0,0,0.15)] w-full">
                        {details.Description_Blog || 'No description is available for this airport yet.'}
                      </p>
 
                      {/* Dynamic Connected Flights Panel - OUTBOUND ONLY */}
                      {isActive && allConnectedRoutes.length > 0 && (
                         <div 
-                          className="mt-6 w-full bg-white/60 backdrop-blur-3xl p-6 rounded-3xl border border-white shadow-[0_15px_40px_rgba(0,0,0,0.05)] cursor-pointer hover:bg-white/80 transition-colors group"
+                          className="mt-6 w-full bg-[#004F30] p-6 rounded-3xl border border-[#0A6B41] shadow-[0_15px_40px_rgba(0,0,0,0.15)] cursor-pointer hover:scale-[1.02] transition-transform group"
                           onClick={() => setIsRoutesModalOpen(true)}
                         >
-                           <p className="text-xs text-[#A89411] font-black tracking-widest mb-3 group-hover:text-[#004F30] transition-colors">
+                           <p className="text-xs text-[#A89411] font-black tracking-widest mb-3 group-hover:text-white transition-colors">
                              CONNECTED ROUTES ({allConnectedRoutes.length}) <span className="opacity-0 group-hover:opacity-100 transition-opacity">→</span>
                            </p>
                            <div className="flex flex-wrap gap-2 pointer-events-none justify-center md:justify-start">
@@ -420,20 +421,20 @@ export default function Airports() {
                                const linkedAir = isSource ? r.Destination_Airport_Code : r.Source_Airport_Code;
                                const cityName = getCityName(linkedAir);
                                return (
-                                 <span key={idx} className={`px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-bold shadow-sm ${isSource ? 'bg-white text-[#1C2B22]' : 'bg-gray-100 text-gray-600'}`}>
+                                 <span key={idx} className={`px-3 py-1.5 border border-white/20 rounded-lg text-xs font-bold shadow-sm ${isSource ? 'bg-white/20 text-white' : 'bg-black/20 text-white/80'}`}>
                                    {isSource ? 'TO' : 'FR'} {cityName.toUpperCase()}
                                  </span>
                                )
                              })}
                              {allConnectedRoutes.length > 8 && (
-                               <span className="px-3 py-1.5 bg-gray-100 rounded-lg text-xs font-bold text-gray-500 shadow-sm">+{allConnectedRoutes.length - 8} MORE</span>
+                               <span className="px-3 py-1.5 bg-black/20 border border-white/10 rounded-lg text-xs font-bold text-white/60 shadow-sm">+{allConnectedRoutes.length - 8} MORE</span>
                              )}
                            </div>
                         </div>
                      )}
                      {isActive && allConnectedRoutes.length === 0 && (
-                        <div className="mt-6 w-full bg-white/50 backdrop-blur-3xl p-5 rounded-3xl border border-white shadow-[0_15px_40px_rgba(0,0,0,0.05)]">
-                           <p className="text-xs text-gray-400 font-bold tracking-widest text-center md:text-left">NO CONNECTED ROUTES ON RECORD</p>
+                        <div className="mt-6 w-full bg-[#004F30] p-5 rounded-3xl border border-[#0A6B41] shadow-[0_15px_40px_rgba(0,0,0,0.15)]">
+                           <p className="text-xs text-white/50 font-bold tracking-widest text-center md:text-left">NO CONNECTED ROUTES ON RECORD</p>
                         </div>
                      )}
                   </div>
@@ -441,9 +442,9 @@ export default function Airports() {
                   {/* CENTER GAP FOR THE GLOBE */}
                   <div className="hidden md:block flex-grow"></div>
 
-                  {/* RIGHT WING: Telemetry & Media — flies in from the right, flies out to the right */}
+                  {/* RIGHT WING: Telemetry & Media */}
                   <div className={`flex flex-col w-full md:w-[35%] xl:w-[30%] max-w-sm mx-auto md:mx-0 items-center md:items-end text-center md:text-right shrink-0 gap-6 sm:gap-8 mt-2 md:mt-0 md:mr-8 lg:mr-16 transition-all duration-[1100ms] delay-300 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
-                    isActive ? 'translate-x-0 rotate-0' : 'translate-x-24 md:translate-x-40 rotate-[3deg]'
+                    isActive ? 'translate-y-0 rotate-0' : `${slideIndex < activeIndex ? '-translate-y-24 md:-translate-y-40' : 'translate-y-24 md:translate-y-40'} rotate-[3deg]`
                   }`}>
                      
                      {/* Media Stack (Clickable Lightbox) */}
@@ -461,22 +462,22 @@ export default function Airports() {
                      </div>
                      
                      {/* Telemetry Stack */}
-                     <div className="w-full bg-white/70 backdrop-blur-3xl p-5 sm:p-6 rounded-3xl border border-white shadow-[0_20px_50px_rgba(0,79,48,0.1)] grid grid-cols-2 gap-x-4 gap-y-5">
+                     <div className="w-full bg-[#004F30] p-5 sm:p-6 rounded-3xl border border-[#0A6B41] shadow-[0_20px_50px_rgba(0,0,0,0.15)] grid grid-cols-2 gap-x-4 gap-y-5">
                         <div>
-                          <p className="text-[10px] text-gray-500 font-black tracking-widest mb-1">ANNUAL PASSENGERS</p>
-                          <p className="text-base sm:text-lg text-[#1C2B22] font-extrabold">{field(details.Annual_Passengers)}</p>
+                          <p className="text-[10px] text-white/50 font-black tracking-widest mb-1">ANNUAL PASSENGERS</p>
+                          <p className="text-base sm:text-lg text-white font-extrabold">{field(details.Annual_Passengers)}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] text-gray-500 font-black tracking-widest mb-1">STATUS</p>
-                          <p className="text-base sm:text-lg text-[#1C2B22] font-extrabold">{field(details.Operational_Status)}</p>
+                          <p className="text-[10px] text-white/50 font-black tracking-widest mb-1">STATUS</p>
+                          <p className="text-base sm:text-lg text-white font-extrabold">{field(details.Operational_Status)}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] text-gray-500 font-black tracking-widest mb-1">CITY / COUNTRY</p>
-                          <p className="text-base sm:text-lg text-[#1C2B22] font-extrabold truncate">{field([details.City, details.Country].filter(Boolean).join(', ') || null)}</p>
+                          <p className="text-[10px] text-white/50 font-black tracking-widest mb-1">CITY / COUNTRY</p>
+                          <p className="text-base sm:text-lg text-white font-extrabold truncate">{field([details.City, details.Country].filter(Boolean).join(', ') || null)}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] text-gray-500 font-black tracking-widest mb-1">LAT / LNG</p>
-                          <p className="text-sm sm:text-base text-[#A89411] font-extrabold">{Number(details.Latitude || 0).toFixed(2)}, {Number(details.Longitude || 0).toFixed(2)}</p>
+                          <p className="text-[10px] text-white/50 font-black tracking-widest mb-1">LAT / LNG</p>
+                          <p className="text-sm sm:text-base text-white/90 font-extrabold">{Number(details.Latitude || 0).toFixed(2)}, {Number(details.Longitude || 0).toFixed(2)}</p>
                         </div>
                      </div>
 
@@ -491,7 +492,7 @@ export default function Airports() {
         <section 
           data-index={airportDetails.length + 1}
           ref={(el) => sectionRefs.current[airportDetails.length + 1] = el}
-          className="w-full shrink-0 snap-start"
+          className="w-full shrink-0 snap-end"
         >
           <Footer />
         </section>
