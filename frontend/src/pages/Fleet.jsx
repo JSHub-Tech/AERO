@@ -1,6 +1,6 @@
 import { useState, Suspense, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { useGLTF, Environment, OrbitControls, Bounds, ContactShadows, Float, Center } from '@react-three/drei';
+import { useGLTF, Environment, OrbitControls, Bounds, ContactShadows, Float, Center, Html } from '@react-three/drei';
 import { Plane, Users, Gauge, ChevronRight, Loader2 } from 'lucide-react';
 import * as THREE from 'three';
 import Footer from '../components/Footer';
@@ -77,7 +77,7 @@ export default function Fleet() {
         {/* 3D Canvas Background Layer */}
         <div className="absolute inset-0 z-0">
         <Canvas camera={{ position: [0, 2, 10], fov: 45 }} dpr={[1, 1.5]}>
-          <Suspense fallback={null}>
+          <Suspense fallback={<Loader />}>
             <Environment preset="city" />
             <ambientLight intensity={0.5} />
             <directionalLight position={[10, 10, 5]} intensity={1.5} />

@@ -15,18 +15,21 @@ const TEAM = [
     rank: 'Fleet Admiral',
     icon: Route,
     description: '...',
+    image: '/pilots/1.png'
   },
   {
     name: 'Muhammad Umer',
     rank: 'Commander',
     icon: Cpu,
     description: '...',
+    image: '/pilots/2.png'
   },
   {
     name: 'Muhammad Saad Asif',
     rank: 'Captain',
     icon: MonitorSmartphone,
     description: '...',
+    image: '/pilots/3.png'
   },
 ];
 
@@ -172,28 +175,25 @@ export default function About({ isSection = false }) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10 max-w-5xl mx-auto">
-            {TEAM.map(({ name, rank, description, icon: Icon }, i) => (
+            {TEAM.map(({ name, rank, description, icon: Icon, image }, i) => (
               <div
                 key={name}
-                className={`${flyClass(teamInView, i % 2 === 0 ? 'left' : 'right', i === 1 ? 'delay-150' : i === 2 ? 'delay-300' : '')} bg-[#004F30] border border-[#0A6B41] p-8 sm:p-10 rounded-[2rem] sm:rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_60px_rgba(0,79,48,0.2)] hover:-translate-y-2 transition-all duration-500 group text-center relative mt-16`}
+                className={`${flyClass(teamInView, i % 2 === 0 ? 'left' : 'right', i === 1 ? 'delay-150' : i === 2 ? 'delay-300' : '')} bg-[#004F30] border border-[#0A6B41] px-8 pb-8 pt-0 sm:px-10 sm:pb-10 rounded-[2rem] sm:rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_60px_rgba(0,79,48,0.2)] hover:scale-105 transition-all duration-500 group text-center relative mt-24 sm:mt-32`}
               >
                 <div className="absolute inset-0 overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] pointer-events-none">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[40px] -translate-y-1/2 translate-x-1/2 transition-opacity group-hover:opacity-100 opacity-50"></div>
                 </div>
-                
-                {/* Real Captain Hat sitting on the card itself */}
-                <div className="absolute -top-20 sm:-top-24 left-1/2 -translate-x-1/2 w-48 sm:w-56 z-30 drop-shadow-[0_20px_20px_rgba(0,0,0,0.6)] transition-transform duration-500 group-hover:-rotate-6 group-hover:scale-110 pointer-events-none">
-                  <img src="/cap.png" alt="AERO Captain Hat" className="w-full h-auto" />
+                  {/* Absolutely positioned avatar for perfect centering and overflow */}
+                <div className="absolute left-1/2 -translate-x-1/2 -top-[100px] sm:-top-[130px] w-[300px] sm:w-[400px] transition-all duration-500 drop-shadow-[0_15px_15px_rgba(0,0,0,0.5)] z-20 pointer-events-none">
+                  <img src={image} alt="" loading="lazy" className="w-full h-auto object-contain scale-[1.05]" onError={(e) => { e.target.style.display = 'none'; }} />
                 </div>
-
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-[1.5rem] bg-white/10 mx-auto flex items-center justify-center mb-6 sm:mb-8 group-hover:scale-110 group-hover:-rotate-3 transition-all duration-500 border border-white/20 shadow-xl overflow-hidden relative z-10">
-                  <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${name}&backgroundColor=004F30&textColor=A89411`} alt={name} className="w-full h-full object-cover" />
-                </div>
-                <h3 className="text-white font-black text-lg sm:text-xl tracking-tight mb-4 uppercase">{name}</h3>
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 border border-white/20 rounded-full group-hover:border-[#A89411]/50 transition-colors">
+                {/* Spacer to push the card's text content down below the absolute avatar */}
+                <div className="h-[120px] sm:h-[150px] w-full"></div>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 border border-white/20 rounded-full group-hover:border-[#A89411]/50 transition-colors mb-4">
                   <Icon className="text-[#A89411]" size={14} />
                   <span className="text-white text-[10px] font-black tracking-[0.2em] uppercase">{rank}</span>
                 </div>
+                <h3 className="text-white font-black text-lg sm:text-xl tracking-tight uppercase">{name}</h3>
               </div>
             ))}
           </div>
