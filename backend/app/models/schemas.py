@@ -289,6 +289,16 @@ class UserLogin(BaseModel):
     password: str
 
 
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+    new_password: str = Field(min_length=1)
+
+
+class UpdateEmailRequest(BaseModel):
+    new_email: EmailStr
+    current_password: str = Field(min_length=1)
+
+
 class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     user_id: uuid.UUID
