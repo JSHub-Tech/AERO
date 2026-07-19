@@ -36,7 +36,7 @@ export default function Contact({ isSection = false }) {
 
             <div className="flex flex-col gap-5 sm:gap-8 w-full max-w-xs mx-auto lg:max-w-none lg:mx-0">
               <div className="flex items-center gap-4 sm:gap-6 group cursor-pointer">
-                <div className="w-11 h-11 sm:w-14 sm:h-14 shrink-0 rounded-full bg-white shadow-sm flex items-center justify-center text-[#004F30] group-hover:bg-[#004F30] group-hover:text-white transition-colors">
+                <div className="w-11 h-11 sm:w-14 sm:h-14 shrink-0 rounded-full bg-[#A89411] shadow-md flex items-center justify-center text-[#1C2B22] group-hover:bg-[#004F30] group-hover:text-white group-hover:scale-110 transition-all duration-300">
                   <MapPin size={20} />
                 </div>
                 <div className="text-left">
@@ -45,7 +45,7 @@ export default function Contact({ isSection = false }) {
                 </div>
               </div>
               <div className="flex items-center gap-4 sm:gap-6 group cursor-pointer">
-                <div className="w-11 h-11 sm:w-14 sm:h-14 shrink-0 rounded-full bg-white shadow-sm flex items-center justify-center text-[#004F30] group-hover:bg-[#004F30] group-hover:text-white transition-colors">
+                <div className="w-11 h-11 sm:w-14 sm:h-14 shrink-0 rounded-full bg-[#A89411] shadow-md flex items-center justify-center text-[#1C2B22] group-hover:bg-[#004F30] group-hover:text-white group-hover:scale-110 transition-all duration-300">
                   <Phone size={20} />
                 </div>
                 <div className="text-left">
@@ -62,20 +62,20 @@ export default function Contact({ isSection = false }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black tracking-widest text-white/70 uppercase ml-2">Full Name</label>
-                  <input type="text" className="w-full bg-white/10 border border-white/20 rounded-2xl p-4 sm:p-5 text-white font-medium focus:outline-none focus:border-white focus:ring-2 focus:ring-white/20 transition-all placeholder-white/40" placeholder="John Doe" />
+                  <input type="text" className="w-full bg-white border border-transparent rounded-2xl p-4 sm:p-5 text-[#1C2B22] font-medium focus:outline-none focus:border-[#A89411] focus:ring-2 focus:ring-[#A89411]/20 transition-all placeholder-gray-400 shadow-inner" placeholder="John Doe" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black tracking-widest text-white/70 uppercase ml-2">Email Address</label>
-                  <input type="email" className="w-full bg-white/10 border border-white/20 rounded-2xl p-4 sm:p-5 text-white font-medium focus:outline-none focus:border-white focus:ring-2 focus:ring-white/20 transition-all placeholder-white/40" placeholder="john@example.com" />
+                  <input type="email" className="w-full bg-white border border-transparent rounded-2xl p-4 sm:p-5 text-[#1C2B22] font-medium focus:outline-none focus:border-[#A89411] focus:ring-2 focus:ring-[#A89411]/20 transition-all placeholder-gray-400 shadow-inner" placeholder="john@example.com" />
                 </div>
               </div>
               
               <div className="space-y-2">
                 <label className="text-[10px] font-black tracking-widest text-white/70 uppercase ml-2">Message</label>
-                <textarea rows="3" className="w-full bg-white/10 border border-white/20 rounded-2xl p-4 sm:p-5 text-white font-medium focus:outline-none focus:border-white focus:ring-2 focus:ring-white/20 transition-all resize-none placeholder-white/40" placeholder="How can we assist you today?"></textarea>
+                <textarea rows="3" className="w-full bg-white border border-transparent rounded-2xl p-4 sm:p-5 text-[#1C2B22] font-medium focus:outline-none focus:border-[#A89411] focus:ring-2 focus:ring-[#A89411]/20 transition-all resize-none placeholder-gray-400 shadow-inner" placeholder="How can we assist you today?"></textarea>
               </div>
               
-              <button type="button" className="group flex items-center justify-center w-full gap-3 sm:gap-4 bg-white text-[#1C2B22] px-6 sm:px-8 py-4 sm:py-5 rounded-2xl font-black tracking-widest text-xs sm:text-sm hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl mt-2 sm:mt-4">
+              <button type="button" className="group flex items-center justify-center w-full gap-3 sm:gap-4 bg-[#A89411] text-[#1C2B22] px-6 sm:px-8 py-4 sm:py-5 rounded-2xl font-black tracking-widest text-xs sm:text-sm hover:bg-[#D4C345] transition-all duration-300 shadow-xl shadow-[#A89411]/20 hover:-translate-y-0.5 hover:shadow-2xl mt-2 sm:mt-4">
                 SEND TRANSMISSION
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </button>

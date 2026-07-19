@@ -305,10 +305,10 @@ export default function Airports() {
 
       {/* SEARCH BAR (Expandable Icon) */}
       <div className="absolute top-24 sm:top-24 md:top-28 right-3 sm:right-6 md:right-8 left-3 sm:left-auto z-40 flex justify-end">
-         <div className={`bg-[#004F30] border border-[#0A6B41] shadow-[0_10px_30px_rgba(0,79,48,0.3)] rounded-full flex items-center transition-all duration-500 overflow-hidden ${isSearchOpen ? 'w-full sm:w-80 px-4' : 'w-11 h-11 sm:w-14 sm:h-14 cursor-pointer hover:shadow-[0_15px_40px_rgba(0,79,48,0.5)] hover:scale-105'}`} onClick={!isSearchOpen ? toggleSearch : undefined}>
+         <div className={`bg-white border border-gray-200 shadow-xl rounded-full flex items-center transition-all duration-500 overflow-hidden ${isSearchOpen ? 'w-full sm:w-80 px-4' : 'w-11 h-11 sm:w-14 sm:h-14 cursor-pointer hover:shadow-2xl hover:scale-105'}`} onClick={!isSearchOpen ? toggleSearch : undefined}>
             
             <div className="h-11 w-11 sm:h-14 sm:w-14 flex items-center justify-center shrink-0 cursor-pointer" onClick={isSearchOpen ? toggleSearch : undefined}>
-              <Search className="text-white w-5 h-5 sm:w-6 sm:h-6 opacity-80" />
+              <Search className="text-[#004F30] w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             
             <input 
@@ -318,7 +318,7 @@ export default function Airports() {
               value={searchQuery}
               onChange={handleSearch}
               onBlur={() => setIsSearchOpen(false)}
-              className={`w-full bg-transparent border-none outline-none text-white font-bold tracking-widest placeholder-white/50 py-3 text-sm sm:text-base transition-opacity duration-300 ${isSearchOpen ? 'opacity-100 block' : 'opacity-0 hidden'}`}
+              className={`w-full bg-transparent border-none outline-none text-[#004F30] font-bold tracking-widest placeholder-[#004F30]/40 py-3 text-sm sm:text-base transition-opacity duration-300 ${isSearchOpen ? 'opacity-100 block' : 'opacity-0 hidden'}`}
             />
          </div>
       </div>
@@ -402,7 +402,7 @@ export default function Airports() {
                         )}
                      </div>
 
-                     <p className="mt-8 text-base sm:text-lg font-semibold text-white/90 leading-relaxed bg-[#004F30] p-6 rounded-3xl border border-[#0A6B41] shadow-[0_15px_40px_rgba(0,0,0,0.15)] w-full">
+                     <p className="mt-8 text-base sm:text-lg font-semibold text-[#1C2B22] leading-relaxed bg-[#A89411] p-6 rounded-3xl border border-[#D4C345]/50 shadow-[0_15px_40px_rgba(0,0,0,0.15)] hover:scale-[1.02] hover:shadow-[0_20px_50px_rgba(168,148,17,0.3)] transition-all duration-300 w-full">
                        {details.Description_Blog || 'No description is available for this airport yet.'}
                      </p>
 
@@ -462,22 +462,22 @@ export default function Airports() {
                      </div>
                      
                      {/* Telemetry Stack */}
-                     <div className="w-full bg-[#004F30] p-5 sm:p-6 rounded-3xl border border-[#0A6B41] shadow-[0_20px_50px_rgba(0,0,0,0.15)] grid grid-cols-2 gap-x-4 gap-y-5">
+                     <div className="w-full bg-[#A89411] p-5 sm:p-6 rounded-3xl border border-[#D4C345]/50 shadow-[0_20px_50px_rgba(0,0,0,0.15)] hover:scale-[1.02] hover:shadow-[0_25px_60px_rgba(168,148,17,0.3)] transition-all duration-300 grid grid-cols-2 gap-x-4 gap-y-5">
                         <div>
-                          <p className="text-[10px] text-white/50 font-black tracking-widest mb-1">ANNUAL PASSENGERS</p>
-                          <p className="text-base sm:text-lg text-white font-extrabold">{field(details.Annual_Passengers)}</p>
+                          <p className="text-[10px] text-[#1C2B22]/70 font-black tracking-widest mb-1">ANNUAL PASSENGERS</p>
+                          <p className="text-base sm:text-lg text-[#1C2B22] font-extrabold">{field(details.Annual_Passengers)}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] text-white/50 font-black tracking-widest mb-1">STATUS</p>
-                          <p className="text-base sm:text-lg text-white font-extrabold">{field(details.Operational_Status)}</p>
+                          <p className="text-[10px] text-[#1C2B22]/70 font-black tracking-widest mb-1">STATUS</p>
+                          <p className="text-base sm:text-lg text-[#1C2B22] font-extrabold">{field(details.Operational_Status)}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] text-white/50 font-black tracking-widest mb-1">CITY / COUNTRY</p>
-                          <p className="text-base sm:text-lg text-white font-extrabold truncate">{field([details.City, details.Country].filter(Boolean).join(', ') || null)}</p>
+                          <p className="text-[10px] text-[#1C2B22]/70 font-black tracking-widest mb-1">CITY / COUNTRY</p>
+                          <p className="text-base sm:text-lg text-[#1C2B22] font-extrabold truncate">{field([details.City, details.Country].filter(Boolean).join(', ') || null)}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] text-white/50 font-black tracking-widest mb-1">LAT / LNG</p>
-                          <p className="text-sm sm:text-base text-white/90 font-extrabold">{Number(details.Latitude || 0).toFixed(2)}, {Number(details.Longitude || 0).toFixed(2)}</p>
+                          <p className="text-[10px] text-[#1C2B22]/70 font-black tracking-widest mb-1">LAT / LNG</p>
+                          <p className="text-sm sm:text-base text-[#1C2B22] font-extrabold">{Number(details.Latitude || 0).toFixed(2)}, {Number(details.Longitude || 0).toFixed(2)}</p>
                         </div>
                      </div>
 
