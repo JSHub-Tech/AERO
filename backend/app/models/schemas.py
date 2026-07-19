@@ -129,6 +129,7 @@ class LiveFlightMapOut(BaseModel):
 # ---------- Live Operations dashboard (LiveOperations.jsx — not in api.md, required by UI design) ----------
 class DashboardFlightItem(BaseModel):
     """Shared shape for the 'Active In-Air' and 'Boarding' panels."""
+    id: str            # Flight.flight_id UUID (string) — required by admin actions (delay/cancel)
     flightNum: str
     source: str
     dest: str
@@ -136,6 +137,7 @@ class DashboardFlightItem(BaseModel):
 
 
 class DashboardDelayedItem(BaseModel):
+    id: str
     flightNum: str
     source: str
     dest: str
@@ -148,6 +150,21 @@ class DashboardFlightsResponse(BaseModel):
 
 class DashboardDelayedResponse(BaseModel):
     flights: list[DashboardDelayedItem]
+
+
+class DashboardSummaryOut(BaseModel):
+    """GET /api/v1/dashboard/summary — Command Center overview cards."""
+    todays_revenue: float
+    todays_bookings: int
+    todays_flights: int
+    on_time_pct: float          # % of today's flights not delayed/cancelled
+    load_factor_pct: float      # booked seats / total seats across today's flights
+    active_flights: int         # currently airborne
+    delayed_flights: int
+    fleet_size: int
+    aircraft_in_maintenance: int
+    total_users: int
+    total_bookings_all_time: int
 
 
 # ---------- Telemetry websocket (api.md 2.1) ----------
@@ -205,6 +222,14 @@ class AircraftOut(AircraftCreate):
     status: str
 
 
+class AircraftUpdate(BaseModel):
+    """PATCH /fleets/{id} — every field optional, only supplied ones change."""
+    manufacturer: str | None = None
+    model: str | None = None
+    total_seats: int | None = Field(default=None, gt=0)
+    status: str | None = None  # 'active' | 'maintenance' | 'retired'
+
+
 # ---------- Flight ----------
 class FlightCreate(BaseModel):
     flight_number: str
@@ -216,13 +241,31 @@ class FlightCreate(BaseModel):
     scheduled_arrival: datetime
     estimated_arrival: datetime | None = None
     base_price: float = Field(gt=0)
-    region_shard: str
+    region_shard: str = "lahore"
+    seat_class: str = "economy"  # class assigned to every auto-generated seat
 
 
 class FlightOut(FlightCreate):
     model_config = ConfigDict(from_attributes=True)
     flight_id: uuid.UUID
     status: str
+
+
+class FlightUpdate(BaseModel):
+    """PATCH /flights/{id} — admin reschedule/edit. Every field optional."""
+    aircraft_id: uuid.UUID | None = None
+    departure_airport: str | None = Field(default=None, min_length=3, max_length=3)
+    arrival_airport: str | None = Field(default=None, min_length=3, max_length=3)
+    scheduled_departure: datetime | None = None
+    estimated_departure: datetime | None = None
+    scheduled_arrival: datetime | None = None
+    estimated_arrival: datetime | None = None
+    base_price: float | None = Field(default=None, gt=0)
+    status: str | None = None
+
+
+class FlightCancelRequest(BaseModel):
+    reason: str | None = None
 
 
 # ---------- Seat ----------
@@ -251,7 +294,16 @@ class UserOut(BaseModel):
     user_id: uuid.UUID
     email: EmailStr
     role: str
+    is_active: bool = True
     created_at: datetime
+
+
+class UserRoleUpdate(BaseModel):
+    role: str = Field(pattern="^(user|admin)$")
+
+
+class UserStatusUpdate(BaseModel):
+    is_active: bool
 
 
 # ---------- Booking ----------
@@ -266,14 +318,23 @@ class BookingCreate(BaseModel):
 class BookingOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     booking_id: uuid.UUID
+    booking_reference: str
     user_id: uuid.UUID
     flight_id: uuid.UUID
     seat_id: uuid.UUID
-    passenger_name: str
-    passenger_email: EmailStr
+    passenger_name: str | None
+    passenger_email: EmailStr | None
     price_paid: float
     status: str
     created_at: datetime
+    # Joined display fields — populated by the admin listing (GET /flights/bookings)
+    # for the Command Center table; absent (None) is fine for other callers.
+    flight_number: str | None = None
+    departure_airport: str | None = None
+    arrival_airport: str | None = None
+    scheduled_departure: datetime | None = None
+    account_email: EmailStr | None = None
+    seat_number: str | None = None
 
 
 # ---------- Routing (Neo4j) ----------

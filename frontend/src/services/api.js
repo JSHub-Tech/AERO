@@ -242,3 +242,81 @@ export const delayFlight = async (flightId, delayMinutes, delayReason, adminUser
   );
   return response.data;
 };
+
+// --- Admin: Dashboard summary (Command Center overview cards) ---
+export const getDashboardSummary = async () => {
+  const response = await API.get('/dashboard/summary');
+  return response.data;
+};
+
+// --- Admin: Fleet CRUD ---
+export const getFleetAdmin = async () => {
+  const response = await API.get('/fleets/admin');
+  return response.data;
+};
+
+export const createAircraft = async (payload) => {
+  const response = await API.post('/fleets', payload);
+  return response.data;
+};
+
+export const updateAircraft = async (aircraftId, payload) => {
+  const response = await API.patch(`/fleets/${aircraftId}`, payload);
+  return response.data;
+};
+
+export const retireAircraft = async (aircraftId) => {
+  const response = await API.delete(`/fleets/${aircraftId}`);
+  return response.data;
+};
+
+// --- Admin: Flight CRUD ---
+export const getFlightsAdmin = async () => {
+  const response = await API.get('/flights/admin');
+  return response.data;
+};
+
+export const createFlight = async (payload) => {
+  const response = await API.post('/flights', payload);
+  return response.data;
+};
+
+export const updateFlight = async (flightId, payload) => {
+  const response = await API.patch(`/flights/${flightId}`, payload);
+  return response.data;
+};
+
+export const cancelFlight = async (flightId, reason) => {
+  const response = await API.post(`/flights/${flightId}/cancel`, { reason });
+  return response.data;
+};
+
+// --- Admin: Bookings ---
+// GET /flights (root, no path segment) returns bookings — admins see every
+// booking, regular users see only their own. Matches the backend's existing
+// mount of bookings.router under the /flights prefix.
+export const getBookings = async () => {
+  const response = await API.get('/flights');
+  return response.data;
+};
+
+export const cancelBooking = async (bookingId) => {
+  const response = await API.delete(`/flights/${bookingId}`);
+  return response.data;
+};
+
+// --- Admin: Users ---
+export const getUsers = async () => {
+  const response = await API.get('/users');
+  return response.data;
+};
+
+export const updateUserRole = async (userId, role) => {
+  const response = await API.patch(`/users/${userId}/role`, { role });
+  return response.data;
+};
+
+export const updateUserStatus = async (userId, isActive) => {
+  const response = await API.patch(`/users/${userId}/status`, { is_active: isActive });
+  return response.data;
+};
