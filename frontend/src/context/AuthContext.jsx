@@ -11,7 +11,7 @@ export const AuthProvider = ({ children }) => {
 
   // Check if we have a saved session
   useEffect(() => {
-    const savedUser = localStorage.getItem('aero_user');
+    const savedUser = sessionStorage.getItem('aero_user');
     if (savedUser) {
       setUser(JSON.parse(savedUser));
     }
@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const userData = await authLogin(email, password);
       setUser(userData);
-      localStorage.setItem('aero_user', JSON.stringify(userData));
+      sessionStorage.setItem('aero_user', JSON.stringify(userData));
       return { success: true };
     } catch (error) {
       console.error('Login failed:', error);
@@ -36,7 +36,7 @@ export const AuthProvider = ({ children }) => {
       const userData = await authSignup(email, password);
       // ...then log the person straight in so signup feels like one step, not two.
       setUser(userData);
-      localStorage.setItem('aero_user', JSON.stringify(userData));
+      sessionStorage.setItem('aero_user', JSON.stringify(userData));
       return { success: true };
     } catch (error) {
       console.error('Signup failed:', error);
@@ -58,14 +58,14 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('aero_user');
+    sessionStorage.removeItem('aero_user');
   };
 
   const updateEmail = async (newEmail, currentPassword) => {
     try {
       const userData = await authUpdateEmail(newEmail, currentPassword);
       setUser(userData);
-      localStorage.setItem('aero_user', JSON.stringify(userData));
+      sessionStorage.setItem('aero_user', JSON.stringify(userData));
       return { success: true };
     } catch (error) {
       console.error('Email update failed:', error);
