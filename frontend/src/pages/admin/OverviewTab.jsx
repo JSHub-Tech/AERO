@@ -43,7 +43,7 @@ export default function OverviewTab() {
         <div className="p-6 border-b border-[#0A6B41] flex flex-wrap gap-4 items-center justify-between bg-[#1C2B22]/30">
           <h2 className="text-sm font-black tracking-widest uppercase text-[#A89411]">All Flights</h2>
         </div>
-        <div className="bg-[#A89411] p-6">
+        <div className="bg-white p-6">
           <p className="text-[#004F30] font-bold text-sm">
             <span className="text-[#1C2B22] font-black">{summary.total_bookings_all_time.toLocaleString()}</span> bookings recorded across the network so far,
             with <span className="text-[#1C2B22] font-black">{summary.active_flights}</span> flights currently airborne.

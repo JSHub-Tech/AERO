@@ -2,7 +2,7 @@ import { Search, X, AlertTriangle } from 'lucide-react';
 
 export function StatCard({ icon: Icon, label, value, accent = 'text-[#A89411]', bg = 'bg-[#004F30]/10' }) {
   return (
-    <div className="bg-[#A89411] rounded-2xl border-2 border-[#0A6B41] shadow-[0_10px_30px_rgba(0,0,0,0.2)] p-5 flex items-center gap-4">
+    <div className="bg-white rounded-2xl border-2 border-[#0A6B41] shadow-[0_10px_30px_rgba(0,0,0,0.2)] p-5 flex items-center gap-4">
       <div className={`w-11 h-11 rounded-xl bg-[#004F30] border border-[#0A6B41] flex items-center justify-center shrink-0`}>
         <Icon size={20} className={accent} />
       </div>

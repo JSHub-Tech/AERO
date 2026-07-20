@@ -115,14 +115,14 @@ export default function Fleet() {
             </p>
             
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white/10 rounded-2xl p-4 shadow-inner border border-white/10">
-                <Users className="w-5 h-5 text-[#A89411] opacity-80 mb-2" />
-                <div className="text-[10px] font-bold text-white/60 uppercase tracking-wider mb-1">Capacity</div>
+              <div className="bg-[#A89411] rounded-2xl p-4 shadow-inner border border-[#A89411]">
+                <Users className="w-5 h-5 text-[#004F30] opacity-90 mb-2" />
+                <div className="text-[10px] font-bold text-white/80 uppercase tracking-wider mb-1">Capacity</div>
                 <div className="text-xl font-bold text-white">{activePlane.seats}</div>
               </div>
-              <div className="bg-white/10 rounded-2xl p-4 shadow-inner border border-white/10">
-                <Gauge className="w-5 h-5 text-[#A89411] opacity-80 mb-2" />
-                <div className="text-[10px] font-bold text-white/60 uppercase tracking-wider mb-1">Speed</div>
+              <div className="bg-[#A89411] rounded-2xl p-4 shadow-inner border border-[#A89411]">
+                <Gauge className="w-5 h-5 text-[#004F30] opacity-90 mb-2" />
+                <div className="text-[10px] font-bold text-white/80 uppercase tracking-wider mb-1">Speed</div>
                 <div className="text-xl font-bold text-white">{activePlane.speed} <span className="text-sm opacity-80">km/h</span></div>
               </div>
             </div>
