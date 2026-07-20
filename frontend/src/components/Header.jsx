@@ -82,9 +82,9 @@ export default function Header() {
             {/* Auth Icon */}
             {user ? (
               <div className="flex items-center gap-1 ml-1 group">
-                <div title="Authenticated" className="p-2 rounded-full bg-white/10 text-white border border-white/20 flex items-center justify-center cursor-default">
+                <Link to="/account" title="My Account" className="p-2 rounded-full bg-white/10 text-white border border-white/20 flex items-center justify-center cursor-pointer hover:bg-white/20 transition-all">
                   <Unlock size={16} />
-                </div>
+                </Link>
                 <button onClick={logout} title="Sign Out" className="p-2 rounded-full bg-red-500/20 text-red-300 hover:bg-red-500 hover:text-white transition-all border border-red-500/30 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 pointer-events-none group-hover:pointer-events-auto">
                   <LogOut size={16} />
                 </button>
