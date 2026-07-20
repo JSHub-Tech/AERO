@@ -293,7 +293,6 @@ The system is seeded from five CSV files covering Pakistan International Airline
 - **Backend:** fully async end-to-end (asyncpg, Motor, async Neo4j driver), with `GZipMiddleware` compressing any JSON response over 1KB — meaningful for the airports/routes/flights list endpoints.
 - **Redis-cached endpoints:** `/airports`, `/airports/details`, and `/network` (distinct airport-to-airport connections powering the globe arcs and 2D map lines) are cached in Upstash Redis with a 1-hour TTL. This data only changes when the schedule is reseeded, so after the first request each call is served straight from Redis instead of re-scanning Postgres or re-running the full `MATCH (a)-[:FLIGHT]->(b)` Neo4j query — the Home and Airports pages both hit these endpoints on every load, so this removes several redundant round trips per page view. `/flights/search` uses the same short-TTL caching pattern.
 - **Frontend:** routes are code-split with `React.lazy`/`Suspense`, so visiting one page doesn't pull in the JS for every other page. The 3D globe and map libraries are only initialized when their section actually scrolls into view.
-- **Suggested next steps:** combine the Home/Airports page's parallel `getAirports`/`getRoutes`/`getFlights` calls into a single bootstrap endpoint; add database indexes on `Flight.status`/`departure_airport`/`arrival_airport`.
 
 ---
 
