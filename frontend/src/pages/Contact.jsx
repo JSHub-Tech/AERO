@@ -1,9 +1,60 @@
-import { Mail, MapPin, Phone, ArrowRight } from 'lucide-react';
+import { useState } from 'react';
+import { Mail, MapPin, Phone, ArrowRight, CheckCircle2, AlertTriangle, X } from 'lucide-react';
 import Footer from '../components/Footer';
 import { useNavigate } from 'react-router-dom';
 
 export default function Contact({ isSection = false }) {
   const navigate = useNavigate();
+
+  // Form Field States
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    message: ''
+  });
+
+  // Alert Modal State
+  const [alert, setAlert] = useState({
+    show: false,
+    type: '', // 'success' | 'error'
+    title: '',
+    message: ''
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    // Check if any fields are empty
+    if (!formData.fullName.trim() || !formData.email.trim() || !formData.message.trim()) {
+      setAlert({
+        show: true,
+        type: 'error',
+        title: 'INCOMPLETE TRANSMISSION',
+        message: 'Please fill out all required fields before sending your transmission.'
+      });
+      return;
+    }
+
+    // Success simulation (No actual message submission)
+    setAlert({
+      show: true,
+      type: 'success',
+      title: 'TRANSMISSION DISPATCHED',
+      message: 'Your message has been logged successfully. Our global support team will contact you shortly.'
+    });
+
+    // Reset Form
+    setFormData({ fullName: '', email: '', message: '' });
+  };
+
+  const closeAlert = () => {
+    setAlert((prev) => ({ ...prev, show: false }));
+  };
 
   return (
     <div id="contact" className={`w-full flex flex-col relative overflow-hidden ${isSection ? 'snap-start min-h-screen justify-center py-16 sm:py-20 lg:py-24 bg-transparent' : 'bg-transparent min-h-screen pt-[80px]'}`}>
@@ -36,7 +87,7 @@ export default function Contact({ isSection = false }) {
 
             <div className="flex flex-col gap-5 sm:gap-8 w-full max-w-xs mx-auto lg:max-w-none lg:mx-0">
               <div className="flex items-center gap-4 sm:gap-6 group cursor-pointer">
-                <div className="w-11 h-11 sm:w-14 sm:h-14 shrink-0 rounded-full bg-white shadow-sm flex items-center justify-center text-[#004F30] group-hover:bg-[#004F30] group-hover:text-white transition-colors">
+                <div className="w-11 h-11 sm:w-14 sm:h-14 shrink-0 rounded-full bg-[#A89411] shadow-md flex items-center justify-center text-[#1C2B22] group-hover:bg-[#004F30] group-hover:text-white group-hover:scale-110 transition-all duration-300">
                   <MapPin size={20} />
                 </div>
                 <div className="text-left">
@@ -45,7 +96,7 @@ export default function Contact({ isSection = false }) {
                 </div>
               </div>
               <div className="flex items-center gap-4 sm:gap-6 group cursor-pointer">
-                <div className="w-11 h-11 sm:w-14 sm:h-14 shrink-0 rounded-full bg-white shadow-sm flex items-center justify-center text-[#004F30] group-hover:bg-[#004F30] group-hover:text-white transition-colors">
+                <div className="w-11 h-11 sm:w-14 sm:h-14 shrink-0 rounded-full bg-[#A89411] shadow-md flex items-center justify-center text-[#1C2B22] group-hover:bg-[#004F30] group-hover:text-white group-hover:scale-110 transition-all duration-300">
                   <Phone size={20} />
                 </div>
                 <div className="text-left">
@@ -58,24 +109,48 @@ export default function Contact({ isSection = false }) {
 
           {/* Right: Premium Contact Form */}
           <div className="w-full lg:w-[55%]">
-            <form className="bg-[#004F30] border border-[#0A6B41] p-6 sm:p-10 md:p-14 rounded-[24px] sm:rounded-[40px] shadow-[0_20px_60px_rgba(0,79,48,0.15)] space-y-5 sm:space-y-6">
+            <form onSubmit={handleSubmit} className="bg-[#004F30] border border-[#0A6B41] p-6 sm:p-10 md:p-14 rounded-[24px] sm:rounded-[40px] shadow-[0_20px_60px_rgba(0,79,48,0.15)] space-y-5 sm:space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black tracking-widest text-white/70 uppercase ml-2">Full Name</label>
-                  <input type="text" className="w-full bg-white/10 border border-white/20 rounded-2xl p-4 sm:p-5 text-white font-medium focus:outline-none focus:border-white focus:ring-2 focus:ring-white/20 transition-all placeholder-white/40" placeholder="John Doe" />
+                  <input 
+                    type="text" 
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleChange}
+                    className="w-full bg-white border border-transparent rounded-2xl p-4 sm:p-5 text-[#1C2B22] font-medium focus:outline-none focus:border-[#A89411] focus:ring-2 focus:ring-[#A89411]/20 transition-all placeholder-gray-400 shadow-inner" 
+                    placeholder="John Doe" 
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black tracking-widest text-white/70 uppercase ml-2">Email Address</label>
-                  <input type="email" className="w-full bg-white/10 border border-white/20 rounded-2xl p-4 sm:p-5 text-white font-medium focus:outline-none focus:border-white focus:ring-2 focus:ring-white/20 transition-all placeholder-white/40" placeholder="john@example.com" />
+                  <input 
+                    type="email" 
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full bg-white border border-transparent rounded-2xl p-4 sm:p-5 text-[#1C2B22] font-medium focus:outline-none focus:border-[#A89411] focus:ring-2 focus:ring-[#A89411]/20 transition-all placeholder-gray-400 shadow-inner" 
+                    placeholder="john@example.com" 
+                  />
                 </div>
               </div>
               
               <div className="space-y-2">
                 <label className="text-[10px] font-black tracking-widest text-white/70 uppercase ml-2">Message</label>
-                <textarea rows="3" className="w-full bg-white/10 border border-white/20 rounded-2xl p-4 sm:p-5 text-white font-medium focus:outline-none focus:border-white focus:ring-2 focus:ring-white/20 transition-all resize-none placeholder-white/40" placeholder="How can we assist you today?"></textarea>
+                <textarea 
+                  rows="3" 
+                  name="message"
+                  value={formData.message}
+                  onChange={handleChange}
+                  className="w-full bg-white border border-transparent rounded-2xl p-4 sm:p-5 text-[#1C2B22] font-medium focus:outline-none focus:border-[#A89411] focus:ring-2 focus:ring-[#A89411]/20 transition-all resize-none placeholder-gray-400 shadow-inner" 
+                  placeholder="How can we assist you today?"
+                ></textarea>
               </div>
               
-              <button type="button" className="group flex items-center justify-center w-full gap-3 sm:gap-4 bg-white text-[#1C2B22] px-6 sm:px-8 py-4 sm:py-5 rounded-2xl font-black tracking-widest text-xs sm:text-sm hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl mt-2 sm:mt-4">
+              <button 
+                type="submit" 
+                className="group flex items-center justify-center w-full gap-3 sm:gap-4 bg-[#A89411] text-[#1C2B22] px-6 sm:px-8 py-4 sm:py-5 rounded-2xl font-black tracking-widest text-xs sm:text-sm hover:bg-[#D4C345] transition-all duration-300 shadow-xl shadow-[#A89411]/20 hover:-translate-y-0.5 hover:shadow-2xl mt-2 sm:mt-4 cursor-pointer"
+              >
                 SEND TRANSMISSION
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </button>
@@ -84,6 +159,51 @@ export default function Contact({ isSection = false }) {
 
         </div>
       </div>
+
+      {/* Themed Alert Modal */}
+      {alert.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1C2B22]/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-[2rem] p-8 max-w-sm w-full border border-gray-100 shadow-2xl relative flex flex-col items-center text-center">
+            
+            <button 
+              onClick={closeAlert} 
+              className="absolute top-5 right-5 text-gray-400 hover:text-[#1C2B22] transition-colors"
+            >
+              <X size={20} />
+            </button>
+
+            {alert.type === 'error' ? (
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4 border border-red-100">
+                <AlertTriangle className="w-8 h-8 text-red-500" />
+              </div>
+            ) : (
+              <div className="w-16 h-16 bg-[#004F30]/10 rounded-full flex items-center justify-center mb-4 border border-[#004F30]/20">
+                <CheckCircle2 className="w-8 h-8 text-[#004F30]" />
+              </div>
+            )}
+
+            <h3 className="text-xl font-black text-[#1C2B22] tracking-tight mb-2">
+              {alert.title}
+            </h3>
+            
+            <p className="text-gray-500 text-sm font-medium leading-relaxed mb-6">
+              {alert.message}
+            </p>
+
+            <button 
+              onClick={closeAlert}
+              className={`w-full py-4 rounded-xl font-black tracking-widest text-xs uppercase transition-all shadow-md ${
+                alert.type === 'error'
+                  ? 'bg-red-500 text-white hover:bg-red-600'
+                  : 'bg-[#004F30] text-white hover:bg-[#1C2B22]'
+              }`}
+            >
+              Acknowledge
+            </button>
+
+          </div>
+        </div>
+      )}
 
       {/* Massive Dark Cinematic Footer */}
       {!isSection && <Footer />}

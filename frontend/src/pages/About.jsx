@@ -106,8 +106,8 @@ export default function About({ isSection = false }) {
                 key={title}
                 className={`${flyClass(missionInView, dir, i === 1 ? 'delay-150' : i === 2 ? 'delay-300' : '')} bg-[#004F30] border border-[#0A6B41] p-6 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,79,48,0.15)] hover:-translate-y-2 transition-all duration-300 group`}
               >
-                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-white/10 flex items-center justify-center mb-6 sm:mb-8 group-hover:scale-110 group-hover:bg-[#A89411]/20 transition-all duration-500">
-                  <Icon className="text-[#A89411]" size={28} />
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-[#A89411] flex items-center justify-center mb-6 sm:mb-8 group-hover:scale-110 group-hover:bg-[#D4C345] transition-all duration-500 shadow-md">
+                  <Icon className="text-[#1C2B22]" size={28} />
                 </div>
                 <h3 className="text-white font-black text-lg sm:text-xl mb-2 sm:mb-3 tracking-wide">{title}</h3>
                 <p className="text-white/80 text-sm font-medium leading-relaxed">{desc}</p>
@@ -128,11 +128,11 @@ export default function About({ isSection = false }) {
             <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#A89411]/10 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/4"></div>
 
             <div className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto">
-              <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/10 backdrop-blur-md rounded-full mb-8 border border-white/20 group-hover:scale-105 transition-transform duration-500 shadow-xl">
-                <MessageCircle className="text-[#A89411]" size={20} />
-                <span className="text-[#A89411] text-xs sm:text-sm font-black tracking-[0.2em] uppercase">Introducing AERO AI</span>
+              <div className="inline-flex items-center gap-3 px-6 py-3 bg-[#A89411] backdrop-blur-md rounded-full mb-8 border border-[#D4C345]/50 group-hover:scale-105 transition-transform duration-500 shadow-xl">
+                <MessageCircle className="text-[#1C2B22]" size={20} />
+                <span className="text-[#1C2B22] text-xs sm:text-sm font-black tracking-[0.2em] uppercase">Introducing AERO AI</span>
               </div>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight mb-4 sm:mb-6">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#A89411] tracking-tight mb-4 sm:mb-6">
                 Your Trip, One Conversation Away.
               </h2>
               <p className="text-white/80 text-sm sm:text-base md:text-lg font-medium leading-relaxed">
@@ -148,8 +148,8 @@ export default function About({ isSection = false }) {
                 className={`${flyClass(aiInView, dir, i === 1 ? 'delay-150' : i === 2 ? 'delay-300' : '')} bg-[#004F30] border border-[#0A6B41] p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] hover:-translate-y-2 hover:shadow-[0_20px_60px_rgba(0,79,48,0.15)] transition-all duration-300 group`}
               >
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-[#A89411]/20 transition-colors">
-                    <Icon className="text-[#A89411]" size={24} />
+                  <div className="w-12 h-12 rounded-xl bg-[#A89411] flex items-center justify-center group-hover:bg-[#D4C345] transition-colors shadow-md">
+                    <Icon className="text-[#1C2B22]" size={24} />
                   </div>
                 </div>
                 <h3 className="text-white font-black text-base sm:text-lg mb-2 tracking-wide">{title}</h3>
@@ -189,9 +189,9 @@ export default function About({ isSection = false }) {
                 </div>
                 {/* Spacer to push the card's text content down below the absolute avatar */}
                 <div className="h-[120px] sm:h-[150px] w-full"></div>
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 border border-white/20 rounded-full group-hover:border-[#A89411]/50 transition-colors mb-4">
-                  <Icon className="text-[#A89411]" size={14} />
-                  <span className="text-white text-[10px] font-black tracking-[0.2em] uppercase">{rank}</span>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#A89411] border border-[#D4C345]/50 rounded-full group-hover:bg-[#D4C345] transition-colors mb-4 shadow-sm">
+                  <Icon className="text-[#1C2B22]" size={14} />
+                  <span className="text-[#1C2B22] text-[10px] font-black tracking-[0.2em] uppercase">{rank}</span>
                 </div>
                 <h3 className="text-white font-black text-lg sm:text-xl tracking-tight uppercase">{name}</h3>
               </div>
@@ -223,8 +223,8 @@ export default function About({ isSection = false }) {
                   className={`${flyClass(techInView, i % 2 === 0 ? 'down' : 'up', delayClass)} bg-[#004F30] border border-[#0A6B41] p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,79,48,0.15)] hover:-translate-y-2 transition-all duration-300 group`}
                 >
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-[#A89411]/20 transition-colors">
-                      <Icon className="text-[#A89411]" size={24} />
+                    <div className="w-12 h-12 rounded-xl bg-[#A89411] flex items-center justify-center group-hover:bg-[#D4C345] transition-colors shadow-md">
+                      <Icon className="text-[#1C2B22]" size={24} />
                     </div>
                   </div>
                   <h3 className="text-white font-black text-base sm:text-lg mb-2 tracking-wide">{title}</h3>

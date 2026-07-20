@@ -65,14 +65,14 @@ export default function FleetTab() {
         <div className="bg-green-50 text-green-700 p-4 rounded-xl font-bold text-sm border border-green-200">{successMsg}</div>
       )}
 
-      <div className="bg-[#004F30] rounded-3xl shadow-[0_20px_60px_rgba(0,79,48,0.3)] border border-[#0A6B41] overflow-hidden">
-        <div className="p-6 border-b border-[#0A6B41] flex flex-wrap gap-4 items-center justify-between bg-[#1C2B22]/30">
-          <h2 className="text-sm font-black tracking-widest uppercase text-white/50">Fleet</h2>
+      <div className="bg-white rounded-3xl shadow-xl border border-gray-200 overflow-hidden">
+        <div className="p-6 border-b border-[#0A6B41] flex flex-wrap gap-4 items-center justify-between bg-[#004F30]">
+          <h2 className="text-sm font-black tracking-widest uppercase text-[#A89411]">Fleet</h2>
           <div className="flex items-center gap-3">
             <SearchBox value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search aircraft..." />
             <button
               onClick={() => setFormTarget('new')}
-              className="flex items-center gap-2 px-4 py-2 bg-[#A89411] hover:bg-[#D4C345] text-[#1C2B22] rounded-lg font-black text-[10px] uppercase tracking-widest transition-colors shadow-md"
+              className="flex items-center gap-2 px-4 py-2 bg-[#A89411] hover:bg-[#D4C345] text-[#1C2B22] rounded-lg font-black text-[10px] uppercase tracking-widest transition-colors shadow-md border border-[#A89411]"
             >
               <Plus size={14} /> Add Aircraft
             </button>
@@ -81,7 +81,7 @@ export default function FleetTab() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-[#1C2B22]/50 text-[10px] uppercase font-black tracking-widest text-white/50">
+            <thead className="bg-[#004F30] text-[10px] uppercase font-black tracking-widest text-white/80">
               <tr>
                 <th className="p-4">Registration</th>
                 <th className="p-4">Manufacturer</th>
@@ -91,18 +91,18 @@ export default function FleetTab() {
                 <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#0A6B41]">
+            <tbody className="divide-y divide-gray-100">
               {loading ? (
-                <tr><td colSpan="6" className="p-8 text-center text-white/50 font-bold">Loading...</td></tr>
+                <tr><td colSpan="6" className="p-8 text-center text-gray-500 font-bold">Loading...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan="6" className="p-8 text-center text-white/50 font-bold">No aircraft found.</td></tr>
+                <tr><td colSpan="6" className="p-8 text-center text-gray-500 font-bold">No aircraft found.</td></tr>
               ) : (
                 paginated.map((a) => (
-                  <tr key={a.aircraft_id} className="hover:bg-[#1C2B22]/30 transition-colors">
-                    <td className="p-4 font-black text-white">{a.registration_code}</td>
-                    <td className="p-4 font-bold text-white/80">{a.manufacturer}</td>
-                    <td className="p-4 font-bold text-white/80">{a.model}</td>
-                    <td className="p-4 font-bold text-white/60">{a.total_seats}</td>
+                  <tr key={a.aircraft_id} className="hover:bg-gray-50 transition-colors">
+                    <td className="p-4 font-black text-[#1C2B22]">{a.registration_code}</td>
+                    <td className="p-4 font-bold text-[#1C2B22]/80">{a.manufacturer}</td>
+                    <td className="p-4 font-bold text-[#1C2B22]/80">{a.model}</td>
+                    <td className="p-4 font-bold text-[#1C2B22]/60">{a.total_seats}</td>
                     <td className="p-4"><StatusBadge status={a.status} /></td>
                     <td className="p-4">
                       <div className="flex items-center justify-end gap-2">

@@ -79,15 +79,15 @@ const ExpandedTableModal = ({ category, flights, airports, onClose }) => {
           </div>
         </div>
         
-        <div className="flex-1 overflow-y-auto border border-gray-100 rounded-2xl bg-white shadow-inner p-4">
-          <table className="w-full text-left text-sm">
-            <thead className="text-[11px] uppercase font-bold tracking-widest text-gray-400 border-b-2 border-gray-100 sticky top-0 bg-white z-10">
+        <div className="flex-1 overflow-y-auto border border-gray-100 rounded-2xl bg-white shadow-inner p-4 custom-scrollbar">
+          <table className="w-full text-left text-sm relative">
+            <thead className="text-[11px] uppercase font-bold tracking-widest text-gray-400 border-b border-gray-200 sticky top-[-16px] pt-4 bg-white z-10 shadow-sm">
               <tr>
-                <th className="pb-3 pl-4">Flight No</th>
-                <th className="pb-3">Origin</th>
-                <th className="pb-3">Destination</th>
-                <th className="pb-3">Status</th>
-                <th className="pb-3 text-right pr-4">Time</th>
+                <th className="pb-3 pt-3 pl-4">Flight No</th>
+                <th className="pb-3 pt-3">Origin</th>
+                <th className="pb-3 pt-3">Destination</th>
+                <th className="pb-3 pt-3">Status</th>
+                <th className="pb-3 pt-3 text-right pr-4">Time</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -99,12 +99,14 @@ const ExpandedTableModal = ({ category, flights, airports, onClose }) => {
                      <td className="py-4 pl-4 font-black text-[#004F30]">{f.flightNum}</td>
                      <td className="py-4 font-bold text-[#1C2B22] text-xs">{getCity(f.source)}</td>
                      <td className="py-4 font-bold text-[#1C2B22] text-xs">{getCity(f.dest)}</td>
-                     <td className="py-4 font-black text-[#A89411] text-xs">
+                     <td className={`py-4 font-black text-xs ${category === 'Delayed' ? 'text-red-500' : 'text-[#A89411]'}`}>
                        {category === 'Boarding' ? 'BOARDING' : 
                         (category === 'Active' ? getActiveStatus(f.targetTime) : 
                         (f.delayTime ? 'DELAYED' : (f.targetTime ? 'SCHEDULED' : 'ACTIVE')))}
                      </td>
-                     <td className="py-4 text-right pr-4 font-bold text-gray-500 text-xs">{f.delayTime || (f.targetTime ? new Date(f.targetTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A')}</td>
+                     <td className={`py-4 text-right pr-4 font-bold text-xs ${category === 'Delayed' ? 'text-red-500' : 'text-gray-500'}`}>
+                       {f.delayTime || (f.targetTime ? new Date(f.targetTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A')}
+                     </td>
                    </tr>
                  ))
               )}

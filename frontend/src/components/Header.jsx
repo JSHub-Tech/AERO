@@ -42,15 +42,15 @@ export default function Header() {
     const isActive = location.pathname === path;
     return `text-base font-bold tracking-widest transition-all px-5 py-4 rounded-2xl w-full text-center ${
       isActive
-      ? 'bg-[#004F30] text-white shadow-md'
-      : 'text-gray-600 hover:text-[#004F30] hover:bg-[#004F30]/10'
+      ? 'bg-[#A89411] text-[#1C2B22] shadow-md'
+      : 'text-white/70 hover:text-white hover:bg-white/10'
     }`;
   };
 
   const aeroAiClass = `text-sm font-bold tracking-widest transition-all px-4 py-2 rounded-full flex items-center gap-2 ${
     location.pathname === '/chat'
     ? 'bg-[#A89411] text-[#1C2B22] shadow-md border-none'
-    : 'bg-white/10 border border-white/20 text-white hover:border-[#A89411] hover:text-[#A89411] hover:shadow-sm'
+    : 'bg-white text-[#004F30] hover:bg-[#A89411] hover:text-[#1C2B22] shadow-sm'
   }`;
 
   return (
@@ -90,7 +90,7 @@ export default function Header() {
                 </button>
               </div>
             ) : (
-              <Link to="/login" title="Sign In" className="ml-1 p-2 rounded-full bg-white/10 text-white/70 hover:bg-[#A89411] hover:text-[#1C2B22] transition-all border border-white/20 flex items-center justify-center group">
+              <Link to="/login" title="Sign In" className="ml-1 p-2 rounded-full bg-white text-[#004F30] hover:bg-[#A89411] hover:text-[#1C2B22] transition-all flex items-center justify-center group shadow-sm">
                 <Lock size={16} className="group-hover:scale-110 transition-transform" />
               </Link>
             )}

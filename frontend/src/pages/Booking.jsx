@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
-import { getAirports, getFleets, searchFlights, bookFlight, getFlightSeats } from '../services/api';
+import { getAirports, getFleets, searchFlights, bookFlight, getFlightSeats, getRoutes } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Footer from '../components/Footer';
-import { Plane, Calendar, Users, ArrowRight, CheckCircle2, ChevronRight, ShieldCheck, ArrowLeft, AlertTriangle, FileText, Download, X, QrCode, Mail, Lock } from 'lucide-react';
+import { Plane, Calendar, Users, ArrowRight, CheckCircle2, ChevronRight, ShieldCheck, ArrowLeft, AlertTriangle, FileText, Download, X, QrCode, Lock } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -20,16 +20,12 @@ L.Icon.Default.mergeOptions({
 });
 
 export default function Booking() {
-  const { user, login } = useAuth();
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [authMode, setAuthMode] = useState('login'); // login or register
-  const [authError, setAuthError] = useState('');
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const { user } = useAuth();
   
   const [step, setStep] = useState(1);
   const [airports, setAirports] = useState([]);
   const [fleets, setFleets] = useState([]);
+  const [routes, setRoutes] = useState([]);
   
   // Form State
   const [origin, setOrigin] = useState('');
@@ -53,27 +49,59 @@ export default function Booking() {
   const [pnr, setPnr] = useState('');
   const [confirmedAt, setConfirmedAt] = useState(null);
   const [showReceipt, setShowReceipt] = useState(false);
-  // A random, unique flight number generated for this specific passenger's
-  // ticket — distinct from the shared schedule flight number (e.g. "PK1234"),
-  // which many passengers on the same flight would share.
   const [passengerFlightNumber, setPassengerFlightNumber] = useState('');
 
   // Load Data via API
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [airportsData, fleetsData] = await Promise.all([
+        const [airportsData, fleetsData, routesData] = await Promise.all([
           getAirports(),
-          getFleets()
+          getFleets(),
+          getRoutes()
         ]);
         setAirports(airportsData);
         setFleets(fleetsData);
+        setRoutes(routesData || []);
       } catch (error) {
         console.error("Error loading booking data:", error);
       }
     };
     fetchData();
   }, []);
+
+  // Filter available Origins based on active routes
+  const availableOrigins = useMemo(() => {
+    if (!routes.length) return airports;
+    const activeOriginCodes = new Set(
+      routes.map(r => r.Source_Airport_Code || r.source)
+    );
+    return airports.filter(a => activeOriginCodes.has(a.Airport_Code));
+  }, [airports, routes]);
+
+  // Filter available Destinations based on selected Origin
+  const availableDestinations = useMemo(() => {
+    if (!origin) return [];
+    if (!routes.length) return airports.filter(a => a.Airport_Code !== origin);
+
+    const validDestCodes = new Set(
+      routes
+        .filter(r => (r.Source_Airport_Code || r.source) === origin)
+        .map(r => r.Destination_Airport_Code || r.destination)
+    );
+
+    return airports.filter(a => validDestCodes.has(a.Airport_Code));
+  }, [origin, airports, routes]);
+
+  // Reset destination if selected origin changes and previous destination becomes invalid
+  useEffect(() => {
+    if (destination) {
+      const isStillValid = availableDestinations.some(d => d.Airport_Code === destination);
+      if (!isStillValid) {
+        setDestination('');
+      }
+    }
+  }, [origin, availableDestinations, destination]);
 
   const airportCoords = useMemo(() => {
     const coords = {};
@@ -107,10 +135,7 @@ export default function Booking() {
     setUnavailableSeats([]);
     setStep(3);
     
-    // Fetch real seat availability (Postgres booked + Redis locked)
     try {
-      // If it's a multi-leg flight (e.g. "uuid1+uuid2"), we'll just fetch the first leg for now 
-      // or map over them. Let's just fetch the first leg's seats for the seat map UI.
       const firstLegId = flight.id.split('+')[0];
       const seatsData = await getFlightSeats(firstLegId);
       setUnavailableSeats(seatsData.booked_seats || []);
@@ -119,10 +144,6 @@ export default function Booking() {
     }
   };
 
-  // Generates a random, unique flight number for this passenger's ticket.
-  // Unlike the flight's own schedule number (e.g. "PK1234", shared by every
-  // passenger on board), this code is one-of-a-kind per passenger and is
-  // what gets encoded into the boarding QR code.
   const generatePassengerFlightNumber = () => {
     const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
     const timePart = Date.now().toString(36).slice(-4).toUpperCase();
@@ -166,17 +187,16 @@ export default function Booking() {
     const totalSeats = aircraft ? parseInt(aircraft.Total_Seats) : 170;
     
     let seatsPerRow = 6;
-    let aisles = [3]; // After seat C
+    let aisles = [3];
     
-    if (totalSeats > 300) { // Boeing 777
+    if (totalSeats > 300) {
       seatsPerRow = 9;
-      aisles = [3, 6]; // 3-3-3 layout
-    } else if (totalSeats < 100) { // ATR
+      aisles = [3, 6];
+    } else if (totalSeats < 100) {
       seatsPerRow = 4;
-      aisles = [2]; // 2-2 layout
+      aisles = [2];
     }
     
-    // Reduce rows slightly just for UI demo purposes so it doesn't take 10 pages to scroll
     const demoRows = Math.min(Math.ceil(totalSeats / seatsPerRow), 15);
     const seatMap = [];
 
@@ -244,8 +264,6 @@ export default function Booking() {
     return aircraft ? aircraft.Model : 'Unknown Aircraft';
   };
 
-  // A flight can only be confirmed if we can actually resolve a real aircraft
-  // for it — never let someone book onto an "Unknown Aircraft".
   const isFlightVerified = !!selectedFlight?.plane && getAircraftModel(selectedFlight?.plane) !== 'Unknown Aircraft';
 
   const qrCodeUrl = (value) =>
@@ -374,44 +392,65 @@ export default function Booking() {
 
         {/* Step 1: Search */}
         {step === 1 && (
-          <div className="bg-white p-10 rounded-3xl shadow-[0_10px_40px_rgba(0,79,48,0.06)] border border-gray-100 animate-fade-in max-w-5xl mx-auto">
-            <h2 className="text-3xl font-bold text-[#1C2B22] mb-8">Where are you flying?</h2>
+          <div className="bg-[#004F30] p-10 rounded-3xl shadow-[0_10px_40px_rgba(0,79,48,0.2)] border border-[#0A6B41] animate-fade-in max-w-5xl mx-auto">
+            <h2 className="text-3xl font-bold text-[#A89411] mb-8">Where are you flying?</h2>
             <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-5 gap-6">
               
+              {/* Origin Dropdown - Dynamically filtered */}
               <div className="md:col-span-1">
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Origin</label>
+                <label className="block text-xs font-bold text-white/70 uppercase tracking-wider mb-2">Origin</label>
                 <div className="relative">
-                  <Plane className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <select required value={origin} onChange={e => setOrigin(e.target.value)} className="w-full bg-[#F8F9FA] border border-gray-200 rounded-xl py-4 pl-12 pr-2 text-[#1C2B22] font-medium focus:ring-2 focus:ring-[#004F30]/20 outline-none appearance-none cursor-pointer text-sm">
-                    <option value="">Origin</option>
-                    {airports.map(a => <option key={a.Airport_Code} value={a.Airport_Code}>{a.City} ({a.Airport_Code})</option>)}
+                  <Plane className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#004F30]" />
+                  <select 
+                    required 
+                    value={origin} 
+                    onChange={e => setOrigin(e.target.value)} 
+                    className="w-full bg-white border border-gray-200 rounded-xl py-4 pl-12 pr-2 text-[#1C2B22] font-medium focus:ring-2 focus:ring-[#004F30]/20 outline-none appearance-none cursor-pointer text-sm"
+                  >
+                    <option value="">Select Origin</option>
+                    {availableOrigins.map(a => (
+                      <option key={a.Airport_Code} value={a.Airport_Code}>
+                        {a.City} ({a.Airport_Code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Destination Dropdown - Dynamically filtered based on Origin */}
+              <div className="md:col-span-1">
+                <label className="block text-xs font-bold text-white/70 uppercase tracking-wider mb-2">Destination</label>
+                <div className="relative">
+                  <Plane className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#004F30] transform rotate-90" />
+                  <select 
+                    required 
+                    disabled={!origin}
+                    value={destination} 
+                    onChange={e => setDestination(e.target.value)} 
+                    className="w-full bg-white border border-gray-200 rounded-xl py-4 pl-12 pr-2 text-[#1C2B22] font-medium focus:ring-2 focus:ring-[#004F30]/20 outline-none appearance-none cursor-pointer text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="">{origin ? "Select Dest" : "Select Origin First"}</option>
+                    {availableDestinations.map(a => (
+                      <option key={a.Airport_Code} value={a.Airport_Code}>
+                        {a.City} ({a.Airport_Code})
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
 
               <div className="md:col-span-1">
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Destination</label>
+                <label className="block text-xs font-bold text-white/70 uppercase tracking-wider mb-2">Date</label>
                 <div className="relative">
-                  <Plane className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 transform rotate-90" />
-                  <select required value={destination} onChange={e => setDestination(e.target.value)} className="w-full bg-[#F8F9FA] border border-gray-200 rounded-xl py-4 pl-12 pr-2 text-[#1C2B22] font-medium focus:ring-2 focus:ring-[#004F30]/20 outline-none appearance-none cursor-pointer text-sm">
-                    <option value="">Dest</option>
-                    {airports.map(a => <option key={a.Airport_Code} value={a.Airport_Code}>{a.City} ({a.Airport_Code})</option>)}
-                  </select>
+                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#004F30]" />
+                  <input required type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl py-4 pl-12 pr-2 text-[#1C2B22] font-medium focus:ring-2 focus:ring-[#004F30]/20 outline-none text-sm" />
                 </div>
               </div>
 
               <div className="md:col-span-1">
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Date</label>
+                <label className="block text-xs font-bold text-white/70 uppercase tracking-wider mb-2">Flexibility</label>
                 <div className="relative">
-                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input required type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-[#F8F9FA] border border-gray-200 rounded-xl py-4 pl-12 pr-2 text-[#1C2B22] font-medium focus:ring-2 focus:ring-[#004F30]/20 outline-none text-sm" />
-                </div>
-              </div>
-
-              <div className="md:col-span-1">
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Flexibility</label>
-                <div className="relative">
-                  <select value={flexibility} onChange={e => setFlexibility(e.target.value)} className="w-full bg-[#F8F9FA] border border-gray-200 rounded-xl py-4 px-4 text-[#1C2B22] font-medium focus:ring-2 focus:ring-[#004F30]/20 outline-none appearance-none cursor-pointer text-sm text-center">
+                  <select value={flexibility} onChange={e => setFlexibility(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl py-4 px-4 text-[#1C2B22] font-medium focus:ring-2 focus:ring-[#004F30]/20 outline-none appearance-none cursor-pointer text-sm text-center">
                     <option value="0">Exact Dates</option>
                     <option value="1">+/- 1 Day</option>
                     <option value="3">+/- 3 Days</option>
@@ -421,10 +460,10 @@ export default function Booking() {
               </div>
 
               <div className="md:col-span-1">
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Passengers</label>
+                <label className="block text-xs font-bold text-white/70 uppercase tracking-wider mb-2">Passengers</label>
                 <div className="relative">
-                  <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input required type="number" min="1" max="9" value={passengers} onChange={e => setPassengers(parseInt(e.target.value))} className="w-full bg-[#F8F9FA] border border-gray-200 rounded-xl py-4 pl-12 pr-2 text-[#1C2B22] font-medium focus:ring-2 focus:ring-[#004F30]/20 outline-none text-sm" />
+                  <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#004F30]" />
+                  <input required type="number" min="1" max="9" value={passengers} onChange={e => setPassengers(parseInt(e.target.value))} className="w-full bg-white border border-gray-200 rounded-xl py-4 pl-12 pr-2 text-[#1C2B22] font-medium focus:ring-2 focus:ring-[#004F30]/20 outline-none text-sm" />
                 </div>
               </div>
 
@@ -435,7 +474,7 @@ export default function Booking() {
               )}
 
               <div className="md:col-span-5 mt-4 text-right">
-                <button type="submit" disabled={isSearching} className="px-10 py-4 bg-gradient-to-r from-[#004F30] to-[#0A6B41] hover:from-[#1C2B22] hover:to-[#1C2B22] text-white font-bold tracking-widest rounded-xl transition-all duration-300 shadow-lg inline-flex items-center gap-3 disabled:opacity-70 hover:-translate-y-0.5 hover:shadow-xl">
+                <button type="submit" disabled={isSearching} className="px-10 py-4 bg-[#A89411] hover:bg-[#D4C345] text-[#1C2B22] font-bold tracking-widest rounded-xl transition-all duration-300 shadow-lg inline-flex items-center gap-3 disabled:opacity-70 hover:-translate-y-0.5 hover:shadow-xl">
                   {isSearching ? 'SEARCHING...' : 'SEARCH FLIGHTS'} <ArrowRight className="w-5 h-5" />
                 </button>
               </div>
@@ -452,7 +491,6 @@ export default function Booking() {
             </button>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
               
-              {/* Flight List */}
               <div className="flex flex-col gap-4">
                 <h3 className="text-xl font-bold text-[#1C2B22] mb-2">Select your flight</h3>
                 <p className="text-sm text-gray-500 font-medium mb-4">Showing available flights from {origin} to {destination} ({flexibility === '0' ? 'Exact Dates' : `Flexible by +/- ${flexibility} days`})</p>
@@ -468,35 +506,35 @@ export default function Booking() {
                       onClick={() => handleSelectFlight(flight)}
                       onMouseEnter={() => setHoveredFlight(flight)}
                       onMouseLeave={() => setHoveredFlight(null)}
-                      className="bg-white border-2 border-gray-100 p-6 rounded-2xl hover:border-[#004F30] hover:shadow-lg transition-all duration-300 cursor-pointer group flex items-center justify-between hover:-translate-y-1"
+                      className="bg-[#004F30] border-2 border-[#0A6B41] p-6 rounded-2xl hover:border-[#A89411] hover:shadow-lg transition-all duration-300 cursor-pointer group flex items-center justify-between hover:-translate-y-1"
                     >
                       <div className="flex items-center gap-6">
                         <div>
-                          <div className="text-xl font-bold text-[#1C2B22]">{flight.departureTime}</div>
-                          <div className="text-sm text-gray-400 font-bold tracking-wider">{origin}</div>
+                          <div className="text-xl font-bold text-white">{flight.departureTime}</div>
+                          <div className="text-sm text-white/50 font-bold tracking-wider">{origin}</div>
                         </div>
                         
                         <div className="flex flex-col items-center px-4">
-                          <div className="text-[10px] text-gray-400 font-bold tracking-widest mb-1">{flight.duration}</div>
-                          <div className="w-24 h-[2px] bg-gray-200 relative">
-                            <Plane className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-[#004F30]" />
+                          <div className="text-[10px] text-white/50 font-bold tracking-widest mb-1">{flight.duration}</div>
+                          <div className="w-24 h-[2px] bg-white/20 relative">
+                            <Plane className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-[#A89411]" />
                           </div>
-                          <div className={`text-[10px] font-bold mt-1 ${flight.type === 'Direct' ? 'text-[#004F30]' : 'text-[#A89411]'}`}>{flight.type}</div>
+                          <div className={`text-[10px] font-bold mt-1 ${flight.type === 'Direct' ? 'text-white' : 'text-[#A89411]'}`}>{flight.type}</div>
                         </div>
 
                         <div>
-                          <div className="text-xl font-bold text-[#1C2B22]">{flight.arrivalTime}</div>
-                          <div className="text-sm text-gray-400 font-bold tracking-wider">{destination}</div>
+                          <div className="text-xl font-bold text-white">{flight.arrivalTime}</div>
+                          <div className="text-sm text-white/50 font-bold tracking-wider">{destination}</div>
                         </div>
                       </div>
                       
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <div className="text-xs text-gray-400 font-bold uppercase">From</div>
-                          <div className="text-2xl font-bold text-[#1C2B22]">{flight.price}</div>
+                          <div className="text-xs text-white/50 font-bold uppercase">From</div>
+                          <div className="text-2xl font-bold text-[#A89411]">{flight.price}</div>
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-[#F8F9FA] group-hover:bg-gradient-to-br group-hover:from-[#004F30] group-hover:to-[#A89411] flex items-center justify-center transition-all duration-300">
-                          <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-white group-hover:translate-x-0.5 transition-transform" />
+                        <div className="w-10 h-10 rounded-full bg-[#1C2B22]/50 group-hover:bg-[#A89411] flex items-center justify-center transition-all duration-300">
+                          <ChevronRight className="w-5 h-5 text-white/50 group-hover:text-[#1C2B22] group-hover:translate-x-0.5 transition-transform" />
                         </div>
                       </div>
                     </div>
@@ -518,10 +556,10 @@ export default function Booking() {
               <ArrowLeft className="w-4 h-4" /> Back to Flights
             </button>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="md:col-span-2 bg-white p-10 rounded-3xl shadow-[0_10px_40px_rgba(0,79,48,0.06)] border border-gray-100 flex flex-col items-center">
-                <h2 className="text-2xl font-bold text-[#1C2B22] mb-2">Select your seats</h2>
-                <p className="text-gray-500 font-medium mb-2">Please choose {passengers} seat(s)</p>
-                <div className="text-sm font-bold bg-[#F8F9FA] text-[#004F30] px-4 py-2 rounded-full mb-8 flex items-center gap-2 border border-gray-200">
+              <div className="md:col-span-2 bg-[#004F30] p-10 rounded-3xl shadow-[0_10px_40px_rgba(0,79,48,0.2)] border border-[#0A6B41] flex flex-col items-center">
+                <h2 className="text-2xl font-bold text-[#A89411] mb-2">Select your seats</h2>
+                <p className="text-white/70 font-medium mb-2">Please choose {passengers} seat(s)</p>
+                <div className="text-sm font-bold bg-[#1C2B22]/50 text-white px-4 py-2 rounded-full mb-8 flex items-center gap-2 border border-[#0A6B41]">
                   <Plane className="w-4 h-4" /> {selectedFlight?.plane} • {getAircraftModel(selectedFlight?.plane)}
                 </div>
                 
@@ -533,36 +571,46 @@ export default function Booking() {
                 </div>
               </div>
               
+              {/* Flight Summary Panel - Fixed CSS overlap for Unique Code / Flight */}
               <div className="md:col-span-1 space-y-6">
-                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-                  <h3 className="text-lg font-bold text-[#1C2B22] mb-6 border-b pb-4">Flight Summary</h3>
-                  <div className="flex justify-between mb-4">
-                    <span className="text-gray-500 font-medium">Flight</span>
-                    <span className="font-bold text-[#1C2B22]">{selectedFlight?.id}</span>
+                <div className="bg-[#004F30] p-8 rounded-3xl shadow-sm border border-[#0A6B41]">
+                  <h3 className="text-lg font-bold text-[#A89411] mb-6 border-b border-[#0A6B41] pb-4">Flight Summary</h3>
+                  
+                  <div className="flex items-center justify-between gap-4 mb-4">
+                    <span className="text-white/70 font-medium shrink-0">Flight</span>
+                    <span className="font-mono font-bold text-white text-right break-all truncate max-w-[180px]" title={selectedFlight?.id}>
+                      {selectedFlight?.id}
+                    </span>
                   </div>
-                  <div className="flex justify-between mb-4">
-                    <span className="text-gray-500 font-medium">Aircraft</span>
-                    <span className="font-bold text-[#1C2B22] text-right text-sm">{getAircraftModel(selectedFlight?.plane)}</span>
+
+                  <div className="flex items-center justify-between gap-4 mb-4">
+                    <span className="text-white/70 font-medium shrink-0">Aircraft</span>
+                    <span className="font-bold text-white text-right text-sm truncate max-w-[180px]" title={getAircraftModel(selectedFlight?.plane)}>
+                      {getAircraftModel(selectedFlight?.plane)}
+                    </span>
                   </div>
-                  <div className="flex justify-between mb-4">
-                    <span className="text-gray-500 font-medium">Route</span>
-                    <span className="font-bold text-[#1C2B22]">{origin} &rarr; {destination}</span>
+
+                  <div className="flex items-center justify-between gap-4 mb-4">
+                    <span className="text-white/70 font-medium shrink-0">Route</span>
+                    <span className="font-bold text-white text-right">{origin} &rarr; {destination}</span>
                   </div>
-                  <div className="flex justify-between mb-4">
-                    <span className="text-gray-500 font-medium">Passengers</span>
-                    <span className="font-bold text-[#1C2B22]">{passengers}</span>
+
+                  <div className="flex items-center justify-between gap-4 mb-4">
+                    <span className="text-white/70 font-medium shrink-0">Passengers</span>
+                    <span className="font-bold text-white text-right">{passengers}</span>
                   </div>
-                  <div className="flex justify-between mb-4">
-                    <span className="text-gray-500 font-medium">Selected Seats</span>
-                    <span className="font-bold text-[#004F30]">
+
+                  <div className="flex items-center justify-between gap-4 mb-4">
+                    <span className="text-white/70 font-medium shrink-0">Selected Seats</span>
+                    <span className="font-bold text-[#A89411] text-right">
                       {selectedSeats.length > 0 ? selectedSeats.join(', ') : 'None'}
                     </span>
                   </div>
                   
-                  <div className="mt-8 pt-6 border-t border-dashed">
+                  <div className="mt-8 pt-6 border-t border-[#0A6B41] border-dashed">
                     <div className="flex justify-between items-end">
-                      <span className="text-gray-400 font-bold uppercase tracking-wider text-sm">Total Price</span>
-                      <span className="text-3xl font-bold text-[#1C2B22]">${parseInt(selectedFlight?.price.replace('$','')) * passengers}</span>
+                      <span className="text-white/50 font-bold uppercase tracking-wider text-sm">Total Price</span>
+                      <span className="text-3xl font-bold text-[#A89411]">${parseInt(selectedFlight?.price.replace('$','')) * passengers}</span>
                     </div>
                   </div>
                 </div>
@@ -572,8 +620,8 @@ export default function Booking() {
                   disabled={selectedSeats.length !== passengers}
                   className={`w-full py-5 font-bold tracking-widest rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 ${
                     selectedSeats.length === passengers 
-                    ? 'bg-[#004F30] hover:bg-[#1C2B22] text-white' 
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    ? 'bg-[#A89411] hover:bg-[#D4C345] text-[#1C2B22]' 
+                    : 'bg-[#1C2B22]/50 text-[#004F30] cursor-not-allowed border border-[#0A6B41]'
                   }`}
                 >
                   REVIEW BOOKING <ArrowRight className="w-5 h-5" />
@@ -589,9 +637,9 @@ export default function Booking() {
             <button onClick={() => setStep(3)} className="mb-6 self-start inline-flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-[#1C2B22] uppercase tracking-wider transition-colors">
               <ArrowLeft className="w-4 h-4" /> Back to Seats
             </button>
-            <div className="bg-white p-10 md:p-12 rounded-3xl shadow-[0_10px_40px_rgba(0,79,48,0.06)] border border-gray-100 w-full">
-              <h2 className="text-3xl font-bold text-[#1C2B22] mb-2">Review your booking</h2>
-              <p className="text-gray-500 font-medium mb-8">Please check the details below before confirming. Nothing is booked yet.</p>
+            <div className="bg-[#004F30] p-10 md:p-12 rounded-3xl shadow-[0_10px_40px_rgba(0,79,48,0.2)] border border-[#0A6B41] w-full">
+              <h2 className="text-3xl font-bold text-[#A89411] mb-2">Review your booking</h2>
+              <p className="text-white/70 font-medium mb-8">Please check the details below before confirming. Nothing is booked yet.</p>
 
               {!isFlightVerified && (
                 <div className="mb-8 flex items-start gap-3 bg-red-50 border border-red-100 rounded-2xl p-5">
@@ -603,47 +651,47 @@ export default function Booking() {
                 </div>
               )}
 
-              <div className="bg-[#F8F9FA] rounded-2xl p-6 border border-gray-200 mb-8">
+              <div className="bg-[#1C2B22]/50 rounded-2xl p-6 border border-[#0A6B41] mb-8">
                 <div className="flex justify-between mb-4">
-                  <span className="text-gray-500 font-medium">Route</span>
-                  <span className="font-bold text-[#1C2B22]">{(selectedFlight?.path || [origin, destination]).join(' → ')}</span>
+                  <span className="text-white/50 font-medium">Route</span>
+                  <span className="font-bold text-white">{(selectedFlight?.path || [origin, destination]).join(' → ')}</span>
                 </div>
                 <div className="flex justify-between mb-4">
-                  <span className="text-gray-500 font-medium">Date</span>
-                  <span className="font-bold text-[#1C2B22]">{date}</span>
+                  <span className="text-white/50 font-medium">Date</span>
+                  <span className="font-bold text-white">{date}</span>
                 </div>
                 <div className="flex justify-between mb-4">
-                  <span className="text-gray-500 font-medium">Departure</span>
-                  <span className="font-bold text-[#1C2B22]">{selectedFlight?.departureTime}</span>
+                  <span className="text-white/50 font-medium">Departure</span>
+                  <span className="font-bold text-white">{selectedFlight?.departureTime}</span>
                 </div>
                 <div className="flex justify-between mb-4">
-                  <span className="text-gray-500 font-medium">Arrival</span>
-                  <span className="font-bold text-[#1C2B22]">{selectedFlight?.arrivalTime}</span>
+                  <span className="text-white/50 font-medium">Arrival</span>
+                  <span className="font-bold text-white">{selectedFlight?.arrivalTime}</span>
                 </div>
                 <div className="flex justify-between mb-4">
-                  <span className="text-gray-500 font-medium">Aircraft</span>
-                  <span className={`font-bold ${isFlightVerified ? 'text-[#1C2B22]' : 'text-red-500'}`}>{getAircraftModel(selectedFlight?.plane)}</span>
+                  <span className="text-white/50 font-medium">Aircraft</span>
+                  <span className={`font-bold ${isFlightVerified ? 'text-white' : 'text-red-500'}`}>{getAircraftModel(selectedFlight?.plane)}</span>
                 </div>
                 <div className="flex justify-between mb-4">
-                  <span className="text-gray-500 font-medium">Passengers</span>
-                  <span className="font-bold text-[#1C2B22]">{passengers}</span>
+                  <span className="text-white/50 font-medium">Passengers</span>
+                  <span className="font-bold text-white">{passengers}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">Seat(s)</span>
-                  <span className="font-bold text-[#004F30]">{selectedSeats.join(', ')}</span>
+                  <span className="text-white/50 font-medium">Seat(s)</span>
+                  <span className="font-bold text-[#A89411]">{selectedSeats.join(', ')}</span>
                 </div>
               </div>
 
-              <div className="flex justify-between items-end mb-8 pb-6 border-b border-dashed">
-                <span className="text-gray-400 font-bold uppercase tracking-wider text-sm">Total Price</span>
-                <span className="text-3xl font-bold text-[#1C2B22]">${totalPrice()}</span>
+              <div className="flex justify-between items-end mb-8 pb-6 border-b border-[#0A6B41] border-dashed">
+                <span className="text-white/50 font-bold uppercase tracking-wider text-sm">Total Price</span>
+                <span className="text-3xl font-bold text-[#A89411]">${totalPrice()}</span>
               </div>
 
               <button
                 onClick={handleCheckout}
                 disabled={!isFlightVerified || isBooking}
                 className={`w-full py-5 font-bold tracking-widest rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 ${
-                  isFlightVerified ? 'bg-gradient-to-r from-[#004F30] to-[#0A6B41] hover:from-[#1C2B22] hover:to-[#1C2B22] text-white hover:-translate-y-0.5 hover:shadow-xl' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  isFlightVerified ? 'bg-[#A89411] hover:bg-[#D4C345] text-[#1C2B22] hover:-translate-y-0.5 hover:shadow-xl' : 'bg-[#1C2B22]/50 text-[#004F30] cursor-not-allowed border border-[#0A6B41]'
                 } ${isBooking ? 'opacity-70' : ''}`}
               >
                 {isBooking ? 'CONFIRMING...' : 'CONFIRM BOOKING'} <CheckCircle2 className="w-5 h-5" />
