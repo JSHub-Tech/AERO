@@ -79,27 +79,16 @@ export default function Booking() {
     return airports.filter(a => activeOriginCodes.has(a.Airport_Code));
   }, [airports, routes]);
 
-  // Filter available Destinations based on selected Origin (including 1-stop connections)
+  // Filter available Destinations based on selected Origin
   const availableDestinations = useMemo(() => {
     if (!origin) return [];
     if (!routes.length) return airports.filter(a => a.Airport_Code !== origin);
 
-    const validDestCodes = new Set();
-    const directRoutes = routes.filter(r => (r.Source_Airport_Code || r.source) === origin);
-    
-    // Add direct destinations
-    directRoutes.forEach(r => {
-      const dest = r.Destination_Airport_Code || r.destination;
-      validDestCodes.add(dest);
-      
-      // Check for 1-stop connections from this intermediate destination
+    const validDestCodes = new Set(
       routes
-        .filter(r2 => (r2.Source_Airport_Code || r2.source) === dest)
-        .forEach(r2 => validDestCodes.add(r2.Destination_Airport_Code || r2.destination));
-    });
-
-    // Remove origin itself in case of circular routes
-    validDestCodes.delete(origin);
+        .filter(r => (r.Source_Airport_Code || r.source) === origin)
+        .map(r => r.Destination_Airport_Code || r.destination)
+    );
 
     return airports.filter(a => validDestCodes.has(a.Airport_Code));
   }, [origin, airports, routes]);
