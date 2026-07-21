@@ -115,6 +115,11 @@ export const AviationMap = ({ selectedFlightId, onSelectFlight }) => {
     return coords;
   }, [airports]);
 
+  const airportCoordsRef = useRef({});
+  useEffect(() => {
+    airportCoordsRef.current = airportCoords;
+  }, [airportCoords]);
+
   useEffect(() => {
     // 1. Setup the WebSocket connection
     const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000';
@@ -126,8 +131,8 @@ export const AviationMap = ({ selectedFlightId, onSelectFlight }) => {
         if (payload.type === 'FLIGHT_TELEMETRY_UPDATE') {
           // payload.data is a list of TelemetryFlightOut from the backend
           const updatedFlights = payload.data.map(f => {
-            const startCoords = airportCoords[f.departure];
-            const endCoords = airportCoords[f.dest];
+            const startCoords = airportCoordsRef.current[f.departure];
+            const endCoords = airportCoordsRef.current[f.dest];
             let screenHeading = f.heading;
             
             // Calculate flat-map bearing so the icon perfectly aligns with the drawn Polyline
@@ -170,7 +175,7 @@ export const AviationMap = ({ selectedFlightId, onSelectFlight }) => {
     return () => {
       ws.close();
     };
-  }, [airportCoords]);
+  }, []);
 
 // Cache plane icons by rounded heading to prevent constant marker re-creation and popup closing
 const planeIconCache = {};
