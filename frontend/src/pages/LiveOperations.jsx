@@ -331,23 +331,23 @@ export default function LiveOperations() {
         </div>
       </div>
 
-      {/* Right Side Drawer ("Flying Div") */}
-      <div className={`absolute top-[80px] right-0 h-[calc(100vh-80px)] w-[450px] bg-white/95 backdrop-blur-3xl shadow-[-20px_0_60px_rgba(0,0,0,0.15)] border-l border-white/50 z-40 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col ${
-        sidePanelFlight ? 'translate-x-0' : 'translate-x-full'
+      {/* Floating Side Panel (Flight Details) */}
+      <div className={`absolute top-[100px] right-8 bottom-8 w-[400px] bg-[#004F30]/90 backdrop-blur-xl shadow-2xl border border-[#0A6B41] rounded-3xl z-40 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col ${
+        sidePanelFlight ? 'translate-x-0 opacity-100 pointer-events-auto' : 'translate-x-[120%] opacity-0 pointer-events-none'
       }`}>
         {sidePanelFlight && (
           <>
-            <div className="p-8 border-b border-gray-100 flex items-center justify-between">
+            <div className="p-8 border-b border-[#0A6B41] flex items-center justify-between">
               <div>
                 <p className="text-[10px] font-black tracking-widest text-[#A89411] uppercase mb-2 flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#A89411] animate-pulse"></span>
                   Active Telemetry Link
                 </p>
-                <h2 className="text-4xl font-black text-[#1C2B22] tracking-tighter">{sidePanelFlight.flightNumber}</h2>
+                <h2 className="text-4xl font-black text-white tracking-tighter">{sidePanelFlight.flightNumber}</h2>
               </div>
               <button 
                 onClick={() => setSidePanelFlight(null)} 
-                className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 hover:text-[#1C2B22] transition-colors"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-[#A89411] hover:text-[#1C2B22] transition-colors shadow-sm"
               >
                 <X size={18} />
               </button>
@@ -355,55 +355,40 @@ export default function LiveOperations() {
             
             <div className="p-8 flex-1 overflow-y-auto">
               {/* Route */}
-              <div className="bg-[#F8F9FA] rounded-2xl p-6 flex items-center justify-between mb-8 border border-gray-100">
+              <div className="bg-[#1C2B22]/50 rounded-2xl p-6 flex items-center justify-between mb-8 border border-white/5 shadow-inner">
                 <div className="text-center">
-                  <span className="block text-3xl font-black text-[#004F30]">{sidePanelFlight.source}</span>
-                  <span className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">{airports.find(a=>a.Airport_Code===sidePanelFlight.source)?.City || 'Origin'}</span>
+                  <span className="block text-3xl font-black text-white">{sidePanelFlight.source}</span>
+                  <span className="text-[10px] uppercase font-bold text-[#A89411] tracking-widest">{airports.find(a=>a.Airport_Code===sidePanelFlight.source)?.City || 'Origin'}</span>
                 </div>
                 <div className="flex flex-col items-center flex-1 px-4 text-[#A89411]">
                   <Plane size={24} className="mb-2" />
                   <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-[#A89411]/30 to-transparent relative">
-                    <div className="absolute top-0 left-0 h-full bg-[#A89411] transition-all duration-1000" style={{width: `${sidePanelFlight.progress * 100}%`}}></div>
+                    <div className="absolute top-0 left-0 h-full bg-[#A89411] transition-all duration-1000 shadow-[0_0_8px_rgba(168,148,17,0.8)]" style={{width: `${sidePanelFlight.progress * 100}%`}}></div>
                   </div>
                 </div>
                 <div className="text-center">
-                  <span className="block text-3xl font-black text-[#1C2B22]">{sidePanelFlight.destination}</span>
-                  <span className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">{airports.find(a=>a.Airport_Code===sidePanelFlight.destination)?.City || 'Dest'}</span>
+                  <span className="block text-3xl font-black text-white">{sidePanelFlight.destination}</span>
+                  <span className="text-[10px] uppercase font-bold text-[#A89411] tracking-widest">{airports.find(a=>a.Airport_Code===sidePanelFlight.destination)?.City || 'Dest'}</span>
                 </div>
               </div>
 
               {/* Data Grid */}
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Status</p>
-                  <p className="text-lg font-black text-[#004F30] uppercase">{sidePanelFlight.status}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/5 border border-[#0A6B41] rounded-2xl p-5 shadow-sm hover:bg-white/10 transition-colors">
+                  <p className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">Status</p>
+                  <p className="text-lg font-black text-[#A89411] uppercase">{sidePanelFlight.status}</p>
                 </div>
-                <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Heading</p>
-                  <p className="text-lg font-black text-[#1C2B22] uppercase">{Math.round(sidePanelFlight.heading)}°</p>
+                <div className="bg-white/5 border border-[#0A6B41] rounded-2xl p-5 shadow-sm hover:bg-white/10 transition-colors">
+                  <p className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">Heading</p>
+                  <p className="text-lg font-black text-white uppercase">{Math.round(sidePanelFlight.heading)}°</p>
                 </div>
-                <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Progress</p>
-                  <p className="text-lg font-black text-[#1C2B22] uppercase">{Math.round(sidePanelFlight.progress * 100)}%</p>
+                <div className="bg-white/5 border border-[#0A6B41] rounded-2xl p-5 shadow-sm hover:bg-white/10 transition-colors">
+                  <p className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">Progress</p>
+                  <p className="text-lg font-black text-white uppercase">{Math.round(sidePanelFlight.progress * 100)}%</p>
                 </div>
-                <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Network</p>
-                  <p className="text-lg font-black text-green-600 uppercase">Linked</p>
-                </div>
-              </div>
-
-              {/* Manifest Placeholder */}
-              <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-6">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-blue-100 text-blue-600 rounded-xl">
-                    <Info size={20} />
-                  </div>
-                  <div>
-                    <h4 className="font-black text-[#1C2B22] mb-1 tracking-tight">Manifest & Telemetry</h4>
-                    <p className="text-xs font-bold text-gray-500 leading-relaxed">
-                      Detailed passenger manifests and deeper telemetry analytics are currently being configured by the backend database team. They will appear here once the API updates are live.
-                    </p>
-                  </div>
+                <div className="bg-white/5 border border-[#0A6B41] rounded-2xl p-5 shadow-sm hover:bg-white/10 transition-colors">
+                  <p className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">Network</p>
+                  <p className="text-lg font-black text-white uppercase">Linked</p>
                 </div>
               </div>
             </div>
